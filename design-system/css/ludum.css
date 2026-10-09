@@ -53,7 +53,8 @@
 }
 
 /* ---------- 1. Base ---------- */
-html { background: var(--paper); }
+html { background: var(--paper); scroll-padding-top: calc(var(--ld-nav-h) + 4px + 16px); }   /* in-page jumps land below the sticky nav */
+html:has(.ld-tabs-bar) { scroll-padding-top: calc(var(--ld-nav-h) + 4px + 64px); }   /* and below a project's sticky tabs */
 .ld-page {
   margin: 0; background: var(--paper); color: var(--ink);
   font-family: var(--font-sans); font-size: 18px; line-height: 30px; font-weight: 400;
@@ -355,7 +356,7 @@ html { background: var(--paper); }
 .ld-tabs > :focus-visible, .ld-tabs > .is-focus { outline: 3px solid var(--focus); outline-offset: -3px; }
 .ld-tabs__count { font-weight: 400; color: var(--ink-3); }
 .ld-tabs--sticky { position: sticky; top: 0; z-index: 20; background: var(--paper); }
-.ld-tabs-bar { position: sticky; top: 0; z-index: 20; background: var(--pj-ground, var(--paper)); }
+.ld-tabs-bar { position: sticky; top: calc(var(--ld-nav-h) + 4px); z-index: 20; background: var(--pj-ground, var(--paper)); }
 .ld-tabs-bar .ld-tabs { border-bottom-color: var(--pj-rule, var(--rule-strong)); }
 
 /* ---------- 14. Wordmark: the name set in Anton on the black frame. There is no drawn logo. ---------- */
@@ -374,7 +375,7 @@ html { background: var(--paper); }
 a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 
 /* ---------- 15. Site navigation: the black bar ---------- */
-.ld-nav { position: relative; z-index: 30; background: var(--frame); color: var(--on-frame); --focus: var(--yellow); }
+.ld-nav { position: sticky; top: 0; z-index: 40; background: var(--frame); color: var(--on-frame); --focus: var(--yellow); }
 .ld-nav::after { content: ''; display: block; height: 4px; background: linear-gradient(90deg, var(--neta-pink), var(--neta-cyan)); }   /* the Neta line: where Ludum meets its parent */
 .ld-nav__bar { display: flex; align-items: stretch; height: var(--ld-nav-h); max-width: var(--frame-max, 1600px); margin: 0 auto; padding-left: var(--ld-margin); }
 .ld-nav__home { display: flex; align-items: center; gap: 14px; margin-right: auto; color: var(--on-frame); text-decoration: none; }
@@ -502,32 +503,38 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 /* ---------- 20. Footer ---------- */
 .ld-footer { background: var(--frame); color: var(--on-frame); --focus: var(--yellow); }
 .ld-footer__band { display: block; height: 8px; background: linear-gradient(90deg, var(--neta-pink), var(--neta-cyan)); }   /* the Neta line, full strength */
-.ld-footer__inner { padding-block: var(--space-8, 64px) var(--space-6, 32px); }
-.ld-footer__top { display: grid; grid-template-columns: 7fr 5fr; gap: var(--ld-gutter); align-items: end; padding-bottom: var(--space-7, 48px); border-bottom: 2px solid var(--rule-strong); }
-.ld-footer__name { margin: 0; font: 400 var(--ld-d0)/.76 var(--font-display); text-transform: uppercase; letter-spacing: -.015em; }
-.ld-footer__line { margin: 0; font: 400 var(--ld-d4)/.98 var(--font-display); text-transform: uppercase; max-width: 16ch; }
+.ld-footer__inner { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); column-gap: var(--ld-gutter); padding-block: var(--space-7, 48px) var(--space-5, 24px); }
+.ld-footer__top { padding-bottom: var(--space-6, 32px); }
+.ld-footer__name { margin: 0; font: 400 var(--ld-d3)/.8 var(--font-display); text-transform: uppercase; letter-spacing: -.005em; }
+.ld-footer__line { margin: 14px 0 0; font: 400 var(--ld-d5)/1 var(--font-display); text-transform: uppercase; max-width: 16ch; }
 .ld-footer__line em { font-style: normal; color: var(--red-ink); }
-.ld-footer__cols { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ld-gutter); padding-block: var(--space-6, 32px) var(--space-7, 48px); }
+/* The epigraph: one reader on play per page, quiet, under the line */
+.ld-footer__epigraph { margin: 24px 0 0; max-width: 36ch; }
+.ld-footer__epigraph blockquote { margin: 0; }
+.ld-footer__epigraph p { margin: 0; font: italic 400 15px/22px var(--font-sans); color: var(--ink-2); }
+.ld-footer__epigraph figcaption { margin-top: 8px; font: 500 11px/16px var(--font-mono); letter-spacing: .08em; color: var(--ink-3); }
+.ld-footer__epigraph cite { font-style: italic; }
+.ld-footer__cols { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ld-gutter); padding-bottom: var(--space-6, 32px); }
 .ld-footer__cols h2 { margin: 0 0 14px; font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
 .ld-footer__cols ul { margin: 0; padding: 0; list-style: none; }
 .ld-footer__cols li + li { margin-top: 6px; }
-.ld-footer__cols ul a { font: 400 24px/1.1 var(--font-display); text-transform: uppercase; text-decoration: none; letter-spacing: .01em; }
+.ld-footer__cols ul a { font: 400 20px/1.1 var(--font-display); text-transform: uppercase; text-decoration: none; letter-spacing: .01em; }
 .ld-footer__cols ul a:hover { color: var(--yellow); }
 .ld-footer__cols p { margin: 0 0 14px; font: 400 15px/24px var(--font-sans); color: var(--ink-2); max-width: 34ch; }
 .ld-footer .ld-link { color: var(--on-frame); }
 .ld-footer .ld-link:hover { color: var(--yellow); }
 .ld-footer__neta { display: grid; gap: 14px; align-content: start; }
-.ld-footer__neta img { width: 72px; height: auto; }
+.ld-footer__neta img { width: 56px; height: auto; }
 .ld-footer__neta a:hover img { opacity: .85; }
-.ld-footer__print { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin: 0; padding-top: 18px; border-top: 1px solid var(--rule);
+.ld-footer__print { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin: 0; padding-top: 18px; border-top: 1px solid var(--rule);
   font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
 @media (max-width: 1023px) {
-  .ld-footer__top { grid-template-columns: 1fr; gap: 20px; }
-  .ld-footer__cols { grid-template-columns: 1fr 1fr; row-gap: 32px; }
+  .ld-footer__inner { grid-template-columns: minmax(0, 1fr); }
+  .ld-footer__top { padding-bottom: var(--space-6, 32px); }
+  .ld-footer__cols { grid-template-columns: 1fr 1fr; row-gap: 28px; }
 }
 @media (max-width: 599px) {
-  .ld-footer__name { font-size: 31vw; }
-  .ld-footer__cols ul a { font-size: 22px; }
+  .ld-footer__cols ul a { font-size: 20px; }
 }
 
 /* ---------- 21. Project masthead: the poster at the top of a project page ---------- */

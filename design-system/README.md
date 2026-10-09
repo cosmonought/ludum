@@ -55,6 +55,7 @@ The **Neta DAO mark** in `assets/Logos/` is Neta DAO's supplied artwork: copy it
 ## Using the system
 
 - Load `tokens.css`, `components/bundle.css` and `components/bundle.js`; put `class="ld-page"` on `<body>`; call `Ludum.enhance()` once. Without the script every page still reads and works.
+- On ludum.netadao.org every page also loads Neta DAO's shared radio, as the other netadao.org sites do: `<script src="https://netadao.org/radio/radio.js" defer></script>`. Once a visitor presses play, the stream carries on as they move between Ludum, netadao.org, the Academy, Fork and Play.
 - Components are HTML patterns with `ld-` classes; each card's guidelines give the markup, states, responsive behaviour and do's and don'ts.
 - Page templates: **Home**, **ProjectsIndex**, **Project18XX**, **Project20Cosmos**, **NotesIndex**, **Note**, **About** at 1440px, and phone cards that show the same markup recomposed at 390px.
 - Accessibility is part of each component: a skip link, real headings in order, labelled landmarks, stretched links with row focus rings, `aria-current`/`aria-pressed`, captions on diagrams, alt text on every picture that isn't decoration.
