@@ -1,0 +1,2 @@
+# Byte-exact: the recorded sha256 must hold in every checkout.
+* -text
