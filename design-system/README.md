@@ -14,7 +14,7 @@ Ludum is Neta DAO's game publisher, and this is its house style: radical game pu
 - **Say only what is true and settled.** Project 18XX's facts come from its own repository: its actions (buy, sell, operate, withhold, rust, bankrupt), its three tables, its house rules, its train roster. 20 Cosmos has no published rules: describe its world and themes, never its mechanics. No dates, prices or player counts until they are real. A diagram or table that isn't the game's own says "illustrative".
 - **Statuses are promises.** PLAYABLE · IN DEVELOPMENT · EXPERIMENTAL · RESEARCH · ARCHIVE, and nothing else ("Coming soon", "Beta" and "New" don't exist).
 - **Casing.** Display type is always uppercase (Anton). Running text is sentence case. Mono labels and actions are uppercase and tracked; mono data is sentence case.
-- **Names.** The first game is **Project 18XX**; its tables are 18XX, 18XX+ and 18XX+: A Level Playing Field. Never name another publisher's 18xx title, designer or edition in Ludum's copy, and never put a real railroad's name or herald on a Ludum plate, piece or picture — specimens use invented companies.
+- **Names.** The first game is **Project 18XX**; its tables are 18XX, 18XX+ and 18XX+: A Level Playing Field.
 - **Never.** Hype words ("revolutionary", "next-gen", "the future of"), "Web3", rocket-and-moon talk, emoji, exclamation marks, real chain names or logos on 20 Cosmos material.
 - **Real lines to reuse.** "Serious games for a more interesting world." · "Games are models you can enter." · "Railways for a multichain world." · "Railways built empires. Blockchains connect them." · "Nothing is playable yet."
 - Sample copy in the templates (note titles, dates, bylines) is illustrative and marked so in each card.
@@ -38,7 +38,7 @@ Ludum is Neta DAO's game publisher, and this is its house style: radical game pu
 
 **Texture.** Print, not decoration: `ld-grain` on fields and mastheads, `ld-halftone`/`ld-hatch` for fills, one `ld-torn` edge per page at most. Never under running text; never animated.
 
-**Imagery.** Pictures are printed onto the stock: `ld-treat--print` (colour, multiply), `--ink` (engraving), `--night` (on dark fields), `--duo` (one pigment), `--screen`. The house uses railway engraving, the 18xx board and pieces; Project 18XX uses only its own art (`assets/Project 18XX/`), untreated, in gilt frames; 20 Cosmos uses infrastructure — viaducts, route linework, charts. Hard crops, square corners, no cards. The files in `assets/Imagery/` are crops of the supplied reference sheets standing in until final photography. See **ImageTreatments**, **Collage**, **Figure**.
+**Imagery.** Pictures are printed onto the stock: `ld-treat--print` (colour, multiply), `--ink` (engraving), `--night` (on dark fields), `--duo` (one pigment), `--screen`. The house uses railway engraving, the 18xx board, pieces and certificates; Project 18XX uses only its own art (`assets/Project 18XX/`), untreated, in gilt frames; 20 Cosmos uses infrastructure — viaducts, route linework, charts. Hard crops, square corners, no cards. The files in `assets/Imagery/` are crops of the supplied reference sheets standing in until final photography. See **ImageTreatments**, **Collage**, **Figure**.
 
 **Diagrams.** Drawn as live SVG in the project's palette, every mark in a legend: flat-topped hexes on dark-green land, tile tiers and dark track for Project 18XX; hex-field zones, octilinear routes and ringed stations for 20 Cosmos, with abstract names (Hub, Gate, Yard…; Zone 1…). See **DiagramStyle** and **RouteMap**.
 

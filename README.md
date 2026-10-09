@@ -31,7 +31,6 @@ then open http://localhost:8000/templates/ — every page works at desktop, tabl
 
 - PLAY always leaves for play.netadao.org. Both games are **In development**, so their pages show the in-development PLAY plate; switch a game to a linked PLAY and a PLAYABLE stamp in the same change, the day it opens.
 - Say only what is settled: Project 18XX's facts (actions, tables, house rules, trains) come from its own repository; 20 Cosmos's rules are unpublished, so its pages describe its world and themes only.
-- Names: the first game is Project 18XX. Don't name another publisher's 18xx title, designer or edition anywhere in Ludum, and keep real railroads' names and heralds off Ludum's plates, pieces and pictures.
 - Note titles, dates and the sample note in `templates/` are illustrative copy.
 - The Neta DAO mark is Neta DAO's artwork: never redraw or recolour it.
 - Fonts: Anton and IBM Plex are under the SIL Open Font License (see `design-system/fonts/`).

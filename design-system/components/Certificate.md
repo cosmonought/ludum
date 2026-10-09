@@ -7,4 +7,4 @@ The engraved share plate, drawn in CSS: a ring-guilloche border, the company in 
 - Project 18XX plates are `p18-sepia` engraving on `p18-paper` with a `p18-wood` band and a gold-lettered seal; the President's certificate is two shares (20%) of a ten-share company.
 - 20 Cosmos plates are blue engraving on cream; they are specimens and say so. Never make a plate that could pass for a real security, token or NFT.
 - Hover straightens a tilted plate and lifts it 4px.
-- Specimen plates on Ludum carry invented companies (Eastern Trunk Line, Interchain Railway Co.) and say "Specimen". Never put a real railroad's name or herald on a Ludum plate.
+- Railroad names in Project 18XX are the game's historical companies (Pennsylvania, B&O, New York Central…). 20 Cosmos companies are invented.
