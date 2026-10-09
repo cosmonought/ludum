@@ -40,7 +40,11 @@
 .pg-flow__box--play li { border-top-color: #3A3631; }
 .pg-neta { display: flex; gap: 24px; align-items: center; }
 .pg-neta img { width: 96px; height: auto; }
+.pg-close__grid { display: grid; grid-template-columns: 7fr 5fr; gap: var(--ld-gutter); align-items: end; padding-top: var(--space-6, 32px); border-top: 2px solid var(--rule-strong); }
+.pg-close__grid .ld-lede { margin: 0 0 20px; max-width: 34ch; }
+.pg-next { isolation: isolate; padding-block: var(--space-8, 64px); }
 @media (max-width: 1023px) {
+  .pg-close__grid { grid-template-columns: 1fr; gap: 32px; }
   .pg-head__row, .pg-two { grid-template-columns: 1fr; gap: 28px; }
   .pg-split__side, .pg-split__main { grid-column: 1 / 13; }
   .pg-split__side { margin-bottom: 24px; }
@@ -120,7 +124,7 @@
   <div class="pg-two"><div style="display:grid;gap:24px;justify-items:start"><p class="ld-lede">In development, in public.</p><p class="ld-play ld-play--soon ld-play--l"><span class="ld-play__word">Play</span><span class="ld-play__what">In development · not yet on play.netadao.org</span></p></div><dl class="ld-meta"><div><dt>Status</dt><dd><span class="ld-stamp ld-stamp--dev ld-stamp--s">In development</span></dd></div><div><dt>Network</dt><dd>Juno</dd></div></dl></div>
 </div></section>
 
-</div></main><footer class="ld-footer" data-theme="press">
+</div><section class="pg-next" aria-label="Next project"><div class="ld-wrap"><nav class="ld-next" aria-label="Next project"><div><span class="ld-next__label">Next project · LUD—02</span><p class="ld-next__title"><a href="/projects/20-cosmos/">20 Cosmos</a></p></div><svg class="ld-icon ld-icon--48" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></nav></div></section></main><footer class="ld-footer" data-theme="press">
   <span class="ld-footer__band" aria-hidden="true"></span>
   <div class="ld-wrap ld-footer__inner">
     <p class="ld-footer__print">© 2026 Neta DAO</p>

@@ -7,6 +7,7 @@
 3. **01 Overview** — what the game is, and that its rules aren't published yet; a pull quote from the project's own line.
 4. **02 The world** — the six themes as a **MechanicsStack** ("themes, not rules"), the network chart **RouteMap** (channels draw once; stations light their channels), a specimen **Certificate**, the channel **Ledger** and the zone legend.
 5. **03 Development** and **04 Notes**.
+6. **Next project** — the **NextNote** band on stock, handing on to Project 18XX; it brings the page back to stock before the footer.
 
 - The whole page sits in the 20 Cosmos field (`ld-pj--cosmos`, `data-theme="press"`).
 - The internet age, not outer space: no planets or starfields, and no trains or rails. Zones and stations have abstract names, never real chains.

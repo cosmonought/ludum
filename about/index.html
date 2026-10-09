@@ -40,7 +40,11 @@
 .pg-flow__box--play li { border-top-color: #3A3631; }
 .pg-neta { display: flex; gap: 24px; align-items: center; }
 .pg-neta img { width: 96px; height: auto; }
+.pg-close__grid { display: grid; grid-template-columns: 7fr 5fr; gap: var(--ld-gutter); align-items: end; padding-top: var(--space-6, 32px); border-top: 2px solid var(--rule-strong); }
+.pg-close__grid .ld-lede { margin: 0 0 20px; max-width: 34ch; }
+.pg-next { isolation: isolate; padding-block: var(--space-8, 64px); }
 @media (max-width: 1023px) {
+  .pg-close__grid { grid-template-columns: 1fr; gap: 32px; }
   .pg-head__row, .pg-two { grid-template-columns: 1fr; gap: 28px; }
   .pg-split__side, .pg-split__main { grid-column: 1 / 13; }
   .pg-split__side { margin-bottom: 24px; }

@@ -10,6 +10,7 @@
 6. **04 House rules** — the four rules as a **Ledger** with the game's tags: Gentle Rust (easier), Dynamic Market (riskier), Delayed Auction (harder), Unpredictable Revenue (chaotic).
 7. **05 Development** — one honest sentence, the PLAY plate, the facts.
 8. **06 Notes on Project 18XX** — rows tagged Project 18XX.
+9. **Next project** — the **NextNote** band on stock, handing on to 20 Cosmos; it brings the page back to stock before the footer.
 
 - The page body stays in the Project 18XX field (`ld-pj--p18`, `data-theme="press"`), so the site's theme never re-tints it. Section heads turn gold over a `p18-gold-deep` rule; grain only on the masthead.
 - Facts come from the game's own repository: its names, tables, house rules and train roster. No dates, prices or player counts until they are real.

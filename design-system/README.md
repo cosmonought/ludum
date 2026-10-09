@@ -34,6 +34,8 @@ Ludum is Neta DAO's game publisher, and this is its house style: radical game pu
 
 **Layout.** 12 columns from tablet up, 4 on phones; margins 48 / 32 / 24 / 16; gutters 24 (16 from tablet down); frame max 1600px; reading measure 680px. Compositions overlap and bleed on purpose (numerals over pictures, pictures off the edge); reading text never does. Spacing `space-1`…`space-10` (4 → 128). See **Grid** and **Responsive**.
 
+**Page rhythm.** A page is cream stock, framed by the black nav and footer; dark fields (a game's identity, a frame-black statement) are set into the stock. Every page comes back to stock before the footer, so the footer never meets a dark field: the homepage closes on stock, the projects index ends on its status key, and each game page ends with a **Next project** band on stock. The one place two dark fields meet is the homepage, where the two games follow each other. Check every change against the whole page, top to bottom, at desktop and phone.
+
 **Rules, corners, shadows.** Structure is drawn with rules: `rule-hair` 1px between rows, `rule-2` for modules and controls, `rule-4` over metadata, `rule-bar` 8px, `rule-band` 16px stripe bands on field edges. `radius-0` everywhere; `radius-token` only for drawn pieces, stations, the hub and the red sun. No shadows: sheets are set apart by `rule-strong`.
 
 **Texture.** Print, not decoration: `ld-grain` on fields and mastheads, `ld-halftone`/`ld-hatch` for fills, one `ld-torn` edge per page at most. Never under running text; never animated.

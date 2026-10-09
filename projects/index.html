@@ -40,7 +40,11 @@
 .pg-flow__box--play li { border-top-color: #3A3631; }
 .pg-neta { display: flex; gap: 24px; align-items: center; }
 .pg-neta img { width: 96px; height: auto; }
+.pg-close__grid { display: grid; grid-template-columns: 7fr 5fr; gap: var(--ld-gutter); align-items: end; padding-top: var(--space-6, 32px); border-top: 2px solid var(--rule-strong); }
+.pg-close__grid .ld-lede { margin: 0 0 20px; max-width: 34ch; }
+.pg-next { isolation: isolate; padding-block: var(--space-8, 64px); }
 @media (max-width: 1023px) {
+  .pg-close__grid { grid-template-columns: 1fr; gap: 32px; }
   .pg-head__row, .pg-two { grid-template-columns: 1fr; gap: 28px; }
   .pg-split__side, .pg-split__main { grid-column: 1 / 13; }
   .pg-split__side { margin-bottom: 24px; }
@@ -86,20 +90,7 @@
 </li></ol>
   <div class="ld-empty" data-ld-filter-empty="catalogue" hidden><p><strong>Nothing here yet</strong>No project has this status today. Statuses on Ludum change only when the work does.</p></div>
 </section>
-<section class="ld-section" aria-labelledby="key-h"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">02</span><h2 class="ld-sechead__title" id="key-h">What the statuses mean</h2></header><ul class="pg-keys"><li><span><span class="ld-stamp ld-stamp--playable">Playable</span></span><span>Runs on play.netadao.org now. PLAY takes you straight there.</span></li><li><span><span class="ld-stamp ld-stamp--dev">In development</span></span><span>Being built, in public. It opens on play.netadao.org first.</span></li><li><span><span class="ld-stamp ld-stamp--experimental">Experimental</span></span><span>A playable prototype. Rules and balance may change between sessions.</span></li><li><span><span class="ld-stamp ld-stamp--research">Research</span></span><span>Study and writing about games, not a game itself.</span></li><li><span><span class="ld-stamp ld-stamp--archive">Archive</span></span><span>Finished or retired, kept on record.</span></li></ul></div></section>
-<section class="ld-playband" data-theme="press" aria-labelledby="play-h">
-  <div class="ld-wrap ld-playband__inner">
-    <div><h2 class="ld-playband__word" id="play-h">Play</h2><span class="ld-playband__host">play.netadao.org — where Ludum’s games run</span><figure class="ld-epigraph"><blockquote><p>“… he is only wholly Man when he is playing.”</p></blockquote><figcaption>Friedrich Schiller, <cite>On the Aesthetic Education of Man</cite> (1795, Letter XV)</figcaption></figure></div>
-    <div class="ld-playband__body">
-      <p>Nothing is playable yet. Both games are in development, and each opens on play.netadao.org first; this list changes the day one does.</p>
-      <ul class="ld-playband__list">
-        <li><strong>Project 18XX</strong><span class="ld-stamp ld-stamp--dev ld-stamp--s">In development</span></li>
-        <li><strong>20 Cosmos</strong><span class="ld-stamp ld-stamp--dev ld-stamp--s">In development</span></li>
-      </ul>
-      <a class="ld-play" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a>
-    </div>
-  </div>
-</section></main><footer class="ld-footer" data-theme="press">
+<section class="ld-section" aria-labelledby="key-h"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">02</span><h2 class="ld-sechead__title" id="key-h">What the statuses mean</h2></header><ul class="pg-keys"><li><span><span class="ld-stamp ld-stamp--playable">Playable</span></span><span>Runs on play.netadao.org now. PLAY takes you straight there.</span></li><li><span><span class="ld-stamp ld-stamp--dev">In development</span></span><span>Being built, in public. It opens on play.netadao.org first.</span></li><li><span><span class="ld-stamp ld-stamp--experimental">Experimental</span></span><span>A playable prototype. Rules and balance may change between sessions.</span></li><li><span><span class="ld-stamp ld-stamp--research">Research</span></span><span>Study and writing about games, not a game itself.</span></li><li><span><span class="ld-stamp ld-stamp--archive">Archive</span></span><span>Finished or retired, kept on record.</span></li></ul></div></section></main><footer class="ld-footer" data-theme="press">
   <span class="ld-footer__band" aria-hidden="true"></span>
   <div class="ld-wrap ld-footer__inner">
     <p class="ld-footer__print">© 2026 Neta DAO</p>

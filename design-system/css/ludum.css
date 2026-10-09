@@ -489,17 +489,6 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 .ld-statement--frame .ld-statement__text em { color: var(--yellow); }
 
 /* ---------- 19. Play band: the way out to play.netadao.org ---------- */
-.ld-playband { background: var(--frame); color: var(--on-frame); --focus: var(--yellow); }
-.ld-playband__inner { display: grid; grid-template-columns: 5fr 7fr; gap: var(--ld-gutter); align-items: end; padding-block: var(--space-8, 64px); }
-.ld-playband__word { margin: 0; font: 400 var(--ld-d0)/.78 var(--font-display); text-transform: uppercase; color: var(--neta-cyan); letter-spacing: -.01em; }
-.ld-playband .ld-epigraph { margin-top: 32px; }
-.ld-playband__host { display: block; margin-top: 14px; font: 500 12px/16px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
-.ld-playband__body { display: grid; gap: 24px; justify-items: start; }
-.ld-playband__body p { margin: 0; max-width: 46ch; font: 400 18px/30px var(--font-sans); color: var(--on-frame); }
-.ld-playband__list { width: 100%; margin: 0; padding: 0; list-style: none; border-top: 2px solid var(--rule-strong); }
-.ld-playband__list li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--rule); }
-.ld-playband__list strong { font: 400 28px/1 var(--font-display); text-transform: uppercase; font-weight: 400; letter-spacing: .01em; }
-@media (max-width: 1023px) { .ld-playband__inner { grid-template-columns: 1fr; } }
 
 /* ---------- 20. Footer ---------- */
 /* One quiet line under the Neta band: the copyright, and the way back to Neta DAO. The nav already carries everything else. */
