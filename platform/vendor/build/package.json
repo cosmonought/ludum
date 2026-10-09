@@ -1,0 +1,14 @@
+{
+  "name": "ludum-cosmjs-vendor",
+  "private": true,
+  "description": "Build inputs for platform/vendor/cosmjs-0.32.4.min.js (see ../README.md)",
+  "dependencies": {
+    "@cosmjs/amino": "0.32.4",
+    "@cosmjs/cosmwasm-stargate": "0.32.4",
+    "@cosmjs/encoding": "0.32.4",
+    "@cosmjs/proto-signing": "0.32.4",
+    "@cosmjs/stargate": "0.32.4",
+    "cosmjs-types": "0.9.0",
+    "esbuild": "0.23.1"
+  }
+}
