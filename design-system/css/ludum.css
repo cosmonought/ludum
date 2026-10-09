@@ -197,6 +197,10 @@ html { background: var(--paper); }
 /* The gilt frame: a hairline, a gap, a hairline — the picture frames of the game's boardroom. */
 .ld-giltframe { position: relative; padding: 8px; background: var(--p18-panel); box-shadow: inset 0 0 0 1px var(--p18-gold-deep), inset 0 0 0 5px var(--p18-panel), inset 0 0 0 6px var(--p18-gold-deep); }
 .ld-giltframe img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* Line art: Project 18XX's gold drawings on black sit bare on the field; a mask fades their edges so no rectangle shows. */
+.ld-lineart { position: relative; margin: 0; }
+.ld-lineart img { -webkit-mask-image: radial-gradient(ellipse 72% 70% at 50% 50%, #000 55%, transparent 100%); mask-image: radial-gradient(ellipse 72% 70% at 50% 50%, #000 55%, transparent 100%); }
+.ld-mast .ld-lineart img { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 22%, #000 100%), linear-gradient(0deg, transparent 0, #000 18%, #000 100%); mask-image: linear-gradient(90deg, transparent 0, #000 22%, #000 100%), linear-gradient(0deg, transparent 0, #000 18%, #000 100%); -webkit-mask-composite: source-in; mask-composite: intersect; }
 /* The game's own title art is gold on pure black: screen it onto any dark field so its black disappears. */
 .ld-titleart { display: block; width: 100%; height: auto; mix-blend-mode: screen; }
 .ld-pj--cosmos {
@@ -547,10 +551,12 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 .ld-mast__play .ld-label-s { color: var(--pj-ink-3); }
 /* Project 18XX: the game's own gilded title art as the title, a framed boardroom picture, the verbs as a gilt row */
 .ld-mast--p18 .ld-mast__edge { background: repeating-linear-gradient(180deg, var(--p18-gold-deep) 0 6px, transparent 6px 11px); }
-.ld-mast--p18 .ld-mast__title { grid-column: 1 / 7; grid-row: 2; margin-top: 28px; z-index: auto; }   /* no stacking context: the title art screens onto the field */
-.ld-mast--p18 .ld-mast__title .ld-titleart { max-width: 660px; margin-left: -2%; }
-.ld-mast--p18 .ld-mast__art { grid-column: 7 / 13; grid-row: 2 / 4; align-self: start; min-height: 0; aspect-ratio: 16 / 10; margin-top: 44px; }
-.ld-mast--p18 .ld-mast__art img { position: absolute; inset: 8px; width: calc(100% - 16px); height: calc(100% - 16px); object-fit: cover; }
+.ld-mast--p18 .ld-mast__title { grid-column: 1 / 7; grid-row: 2; margin-top: 28px; }
+.ld-mast--p18 .ld-mast__name { margin: 0 0 6px; }
+.ld-mast--p18 .ld-mast__kicker, .ld-mast--p18 .ld-mast__status, .ld-mast--p18 .ld-mast__dek { position: relative; z-index: 2; }
+/* The board meeting bleeds off the right edge behind the title; its own left third is empty black */
+.ld-mast--p18 .ld-mast__art { grid-column: 5 / 13; grid-row: 1 / 4; align-self: start; min-height: 0; aspect-ratio: 1350 / 696; margin-right: calc(-1 * var(--ld-margin)); }
+.ld-mast--p18 .ld-mast__art img { object-fit: cover; object-position: 100% 50%; }
 .ld-mast--p18 .ld-mast__dek { grid-column: 1 / 6; grid-row: 3; }
 .ld-mast--p18 .ld-mast__verbs { grid-column: 1 / 13; grid-row: 4; align-self: start; margin-top: 44px; }
 .ld-mast--p18 .ld-mast__foot { grid-row: 5; }
@@ -577,7 +583,7 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 }
 @media (max-width: 1023px) {
   .ld-mast--p18 .ld-mast__title { grid-column: 1 / 13; }
-  .ld-mast--p18 .ld-mast__art { grid-column: 1 / 13; grid-row: 4; margin-top: 32px; }
+  .ld-mast--p18 .ld-mast__art { grid-column: 1 / 13; grid-row: 4; margin: 32px calc(-1 * var(--ld-margin)) 0; }
   .ld-mast--p18 .ld-mast__dek { grid-column: 1 / 11; grid-row: 3; }
   .ld-mast--p18 .ld-mast__verbs { grid-row: 5; }
   .ld-mast--p18 .ld-mast__foot { grid-row: 6; }
@@ -614,8 +620,8 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
   .ld-mast--cosmos .ld-mast__word { margin-left: 0; }
   .ld-mast--p18 .ld-mast__title, .ld-mast--p18 .ld-mast__art, .ld-mast--p18 .ld-mast__verbs, .ld-mast--p18 .ld-mast__dek, .ld-mast--p18 .ld-mast__foot { grid-column: 1 / 5; }
   .ld-mast--p18 .ld-mast__title { grid-row: 2; margin-top: 16px; }
-  .ld-mast--p18 .ld-mast__title .ld-titleart { margin-left: -4%; width: 108%; max-width: none; }
   .ld-mast--p18 .ld-mast__art { grid-row: 4; aspect-ratio: 4 / 3; margin: 24px calc(-1 * var(--ld-margin)) 0; }
+  .ld-mast--p18 .ld-mast__art img { object-position: 78% 50%; }
   .ld-mast--p18 .ld-mast__dek { grid-row: 5; } .ld-mast--p18 .ld-mast__verbs { grid-row: 6; margin-top: 28px; } .ld-mast--p18 .ld-mast__foot { grid-row: 7; }
   .ld-mech--six { grid-template-columns: 1fr 1fr; }
   .ld-mast--cosmos .ld-mast__name { letter-spacing: .2em; font-size: 12px; line-height: 16px; }
@@ -681,8 +687,6 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 .ld-feature__name { display: block; margin-top: 8px; font: 400 var(--ld-d2)/.88 var(--font-display); text-transform: uppercase; color: var(--pj-ink); }
 .ld-feature__name--big { margin-top: 14px; font-size: var(--ld-d1); line-height: .84; }
 .ld-feature--p18 .ld-feature__name { margin: 0 0 4px; }
-.ld-feature--p18 .ld-feature__art { padding: 0; }
-.ld-feature--p18 .ld-feature__art img { inset: 8px; width: calc(100% - 16px); height: calc(100% - 16px); }
 .ld-feature__dek { grid-column: 1 / 6; grid-row: 3; margin: 28px 0 0; font: 400 18px/30px var(--font-sans); color: var(--pj-ink); }
 .ld-feature__meta { grid-column: 1 / 7; grid-row: 4; margin-top: 28px; }
 .ld-feature__actions { grid-column: 1 / 7; grid-row: 5; position: relative; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 28px; }
@@ -690,7 +694,7 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 .ld-feature__art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-print, 560ms) var(--ease-out); }
 .ld-feature__tape { position: absolute; z-index: 3; top: 18px; right: 18px; }
 .ld-feature:hover .ld-feature__art img, .ld-feature.is-hover .ld-feature__art img { transform: scale(1.04); }
-.ld-feature--p18:hover .ld-feature__art img, .ld-feature--p18.is-hover .ld-feature__art img { transform: none; filter: brightness(1.14); }   /* the frame holds: the painting lights up instead */
+.ld-feature--p18:hover .ld-feature__art img, .ld-feature--p18.is-hover .ld-feature__art img { transform: none; filter: brightness(1.18); }   /* the line drawing's glow comes up instead */
 .ld-feature--p18 .ld-feature__art img { transition: filter var(--dur-print, 560ms) var(--ease-out); }
 .ld-feature:hover .ld-feature__num, .ld-feature.is-hover .ld-feature__num { transform: translateX(10px); }
 .ld-feature:hover .ld-btn, .ld-feature.is-hover .ld-btn { color: var(--b-wipe-fg); border-color: var(--b-wipe-edge); }

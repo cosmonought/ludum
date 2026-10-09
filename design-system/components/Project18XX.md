@@ -1,8 +1,8 @@
 # Project18XX
 
-/projects/project-18xx/ — a project page in Project 18XX's own identity from masthead to footer: the gilded boardroom, gold on near-black, the game's own art in gilt frames.
+/projects/project-18xx/ — a project page in Project 18XX's own identity from masthead to footer: the gilded boardroom, gold on near-black, gold line drawings and the game's title cards.
 
-1. **ProjectMasthead** (Project 18XX): the game's gilded title art as the h1 (`alt="Project 18XX"`), the boardroom painting in a gilt frame, the dek, the six verbs as a row, facts, and PLAY in its in-development state.
+1. **ProjectMasthead** (Project 18XX): PROJECT and a gilt 18XX as the h1, the gold line drawing of the board meeting bled off the right edge behind it, the dek, the six verbs as a row, facts, and PLAY in its in-development state.
 2. **Tabs** (sticky): Overview · The game · The tables · House rules · Development · Notes.
 3. **01 Overview** — two paragraphs and a figure (share certificates).
 4. **02 The game** — the **MechanicsStack** of the game's six actions; a schematic hex **RouteMap** in the board's colours with its legend beside the train roster **Ledger**; two **Certificates**.
