@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en" data-theme="stock">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ludum — Games by Neta DAO</title>
+<meta name="description" content="Serious games for a more interesting world. Ludum is Neta DAO’s game publisher: strategy games about capital, infrastructure and coordination, built in public.">
+<link rel="canonical" href="https://ludum.netadao.org/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ludum">
+<meta property="og:title" content="Ludum — Games by Neta DAO">
+<meta property="og:description" content="Serious games for a more interesting world. Ludum is Neta DAO’s game publisher: strategy games about capital, infrastructure and coordination, built in public.">
+<meta property="og:url" content="https://ludum.netadao.org/">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#0B0B0B">
+<link rel="preload" href="/design-system/fonts/Anton-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/design-system/css/ludum.css">
+<style>.pg-head { padding-block: var(--space-8, 64px) var(--space-7, 48px); }
+.pg-head__kicker { margin: 0 0 24px; }
+.pg-head__title { margin: 0; font: 400 var(--ld-d1)/.84 var(--font-display); text-transform: uppercase; letter-spacing: -.005em; }
+.pg-head__row { display: grid; grid-template-columns: 7fr 5fr; gap: var(--ld-gutter); align-items: end; }
+.pg-head__dek { margin: 0; max-width: 40ch; font: 400 22px/32px var(--font-sans); }
+.pg-split { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--ld-gutter); }
+.pg-split__side { grid-column: 1 / 4; }
+.pg-split__main { grid-column: 4 / 13; min-width: 0; }
+.pg-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7, 48px); align-items: start; }
+.pg-keys { margin: 0; padding: 0; list-style: none; border-top: 2px solid var(--rule-strong); }
+.pg-keys li { display: grid; grid-template-columns: 260px 1fr; gap: var(--ld-gutter); align-items: center; padding: 16px 0; border-bottom: 1px solid var(--rule); font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
+.pg-flow { display: grid; grid-template-columns: 1fr 120px 1fr; align-items: stretch; }
+.pg-flow__box { padding: 28px 28px 30px; border: 2px solid var(--rule-strong); }
+.pg-flow__box h3 { margin: 0 0 14px; font: 400 var(--ld-d3)/.9 var(--font-display); text-transform: uppercase; font-weight: 400; }
+.pg-flow__box p { margin: 0; font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
+.pg-flow__box ul { margin: 16px 0 0; padding: 0; list-style: none; font: 500 12px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.pg-flow__box li { padding: 8px 0; border-top: 1px solid var(--rule); }
+.pg-flow__arrow { display: grid; place-items: center; }
+.pg-flow__arrow .ld-icon { width: 64px; height: 64px; color: var(--red); }
+.pg-flow__box--play { background: var(--frame); color: var(--on-frame); border-color: var(--frame); border-top: 6px solid; border-image: linear-gradient(90deg, var(--neta-pink), var(--neta-cyan)) 1; }
+.pg-flow__box--play h3 { color: var(--neta-cyan); }
+.pg-flow__box--play p { color: #BDB5A6; }
+.pg-flow__box--play li { border-top-color: #3A3631; }
+.pg-neta { display: flex; gap: 24px; align-items: center; }
+.pg-neta img { width: 96px; height: auto; }
+@media (max-width: 1023px) {
+  .pg-head__row, .pg-two { grid-template-columns: 1fr; gap: 28px; }
+  .pg-split__side, .pg-split__main { grid-column: 1 / 13; }
+  .pg-split__side { margin-bottom: 24px; }
+}
+@media (max-width: 599px) {
+  .pg-split { grid-template-columns: 1fr; }
+  .pg-split__side, .pg-split__main { grid-column: 1; }
+  .pg-keys li { grid-template-columns: 1fr; gap: 8px; }
+  .pg-flow { grid-template-columns: 1fr; }
+  .pg-flow__arrow { padding: 12px 0; } .pg-flow__arrow .ld-icon { transform: rotate(90deg); width: 48px; height: 48px; }
+  .pg-head__dek { font-size: 19px; line-height: 28px; }
+}</style>
+</head>
+<body class="ld-page">
+<a class="ld-skip" href="#main">Skip to content</a><header class="ld-nav" data-theme="press">
+  <div class="ld-nav__bar">
+    <a class="ld-nav__home" href="/" aria-label="Ludum, home"><span class="ld-nav__name">Ludum</span><span class="ld-nav__by">Games by<br>Neta DAO</span></a>
+    <nav class="ld-nav__links" id="ld-menu" aria-label="Main"><a href="/projects/"><span>Projects</span><span class="ld-nav__no" aria-hidden="true">01</span></a><a href="/about/"><span>About</span><span class="ld-nav__no" aria-hidden="true">02</span></a>
+      <div class="ld-nav__panel-foot"><a class="ld-play ld-play--l" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a><p>Ludum publishes. The games run on play.netadao.org.</p></div>
+    </nav>
+    <a class="ld-play" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a>
+    <button class="ld-nav__menu" type="button" aria-expanded="false" aria-controls="ld-menu"><span class="ld-nav__menu-word">Menu</span><span class="ld-nav__burger" aria-hidden="true"></span></button>
+  </div>
+</header><main id="main">
+<section class="ld-hero" aria-labelledby="hero-h">
+  <span class="ld-hero__edge" aria-hidden="true"></span>
+  <div class="ld-wrap ld-hero__grid">
+    <p class="ld-label ld-hero__kicker">Ludum · Games by Neta DAO</p>
+    <h1 class="ld-hero__title" id="hero-h"><span>Serious games</span> <span>for a more</span> <span><em>interesting</em></span> <span>world.</span></h1>
+    <p class="ld-hero__dek">Ludum is Neta DAO’s game publisher. It makes strategy games about capital, infrastructure and coordination, builds them in public, and runs them on play.netadao.org.</p>
+    <div class="ld-hero__actions"><a class="ld-btn" href="#games">View the games<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a><a class="ld-link" href="/about/">Why games<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a></div>
+    <div class="ld-hero__side"><span class="ld-hero__sun ld-sun" aria-hidden="true"></span><section class="ld-board ld-board--compact" data-theme="press" aria-labelledby="board-h">
+  <header class="ld-board__head"><h2 id="board-h">Departures</h2><span class="ld-board__clock">Ludum · Games by Neta DAO</span></header>
+  <div class="ld-board__cols" aria-hidden="true"><span>No.</span><span>Game</span><span style="text-align:right">Status</span></div>
+  <ol class="ld-board__rows"><li class="ld-board__row"><span class="ld-board__no">01</span><span><a class="ld-board__title" href="/projects/project-18xx/">Project 18XX</a><span class="ld-board__kind">18xx · The gilded boardroom</span></span><span class="ld-board__status">In development</span></li><li class="ld-board__row"><span class="ld-board__no">02</span><span><a class="ld-board__title" href="/projects/20-cosmos/">20 Cosmos</a><span class="ld-board__kind">18xx · Interchain infrastructure</span></span><span class="ld-board__status">In development</span></li></ol>
+  <footer class="ld-board__foot"><span>Platform: play.netadao.org</span><a class="ld-link" href="/projects/">All projects<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a></footer>
+</section></div>
+  </div>
+</section>
+<section id="games" aria-labelledby="games-h">
+  <div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">01</span><h2 class="ld-sechead__title" id="games-h">The games</h2><span class="ld-sechead__more"><a class="ld-link" href="/projects/">All projects<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a></span></header></div>
+  <article class="ld-feature ld-feature--p18 ld-pj ld-pj--p18 ld-grain" data-theme="press">
+  <div class="ld-wrap ld-feature__grid">
+    <header class="ld-feature__head"><span class="ld-label">LUD—01 · 18xx · The gilded boardroom</span><span class="ld-stamp ld-stamp--dev">In development</span></header>
+    <h3 class="ld-feature__title"><a href="/projects/project-18xx/"><span class="ld-feature__name">Project</span><span class="ld-feature__num ld-gilt">18XX</span><span class="ld-sr"> — view the project</span></a></h3>
+    <p class="ld-feature__dek">Railroads, a stock market and the people who run both: an 18xx game being built for play on Juno, at three tables.</p>
+    <div class="ld-feature__meta"><dl class="ld-meta ld-meta--compact"><div><dt>Family</dt><dd>18xx · economic strategy</dd></div><div><dt>Network</dt><dd>Juno</dd></div><div><dt>Tables</dt><dd>18XX · 18XX+ · A Level Playing Field</dd></div></dl></div>
+    <div class="ld-feature__actions"><a class="ld-btn ld-btn--secondary" href="/projects/project-18xx/">View project<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a><p class="ld-play ld-play--soon"><span class="ld-play__word">Play</span><span class="ld-play__what">In development · not yet on play.netadao.org</span></p></div>
+    <figure class="ld-feature__art ld-lineart" data-ld-reveal><img src="/assets/project-18xx/p18-breakthrough.webp" alt="A gold line drawing of a steam locomotive bursting head-on through a torn share certificate, its headlight blazing and paper fragments flying." width="1376" height="768"><span class="ld-feature__tape ld-tape">The market</span></figure>
+  </div>
+</article>
+  <article class="ld-feature ld-feature--cosmos ld-pj ld-pj--cosmos ld-grain" data-theme="press">
+  <div class="ld-wrap ld-feature__grid">
+    <header class="ld-feature__head"><span class="ld-label">LUD—02 · 18xx · Interchain infrastructure</span><span class="ld-stamp ld-stamp--dev">In development</span></header>
+    <h3 class="ld-feature__title"><a href="/projects/20-cosmos/"><span class="ld-feature__num">20</span><span class="ld-feature__name ld-feature__name--big">Cosmos</span><span class="ld-sr"> — view the project</span></a></h3>
+    <p class="ld-feature__dek">Robber barons in the internet age: an 18xx game of blockchains, validators and the channels between them, loosely based on the Cosmos ecosystem.</p>
+    <div class="ld-feature__meta"><dl class="ld-meta ld-meta--compact"><div><dt>Family</dt><dd>18xx</dd></div><div><dt>Setting</dt><dd>The Cosmos ecosystem, loosely</dd></div><div><dt>Plays on</dt><dd>play.netadao.org, when ready</dd></div></dl></div>
+    <div class="ld-feature__actions"><a class="ld-btn ld-btn--secondary" href="/projects/20-cosmos/">View project<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a><p class="ld-play ld-play--soon"><span class="ld-play__word">Play</span><span class="ld-play__what">In development · not yet on play.netadao.org</span></p></div>
+    <figure class="ld-feature__art ld-lineart" data-ld-reveal><img src="/assets/20-cosmos/c20-machine-hall.webp" alt="An engraving in steel blue: a robber baron in a top hat and frock coat stands in the aisle of a vast data centre, server racks stretching away under iron cable trays lit in yellow." width="1350" height="756"><span class="ld-feature__tape ld-tape">The machine hall</span></figure>
+  </div>
+</article>
+</section>
+<section class="ld-playband" data-theme="press" aria-labelledby="play-h">
+  <div class="ld-wrap ld-playband__inner">
+    <div><h2 class="ld-playband__word" id="play-h">Play</h2><span class="ld-playband__host">02 · play.netadao.org — where Ludum’s games run</span></div>
+    <div class="ld-playband__body">
+      <p>Nothing is playable yet. Both games are in development, and each opens on play.netadao.org first; this list changes the day one does.</p>
+      <ul class="ld-playband__list">
+        <li><strong>Project 18XX</strong><span class="ld-stamp ld-stamp--dev ld-stamp--s">In development</span></li>
+        <li><strong>20 Cosmos</strong><span class="ld-stamp ld-stamp--dev ld-stamp--s">In development</span></li>
+      </ul>
+      <a class="ld-play" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<section class="ld-section" aria-labelledby="why-h" style="padding-top:0"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">03</span><h2 class="ld-sechead__title" id="why-h">Why games</h2><span class="ld-sechead__more"><a class="ld-link" href="/about/">About Ludum<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a></span></header>
+  <div class="pg-two"><figure class="ld-quote ld-quote--frame" data-theme="press"><blockquote><p>A good game is a model you can enter.</p></blockquote><figcaption>Ludum · Why games</figcaption></figure><div style="display:grid;gap:24px;justify-items:start"><p class="ld-lede">Some systems are easier to play than to explain. A market where everyone owns a piece of everyone else; a network worth only what it connects; a rule that turns yesterday’s investment into scrap.</p><p class="ld-body" style="color:var(--ink-2)">Read about them and you understand them. Sit at a table and run them, and you feel them. That is what Ludum publishes.</p><a class="ld-btn ld-btn--secondary" href="/about/">Read why<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a></div></div>
+</div></section></main><footer class="ld-footer" data-theme="press">
+  <span class="ld-footer__band" aria-hidden="true"></span>
+  <div class="ld-wrap ld-footer__inner">
+    <div class="ld-footer__top">
+      <p class="ld-footer__name" aria-hidden="true">Ludum</p>
+      <p class="ld-footer__line">Serious games for a more <em>interesting</em> world.</p>
+    </div>
+    <div class="ld-footer__cols">
+      <nav aria-label="Projects"><h2>Projects</h2><ul><li><a href="/projects/project-18xx/">Project 18XX</a></li><li><a href="/projects/20-cosmos/">20 Cosmos</a></li><li><a href="/projects/">All projects</a></li></ul></nav>
+      <nav aria-label="Ludum"><h2>Ludum</h2><ul><li><a href="/about/">About</a></li><li><a href="/about/#why-games">Why games</a></li></ul></nav>
+      <div><h2>Play</h2><p>Ludum publishes the games; they run on play.netadao.org.</p><a class="ld-link ld-link--out" href="https://play.netadao.org">play.netadao.org<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a></div>
+      <div class="ld-footer__neta"><h2>A Neta DAO project</h2><a href="https://netadao.org" aria-label="Neta DAO"><img src="/assets/logos/neta-mark-night.png" alt="" width="251" height="192"></a><p>Sister to <a class="ld-inline" href="https://academy.netadao.org">Neta DAO Academy</a>.</p></div>
+    </div>
+    <p class="ld-footer__print"><span>© 2026 Neta DAO</span><span>ludum.netadao.org</span><span>Games by Neta DAO</span></p>
+  </div>
+</footer>
+<script src="/design-system/js/ludum.js"></script>
+<script>Ludum.enhance();</script>
+</body>
+</html>

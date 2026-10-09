@@ -568,25 +568,27 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 .ld-pj--p18 .ld-sechead__title { color: var(--p18-gold); }
 .ld-pj--p18 .ld-sechead__dek { color: var(--p18-text-dim); }
 .ld-mech--six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-/* 20 Cosmos: one line of title, a full-width network chart instead of a picture */
+/* 20 Cosmos: "20" over COSMOS and the tagline; the boardroom engraving bleeds off the right edge behind them */
 .ld-mast--cosmos .ld-mast__edge { background: repeating-linear-gradient(180deg, var(--p20c-line) 0 6px, transparent 6px 11px); }
-.ld-mast--cosmos .ld-mast__title { grid-column: 1 / 13; margin-top: 32px; }
-.ld-mast--cosmos .ld-mast__num { display: inline; color: var(--pj-accent); }
-.ld-mast--cosmos .ld-mast__word { display: inline; margin-left: .1em; font: 400 var(--ld-d0)/.8 var(--font-display); letter-spacing: -.01em; text-transform: uppercase; color: var(--pj-ink); }
+.ld-mast--cosmos .ld-mast__title { grid-column: 1 / 7; grid-row: 2; margin-top: 28px; }
+.ld-mast--cosmos .ld-mast__num { display: block; color: var(--pj-accent); }
+.ld-mast--cosmos .ld-mast__word { display: block; margin-top: 4px; font: 400 var(--ld-d1)/.84 var(--font-display); text-transform: uppercase; color: var(--pj-ink); }
 .ld-mast--cosmos .ld-mast__name { margin-top: 18px; font: 500 14px/20px var(--font-mono); letter-spacing: .34em; color: var(--pj-ink); }
-.ld-mast--cosmos .ld-mast__art { grid-column: 1 / 13; grid-row: 4; min-height: 0; margin-top: 32px; }
-.ld-mast--cosmos .ld-mast__verbs { grid-column: 7 / 13; grid-row: 3; align-self: end; margin-top: 32px; }
+.ld-mast--cosmos .ld-mast__kicker, .ld-mast--cosmos .ld-mast__status, .ld-mast--cosmos .ld-mast__dek { position: relative; z-index: 2; }
+.ld-mast--cosmos .ld-mast__art { grid-column: 5 / 13; grid-row: 1 / 4; align-self: start; min-height: 0; aspect-ratio: 1376 / 768; margin-right: calc(-1 * var(--ld-margin)); }
+.ld-mast--cosmos .ld-mast__art img { object-fit: cover; object-position: 100% 50%; }
 .ld-mast--cosmos .ld-mast__dek { grid-column: 1 / 6; grid-row: 3; }
+.ld-mast--cosmos .ld-mast__verbs { grid-column: 1 / 13; grid-row: 4; align-self: start; margin-top: 44px; }
 .ld-mast--cosmos .ld-mast__foot { grid-row: 5; }
 @media (max-width: 1279px) {
   .ld-mast__art { min-height: 400px; }
 }
 @media (max-width: 1023px) {
-  .ld-mast--p18 .ld-mast__title { grid-column: 1 / 13; }
-  .ld-mast--p18 .ld-mast__art { grid-column: 1 / 13; grid-row: 4; margin: 32px calc(-1 * var(--ld-margin)) 0; }
-  .ld-mast--p18 .ld-mast__dek { grid-column: 1 / 11; grid-row: 3; }
-  .ld-mast--p18 .ld-mast__verbs { grid-row: 5; }
-  .ld-mast--p18 .ld-mast__foot { grid-row: 6; }
+  .ld-mast--p18 .ld-mast__title, .ld-mast--cosmos .ld-mast__title { grid-column: 1 / 13; }
+  .ld-mast--p18 .ld-mast__art, .ld-mast--cosmos .ld-mast__art { grid-column: 1 / 13; grid-row: 4; margin: 32px calc(-1 * var(--ld-margin)) 0; }
+  .ld-mast--p18 .ld-mast__dek, .ld-mast--cosmos .ld-mast__dek { grid-column: 1 / 11; grid-row: 3; }
+  .ld-mast--p18 .ld-mast__verbs, .ld-mast--cosmos .ld-mast__verbs { grid-column: 1 / 13; grid-row: 5; }
+  .ld-mast--p18 .ld-mast__foot, .ld-mast--cosmos .ld-mast__foot { grid-row: 6; }
   .ld-mech--six { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 1023px) {
@@ -595,10 +597,6 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
   .ld-mast__verbs { grid-column: 1 / 13; grid-row: 4; margin-top: 32px; }
   .ld-mast__dek { grid-column: 1 / 9; grid-row: 3; }
   .ld-mast__foot { grid-row: 5; }
-  .ld-mast--cosmos .ld-mast__verbs { grid-column: 1 / 13; grid-row: 4; }
-  .ld-mast--cosmos .ld-mast__dek { grid-column: 1 / 11; }
-  .ld-mast--cosmos .ld-mast__art { grid-row: 5; }
-  .ld-mast--cosmos .ld-mast__foot { grid-row: 6; }
 }
 /* Phone: recomposed, not stacked — numerals first, the picture bleeds as a band, the verbs become a 2 × 3 board, PLAY spans the width. */
 @media (max-width: 599px) {
@@ -625,7 +623,8 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
   .ld-mast--p18 .ld-mast__dek { grid-row: 5; } .ld-mast--p18 .ld-mast__verbs { grid-row: 6; margin-top: 28px; } .ld-mast--p18 .ld-mast__foot { grid-row: 7; }
   .ld-mech--six { grid-template-columns: 1fr 1fr; }
   .ld-mast--cosmos .ld-mast__name { letter-spacing: .2em; font-size: 12px; line-height: 16px; }
-  .ld-mast--cosmos .ld-mast__art { grid-row: 4; aspect-ratio: auto; margin-top: 24px; }
+  .ld-mast--cosmos .ld-mast__art { grid-row: 4; aspect-ratio: 4 / 3; margin: 24px calc(-1 * var(--ld-margin)) 0; }
+  .ld-mast--cosmos .ld-mast__art img { object-position: 74% 50%; }
   .ld-mast--cosmos .ld-mast__dek { grid-row: 5; }
   .ld-mast--cosmos .ld-mast__verbs { grid-row: 6; }
   .ld-mast--cosmos .ld-mast__foot { grid-row: 7; }

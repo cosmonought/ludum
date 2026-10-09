@@ -18,5 +18,5 @@ How colour is shared out: one house palette, and a field of its own for each gam
 
 - The field carries its theme: both games pin `data-theme="press"`. A project never re-tints with the site's theme.
 - **Project 18XX** is the gilded boardroom of its own title art and paintings: near-black and walnut, gold leaf, paper-white text (`p18-text-dim` and `p18-text-muted` for second and third ink). The colours are the game's own, taken from its repository (its palette, board data and art); its gold is not the house `yellow`, and its gilt gradient (`ld-gilt`) is its alone. The board's colours — dark-green land, the tile tiers yellow → green → brown → grey, off-board red, coal — appear only on the board and in charts.
-- 20 Cosmos is the night of an operating chart, not of outer space: cream linework, a yellow signal, zone blue, a light route blue.
+- 20 Cosmos is robber barons in the internet age, not outer space: night navy, cream linework, a yellow signal, zone blue, a light channel blue.
 - A new project chooses its accent from the house pigments first. Two projects never share both ground and accent.
