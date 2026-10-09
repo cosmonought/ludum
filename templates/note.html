@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en" data-theme="stock">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why 1830 is the first game — Ludum</title>
+<meta name="description" content="The 18xx that made the family, and why a market of shared companies is the right place for Ludum to start.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0B0B0B">
+<link rel="preload" href="../design-system/fonts/Anton-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../design-system/css/ludum.css">
+<style>.pg-head { padding-block: var(--space-8, 64px) var(--space-7, 48px); }
+.pg-head__kicker { margin: 0 0 24px; }
+.pg-head__title { margin: 0; font: 400 var(--ld-d1)/.84 var(--font-display); text-transform: uppercase; letter-spacing: -.005em; }
+.pg-head__row { display: grid; grid-template-columns: 7fr 5fr; gap: var(--ld-gutter); align-items: end; }
+.pg-head__dek { margin: 0; max-width: 40ch; font: 400 22px/32px var(--font-sans); }
+.pg-split { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--ld-gutter); }
+.pg-split__side { grid-column: 1 / 4; }
+.pg-split__main { grid-column: 4 / 13; min-width: 0; }
+.pg-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7, 48px); align-items: start; }
+.pg-keys { margin: 0; padding: 0; list-style: none; border-top: 2px solid var(--rule-strong); }
+.pg-keys li { display: grid; grid-template-columns: 260px 1fr; gap: var(--ld-gutter); align-items: center; padding: 16px 0; border-bottom: 1px solid var(--rule); font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
+.pg-flow { display: grid; grid-template-columns: 1fr 120px 1fr; align-items: stretch; }
+.pg-flow__box { padding: 28px 28px 30px; border: 2px solid var(--rule-strong); }
+.pg-flow__box h3 { margin: 0 0 14px; font: 400 var(--ld-d3)/.9 var(--font-display); text-transform: uppercase; font-weight: 400; }
+.pg-flow__box p { margin: 0; font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
+.pg-flow__box ul { margin: 16px 0 0; padding: 0; list-style: none; font: 500 12px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.pg-flow__box li { padding: 8px 0; border-top: 1px solid var(--rule); }
+.pg-flow__arrow { display: grid; place-items: center; }
+.pg-flow__arrow .ld-icon { width: 64px; height: 64px; color: var(--red); }
+.pg-flow__box--play { background: var(--frame); color: var(--on-frame); border-color: var(--frame); border-top: 6px solid; border-image: linear-gradient(90deg, var(--neta-pink), var(--neta-cyan)) 1; }
+.pg-flow__box--play h3 { color: var(--neta-cyan); }
+.pg-flow__box--play p { color: #BDB5A6; }
+.pg-flow__box--play li { border-top-color: #3A3631; }
+.pg-neta { display: flex; gap: 24px; align-items: center; }
+.pg-neta img { width: 96px; height: auto; }
+@media (max-width: 1023px) {
+  .pg-head__row, .pg-two { grid-template-columns: 1fr; gap: 28px; }
+  .pg-split__side, .pg-split__main { grid-column: 1 / 13; }
+  .pg-split__side { margin-bottom: 24px; }
+}
+@media (max-width: 599px) {
+  .pg-split { grid-template-columns: 1fr; }
+  .pg-split__side, .pg-split__main { grid-column: 1; }
+  .pg-keys li { grid-template-columns: 1fr; gap: 8px; }
+  .pg-flow { grid-template-columns: 1fr; }
+  .pg-flow__arrow { padding: 12px 0; } .pg-flow__arrow .ld-icon { transform: rotate(90deg); width: 48px; height: 48px; }
+  .pg-head__dek { font-size: 19px; line-height: 28px; }
+}</style>
+</head>
+<body class="ld-page">
+<a class="ld-skip" href="#main">Skip to content</a><header class="ld-nav" data-theme="press">
+  <div class="ld-nav__bar">
+    <a class="ld-nav__home" href="index.html" aria-label="Ludum, home"><span class="ld-nav__name">Ludum</span><span class="ld-nav__by">Games by<br>Neta DAO</span></a>
+    <nav class="ld-nav__links" id="ld-menu" aria-label="Main"><a href="projects.html"><span>Projects</span><span class="ld-nav__no" aria-hidden="true">01</span></a><a href="notes.html" aria-current="page"><span>Notes</span><span class="ld-nav__no" aria-hidden="true">02</span></a><a href="about.html"><span>About</span><span class="ld-nav__no" aria-hidden="true">03</span></a>
+      <div class="ld-nav__panel-foot"><a class="ld-play ld-play--l" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a><p>Ludum publishes. The games run on play.netadao.org.</p></div>
+    </nav>
+    <a class="ld-play" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a>
+    <button class="ld-nav__menu" type="button" aria-expanded="false" aria-controls="ld-menu"><span class="ld-nav__menu-word">Menu</span><span class="ld-nav__burger" aria-hidden="true"></span></button>
+  </div>
+</header><main id="main">
+<header class="ld-wrap ld-arthead">
+  <div class="ld-arthead__kicker"><span class="ld-label">Note 014 · Design note</span><a class="ld-tag ld-tag--1830" href="1830-juno-edition.html">1830</a></div>
+  <h1 class="ld-arthead__title">Why 1830 is the first game</h1>
+  <p class="ld-arthead__lede">The 18xx that made the family, and why a market of shared companies is the right place for Ludum to start.</p>
+  <dl class="ld-meta"><div><dt>Published</dt><dd>8 Oct 2026</dd></div><div><dt>By</dt><dd>Ludum</dd></div><div><dt>Project</dt><dd>1830: Juno Edition</dd></div><div><dt>Reading</dt><dd>6 minutes</dd></div></dl>
+</header>
+<div class="ld-wrap"><article class="ld-article" aria-label="Note">
+  <nav class="ld-article__rail" aria-label="In this note"><p class="ld-toc__head">In this note</p><ol class="ld-toc"><li><a href="#n-1" aria-current="true">Investors first</a></li><li><a href="#n-2">Capital that wears out</a></li><li><a href="#n-3">What the Juno Edition keeps</a></li><li><a href="#n-4">What it doesn’t promise</a></li></ol><p style="margin-top:28px"><a class="ld-link" href="notes.html">All notes<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a></p></nav>
+  <div class="ld-article__body"><div class="ld-prose ld-prose--initial">
+  <p id="n-1">Most 18xx games still start from 1830’s rules. Francis Tresham’s game, published by Avalon Hill in 1986, put railroads and a stock market on the same table, and made its players investors before it made them builders.<sup><a href="#fn-1" id="r-1">1</a></sup></p>
+  <aside class="ld-sidenote"><b>Note 1</b>The president holds the most shares, runs the company for every shareholder, and is the first to answer when it cannot pay.</aside>
+  <p>That is the reason it comes first at Ludum. The market of shared companies — where you can own part of a railroad you do not run, and run one you barely own — is the idea every later game here borrows, <a href="20-cosmos.html">20 Cosmos</a> included.</p>
+  <h2 id="n-2">A game about capital that wears out</h2>
+  <p>Trains rust. The day a newer train is bought, older ones leave the board, and a company that was rich on paper discovers it has to buy again. It is the rule players remember, and the one that makes 1830 a game about time as much as money.</p>
+  <figure class="ld-figure"><div class="ld-figure__plate ld-treat ld-treat--ink" style="aspect-ratio:21/9"><img src="../assets/img/rail-locomotive-detail.webp" alt="The wheels and coupling rods of a steam locomotive."></div><figcaption><span class="ld-figure__no">Fig. 01</span>Rolling stock. In 1830 a company is worth what its trains can earn before they rust.</figcaption></figure>
+  <p>A round of 1830 has three movements:</p>
+  <ol><li>Stock rounds, where players buy and sell shares.</li><li>Operating rounds, where each company builds, runs its trains, and pays out or withholds.</li><li>Phase changes, when the first of a new train is bought and the board’s rules move on.</li></ol>
+  <figure class="ld-quote"><blockquote><p>You can own part of a railroad you do not run, and run one you barely own.</p></blockquote><figcaption>From this note</figcaption></figure>
+  <h2 id="n-3">What the Juno Edition keeps</h2>
+  <p>The rules of the original, and the table talk. What changes is where the game is kept: the Juno Edition is being built for play on Juno, and its development is logged here as it happens.</p>
+  <figure class="ld-ledger ld-ledger--stack">
+  <figcaption class="ld-ledger__cap"><span class="ld-ledger__title">The train roster</span><span class="ld-label ld-muted">Table 01 · 1830</span></figcaption>
+  <div class="ld-ledger__scroll"><table>
+    <thead><tr><th scope="col">Train</th><th scope="col" class="is-num">Cost</th><th scope="col" class="is-num">Supply</th><th scope="col">Rusts when</th></tr></thead>
+    <tbody>
+      <tr><td class="is-key" data-label="Train">2</td><td class="is-num" data-label="Cost">$80</td><td class="is-num" data-label="Supply">6</td><td data-label="Rusts when">The first 4 is bought</td></tr>
+      <tr><td class="is-key" data-label="Train">3</td><td class="is-num" data-label="Cost">$180</td><td class="is-num" data-label="Supply">5</td><td data-label="Rusts when">The first 6 is bought</td></tr>
+      <tr><td class="is-key" data-label="Train">4</td><td class="is-num" data-label="Cost">$300</td><td class="is-num" data-label="Supply">4</td><td data-label="Rusts when">The first diesel is bought</td></tr>
+      <tr><td class="is-key" data-label="Train">5</td><td class="is-num" data-label="Cost">$450</td><td class="is-num" data-label="Supply">3</td><td data-label="Rusts when">Never</td></tr>
+      <tr><td class="is-key" data-label="Train">6</td><td class="is-num" data-label="Cost">$630</td><td class="is-num" data-label="Supply">2</td><td data-label="Rusts when">Never</td></tr>
+      <tr><td class="is-key" data-label="Train">D</td><td class="is-num" data-label="Cost">$1,100</td><td class="is-num" data-label="Supply">—</td><td data-label="Rusts when">Never</td></tr>
+    </tbody>
+  </table></div>
+  <p class="ld-ledger__note">The classic 1830 roster, for illustration; the Juno Edition’s own figures are published with its rules.</p>
+</figure>
+  <h3 id="n-4">What it doesn’t promise yet</h3>
+  <p>Release dates, prices, player counts online: none of these are set, so none of them are on this page. When they are, they will be in a devlog first.</p>
+  <div class="ld-footnotes"><ol><li id="fn-1">Francis Tresham, <i>1830: Railways &amp; Robber Barons</i> (Avalon Hill, 1986). The family began with Tresham’s <i>1829</i> (1974). <a class="ld-inline" href="#r-1">Back</a></li></ol></div>
+</div></div>
+</article>
+<nav class="ld-next" aria-label="Next note" style="margin-bottom:var(--ld-section)"><div><span class="ld-next__label">Next note · Research</span><p class="ld-next__title"><a href="note.html">Rust: obsolescence as a design problem</a></p></div><svg class="ld-icon ld-icon--48" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></nav></div></main><footer class="ld-footer" data-theme="press">
+  <span class="ld-footer__band" aria-hidden="true"></span>
+  <div class="ld-wrap ld-footer__inner">
+    <div class="ld-footer__top">
+      <p class="ld-footer__name" aria-hidden="true">Ludum</p>
+      <p class="ld-footer__line">Serious games for a more <em>interesting</em> world.</p>
+    </div>
+    <div class="ld-footer__cols">
+      <nav aria-label="Projects"><h2>Projects</h2><ul><li><a href="1830-juno-edition.html">1830: Juno Edition</a></li><li><a href="20-cosmos.html">20 Cosmos</a></li><li><a href="projects.html">All projects</a></li></ul></nav>
+      <nav aria-label="Ludum"><h2>Ludum</h2><ul><li><a href="notes.html">Notes</a></li><li><a href="about.html">About</a></li><li><a href="about.html#why-games">Why games</a></li></ul></nav>
+      <div><h2>Play</h2><p>Ludum publishes the games; they run on play.netadao.org.</p><a class="ld-link ld-link--out" href="https://play.netadao.org">play.netadao.org<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a></div>
+      <div class="ld-footer__neta"><h2>A Neta DAO project</h2><a href="https://netadao.org" aria-label="Neta DAO"><img src="../assets/logos/neta-mark-night.png" alt="" width="251" height="192"></a><p>Sister to <a class="ld-inline" href="https://academy.netadao.org">Neta DAO Academy</a>.</p></div>
+    </div>
+    <p class="ld-footer__print"><span>© 2026 Neta DAO</span><span>ludum.netadao.org</span><span>Games by Neta DAO</span></p>
+  </div>
+</footer>
+<script src="../design-system/js/ludum.js"></script>
+<script>Ludum.enhance();</script>
+</body>
+</html>

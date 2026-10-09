@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en" data-theme="stock">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notes — Ludum</title>
+<meta name="description" content="Working notes from Ludum’s projects.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0B0B0B">
+<link rel="preload" href="../design-system/fonts/Anton-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../design-system/css/ludum.css">
+<style>.pg-head { padding-block: var(--space-8, 64px) var(--space-7, 48px); }
+.pg-head__kicker { margin: 0 0 24px; }
+.pg-head__title { margin: 0; font: 400 var(--ld-d1)/.84 var(--font-display); text-transform: uppercase; letter-spacing: -.005em; }
+.pg-head__row { display: grid; grid-template-columns: 7fr 5fr; gap: var(--ld-gutter); align-items: end; }
+.pg-head__dek { margin: 0; max-width: 40ch; font: 400 22px/32px var(--font-sans); }
+.pg-split { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--ld-gutter); }
+.pg-split__side { grid-column: 1 / 4; }
+.pg-split__main { grid-column: 4 / 13; min-width: 0; }
+.pg-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7, 48px); align-items: start; }
+.pg-keys { margin: 0; padding: 0; list-style: none; border-top: 2px solid var(--rule-strong); }
+.pg-keys li { display: grid; grid-template-columns: 260px 1fr; gap: var(--ld-gutter); align-items: center; padding: 16px 0; border-bottom: 1px solid var(--rule); font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
+.pg-flow { display: grid; grid-template-columns: 1fr 120px 1fr; align-items: stretch; }
+.pg-flow__box { padding: 28px 28px 30px; border: 2px solid var(--rule-strong); }
+.pg-flow__box h3 { margin: 0 0 14px; font: 400 var(--ld-d3)/.9 var(--font-display); text-transform: uppercase; font-weight: 400; }
+.pg-flow__box p { margin: 0; font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
+.pg-flow__box ul { margin: 16px 0 0; padding: 0; list-style: none; font: 500 12px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.pg-flow__box li { padding: 8px 0; border-top: 1px solid var(--rule); }
+.pg-flow__arrow { display: grid; place-items: center; }
+.pg-flow__arrow .ld-icon { width: 64px; height: 64px; color: var(--red); }
+.pg-flow__box--play { background: var(--frame); color: var(--on-frame); border-color: var(--frame); border-top: 6px solid; border-image: linear-gradient(90deg, var(--neta-pink), var(--neta-cyan)) 1; }
+.pg-flow__box--play h3 { color: var(--neta-cyan); }
+.pg-flow__box--play p { color: #BDB5A6; }
+.pg-flow__box--play li { border-top-color: #3A3631; }
+.pg-neta { display: flex; gap: 24px; align-items: center; }
+.pg-neta img { width: 96px; height: auto; }
+@media (max-width: 1023px) {
+  .pg-head__row, .pg-two { grid-template-columns: 1fr; gap: 28px; }
+  .pg-split__side, .pg-split__main { grid-column: 1 / 13; }
+  .pg-split__side { margin-bottom: 24px; }
+}
+@media (max-width: 599px) {
+  .pg-split { grid-template-columns: 1fr; }
+  .pg-split__side, .pg-split__main { grid-column: 1; }
+  .pg-keys li { grid-template-columns: 1fr; gap: 8px; }
+  .pg-flow { grid-template-columns: 1fr; }
+  .pg-flow__arrow { padding: 12px 0; } .pg-flow__arrow .ld-icon { transform: rotate(90deg); width: 48px; height: 48px; }
+  .pg-head__dek { font-size: 19px; line-height: 28px; }
+}</style>
+</head>
+<body class="ld-page">
+<a class="ld-skip" href="#main">Skip to content</a><header class="ld-nav" data-theme="press">
+  <div class="ld-nav__bar">
+    <a class="ld-nav__home" href="index.html" aria-label="Ludum, home"><span class="ld-nav__name">Ludum</span><span class="ld-nav__by">Games by<br>Neta DAO</span></a>
+    <nav class="ld-nav__links" id="ld-menu" aria-label="Main"><a href="projects.html"><span>Projects</span><span class="ld-nav__no" aria-hidden="true">01</span></a><a href="notes.html" aria-current="page"><span>Notes</span><span class="ld-nav__no" aria-hidden="true">02</span></a><a href="about.html"><span>About</span><span class="ld-nav__no" aria-hidden="true">03</span></a>
+      <div class="ld-nav__panel-foot"><a class="ld-play ld-play--l" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a><p>Ludum publishes. The games run on play.netadao.org.</p></div>
+    </nav>
+    <a class="ld-play" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a>
+    <button class="ld-nav__menu" type="button" aria-expanded="false" aria-controls="ld-menu"><span class="ld-nav__menu-word">Menu</span><span class="ld-nav__burger" aria-hidden="true"></span></button>
+  </div>
+</header><main id="main">
+<header class="ld-wrap pg-head"><p class="ld-label pg-head__kicker">Notes · Design · Research · Devlogs · Essays</p><div class="pg-head__row"><h1 class="pg-head__title">Notes</h1><div><p class="pg-head__dek">Working notes from Ludum’s projects: design, research and development, newest first.</p></div></div></header>
+<section class="ld-wrap" aria-label="Lead note"><ol class="ld-notes" style="border-top:0"><li class="ld-note ld-note--lead"><figure class="ld-note__art ld-treat ld-treat--print"><img src="../assets/img/rail-board.webp" alt="An 18xx map in play."></figure><div class="ld-note__meta"><time class="ld-note__date">8 Oct 2026</time><span class="ld-note__kind">Design note</span></div><div class="ld-note__body"><h2 class="ld-note__title"><a href="note.html">Why 1830 is the first game</a></h2><p class="ld-note__dek">The 18xx that made the family, and why a market of shared companies is the right place for Ludum to start.</p></div><div class="ld-note__tags"><a class="ld-tag ld-tag--1830" href="projects.html">1830</a></div></li></ol></section>
+<section class="ld-section" aria-label="All notes"><div class="ld-wrap"><div class="ld-filters"><div class="ld-tabs" data-ld-filter="note-list" role="group" aria-label="Filter notes by kind"><button type="button" data-value="all" aria-pressed="true">All</button><button type="button" data-value="design" aria-pressed="false">Design notes</button><button type="button" data-value="research" aria-pressed="false">Research</button><button type="button" data-value="devlog" aria-pressed="false">Devlogs</button><button type="button" data-value="essay" aria-pressed="false">Essays</button></div><span class="ld-filters__count">Newest first</span></div><ol class="ld-notes" id="note-list"><li class="ld-note" data-ld-status="research"><div class="ld-note__meta"><time class="ld-note__date">1 Oct 2026</time><span class="ld-note__kind">Research</span></div><div class="ld-note__body"><h2 class="ld-note__title"><a href="note.html">Rust: obsolescence as a design problem</a></h2><p class="ld-note__dek">How one rule turns a railway game into a lesson in capital that wears out.</p></div><div class="ld-note__tags"><a class="ld-tag ld-tag--1830" href="projects.html">1830</a></div></li><li class="ld-note" data-ld-status="design"><div class="ld-note__meta"><time class="ld-note__date">24 Sep 2026</time><span class="ld-note__kind">Design note</span></div><div class="ld-note__body"><h2 class="ld-note__title"><a href="note.html">Drawing networks as railways</a></h2><p class="ld-note__dek">Zones, routes and stations: the visual grammar of 20 Cosmos, before the rules.</p></div><div class="ld-note__tags"><a class="ld-tag ld-tag--cosmos" href="projects.html">20 Cosmos</a></div></li><li class="ld-note" data-ld-status="essay"><div class="ld-note__meta"><time class="ld-note__date">17 Sep 2026</time><span class="ld-note__kind">Essay</span></div><div class="ld-note__body"><h2 class="ld-note__title"><a href="note.html">What ‘in development’ means here</a></h2><p class="ld-note__dek">Statuses on Ludum are promises. A note on keeping them.</p></div><div class="ld-note__tags"><a class="ld-tag ld-tag--ludum" href="projects.html">Ludum</a></div></li><li class="ld-note" data-ld-status="research"><div class="ld-note__meta"><time class="ld-note__date">9 Sep 2026</time><span class="ld-note__kind">Research</span></div><div class="ld-note__body"><h2 class="ld-note__title"><a href="note.html">Reading the 18xx family</a></h2><p class="ld-note__dek">A short guide to the games that grew from 1829 and 1830, for people who have never sat at one.</p></div><div class="ld-note__tags"><a class="ld-tag ld-tag--ludum" href="projects.html">Ludum</a></div></li></ol>
+<div style="display:flex;justify-content:space-between;align-items:center;padding-top:28px"><a class="ld-link" href="#">Older notes<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a><span class="ld-label ld-muted">Page 1 of 1</span></div></div></section></main><footer class="ld-footer" data-theme="press">
+  <span class="ld-footer__band" aria-hidden="true"></span>
+  <div class="ld-wrap ld-footer__inner">
+    <div class="ld-footer__top">
+      <p class="ld-footer__name" aria-hidden="true">Ludum</p>
+      <p class="ld-footer__line">Serious games for a more <em>interesting</em> world.</p>
+    </div>
+    <div class="ld-footer__cols">
+      <nav aria-label="Projects"><h2>Projects</h2><ul><li><a href="1830-juno-edition.html">1830: Juno Edition</a></li><li><a href="20-cosmos.html">20 Cosmos</a></li><li><a href="projects.html">All projects</a></li></ul></nav>
+      <nav aria-label="Ludum"><h2>Ludum</h2><ul><li><a href="notes.html">Notes</a></li><li><a href="about.html">About</a></li><li><a href="about.html#why-games">Why games</a></li></ul></nav>
+      <div><h2>Play</h2><p>Ludum publishes the games; they run on play.netadao.org.</p><a class="ld-link ld-link--out" href="https://play.netadao.org">play.netadao.org<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a></div>
+      <div class="ld-footer__neta"><h2>A Neta DAO project</h2><a href="https://netadao.org" aria-label="Neta DAO"><img src="../assets/logos/neta-mark-night.png" alt="" width="251" height="192"></a><p>Sister to <a class="ld-inline" href="https://academy.netadao.org">Neta DAO Academy</a>.</p></div>
+    </div>
+    <p class="ld-footer__print"><span>© 2026 Neta DAO</span><span>ludum.netadao.org</span><span>Games by Neta DAO</span></p>
+  </div>
+</footer>
+<script src="../design-system/js/ludum.js"></script>
+<script>Ludum.enhance();</script>
+</body>
+</html>

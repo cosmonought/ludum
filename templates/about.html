@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en" data-theme="stock">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why games — Ludum</title>
+<meta name="description" content="Ludum is Neta DAO’s game publisher. It makes serious games and builds them in public.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0B0B0B">
+<link rel="preload" href="../design-system/fonts/Anton-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../design-system/css/ludum.css">
+<style>.pg-head { padding-block: var(--space-8, 64px) var(--space-7, 48px); }
+.pg-head__kicker { margin: 0 0 24px; }
+.pg-head__title { margin: 0; font: 400 var(--ld-d1)/.84 var(--font-display); text-transform: uppercase; letter-spacing: -.005em; }
+.pg-head__row { display: grid; grid-template-columns: 7fr 5fr; gap: var(--ld-gutter); align-items: end; }
+.pg-head__dek { margin: 0; max-width: 40ch; font: 400 22px/32px var(--font-sans); }
+.pg-split { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--ld-gutter); }
+.pg-split__side { grid-column: 1 / 4; }
+.pg-split__main { grid-column: 4 / 13; min-width: 0; }
+.pg-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7, 48px); align-items: start; }
+.pg-keys { margin: 0; padding: 0; list-style: none; border-top: 2px solid var(--rule-strong); }
+.pg-keys li { display: grid; grid-template-columns: 260px 1fr; gap: var(--ld-gutter); align-items: center; padding: 16px 0; border-bottom: 1px solid var(--rule); font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
+.pg-flow { display: grid; grid-template-columns: 1fr 120px 1fr; align-items: stretch; }
+.pg-flow__box { padding: 28px 28px 30px; border: 2px solid var(--rule-strong); }
+.pg-flow__box h3 { margin: 0 0 14px; font: 400 var(--ld-d3)/.9 var(--font-display); text-transform: uppercase; font-weight: 400; }
+.pg-flow__box p { margin: 0; font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
+.pg-flow__box ul { margin: 16px 0 0; padding: 0; list-style: none; font: 500 12px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.pg-flow__box li { padding: 8px 0; border-top: 1px solid var(--rule); }
+.pg-flow__arrow { display: grid; place-items: center; }
+.pg-flow__arrow .ld-icon { width: 64px; height: 64px; color: var(--red); }
+.pg-flow__box--play { background: var(--frame); color: var(--on-frame); border-color: var(--frame); border-top: 6px solid; border-image: linear-gradient(90deg, var(--neta-pink), var(--neta-cyan)) 1; }
+.pg-flow__box--play h3 { color: var(--neta-cyan); }
+.pg-flow__box--play p { color: #BDB5A6; }
+.pg-flow__box--play li { border-top-color: #3A3631; }
+.pg-neta { display: flex; gap: 24px; align-items: center; }
+.pg-neta img { width: 96px; height: auto; }
+@media (max-width: 1023px) {
+  .pg-head__row, .pg-two { grid-template-columns: 1fr; gap: 28px; }
+  .pg-split__side, .pg-split__main { grid-column: 1 / 13; }
+  .pg-split__side { margin-bottom: 24px; }
+}
+@media (max-width: 599px) {
+  .pg-split { grid-template-columns: 1fr; }
+  .pg-split__side, .pg-split__main { grid-column: 1; }
+  .pg-keys li { grid-template-columns: 1fr; gap: 8px; }
+  .pg-flow { grid-template-columns: 1fr; }
+  .pg-flow__arrow { padding: 12px 0; } .pg-flow__arrow .ld-icon { transform: rotate(90deg); width: 48px; height: 48px; }
+  .pg-head__dek { font-size: 19px; line-height: 28px; }
+}</style>
+</head>
+<body class="ld-page">
+<a class="ld-skip" href="#main">Skip to content</a><header class="ld-nav" data-theme="press">
+  <div class="ld-nav__bar">
+    <a class="ld-nav__home" href="index.html" aria-label="Ludum, home"><span class="ld-nav__name">Ludum</span><span class="ld-nav__by">Games by<br>Neta DAO</span></a>
+    <nav class="ld-nav__links" id="ld-menu" aria-label="Main"><a href="projects.html"><span>Projects</span><span class="ld-nav__no" aria-hidden="true">01</span></a><a href="notes.html"><span>Notes</span><span class="ld-nav__no" aria-hidden="true">02</span></a><a href="about.html" aria-current="page"><span>About</span><span class="ld-nav__no" aria-hidden="true">03</span></a>
+      <div class="ld-nav__panel-foot"><a class="ld-play ld-play--l" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a><p>Ludum publishes. The games run on play.netadao.org.</p></div>
+    </nav>
+    <a class="ld-play" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a>
+    <button class="ld-nav__menu" type="button" aria-expanded="false" aria-controls="ld-menu"><span class="ld-nav__menu-word">Menu</span><span class="ld-nav__burger" aria-hidden="true"></span></button>
+  </div>
+</header><main id="main">
+<header class="ld-wrap pg-head"><p class="ld-label pg-head__kicker">About · Ludum</p><div class="pg-head__row"><h1 class="pg-head__title">Why games</h1><div><p class="pg-head__dek">Ludum is Neta DAO’s game publisher. It makes serious games — about capital, infrastructure and coordination — and builds them in public.</p></div></div></header>
+<section class="ld-statement ld-statement--frame" data-theme="press" id="why-games"><div class="ld-wrap"><p class="ld-statement__text">Games are models you can <em>enter.</em></p></div></section>
+<section class="ld-section" aria-labelledby="a1"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">01</span><h2 class="ld-sechead__title" id="a1">What Ludum is</h2></header><div class="pg-split"><div class="pg-split__side"></div><div class="pg-split__main"><div class="ld-prose ld-prose--initial">
+  <p>Some systems are easier to play than to explain. A market where everyone owns a piece of everyone else; a network that is worth only what it connects; a rule that turns yesterday’s investment into scrap. Read about them and you understand them. Sit at a table and run them for three hours, and you feel them.</p>
+  <p>Ludum publishes games of that kind: long, social and exact, about money, infrastructure and the ways people coordinate. Its first two are 18xx games — the family of railway-and-stock games that Francis Tresham began.</p>
+</div></div></div></div></section>
+<section class="ld-section" aria-labelledby="a2"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">02</span><h2 class="ld-sechead__title" id="a2">Ludum and Play</h2><p class="ld-sechead__dek">Two addresses, two jobs. You never have to come through Ludum to play.</p></header>
+  <div class="pg-flow">
+    <div class="pg-flow__box"><h3>Ludum</h3><p>ludum.netadao.org — the publisher’s house.</p><ul><li>Projects</li><li>Notes and research</li><li>Why games</li></ul></div>
+    <div class="pg-flow__arrow"><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></div>
+    <div class="pg-flow__box pg-flow__box--play"><h3>Play</h3><p>play.netadao.org — where the games run.</p><ul><li>The games themselves</li><li>Never behind Ludum</li><li>Every PLAY on this site leads here</li></ul></div>
+  </div>
+</div></section>
+<section class="ld-section" aria-labelledby="a3"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">03</span><h2 class="ld-sechead__title" id="a3">How statuses work</h2></header><ul class="pg-keys"><li><span><span class="ld-stamp ld-stamp--playable">Playable</span></span><span>Runs on play.netadao.org now. PLAY takes you straight there.</span></li><li><span><span class="ld-stamp ld-stamp--dev">In development</span></span><span>Being built, in public. Follow it in Notes; it opens on play.netadao.org first.</span></li><li><span><span class="ld-stamp ld-stamp--experimental">Experimental</span></span><span>A playable prototype. Rules and balance may change between sessions.</span></li><li><span><span class="ld-stamp ld-stamp--research">Research</span></span><span>Study and writing about games, not a game itself.</span></li><li><span><span class="ld-stamp ld-stamp--archive">Archive</span></span><span>Finished or retired, kept on record with its notes.</span></li></ul></div></section>
+<section class="ld-section" aria-labelledby="a4"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">04</span><h2 class="ld-sechead__title" id="a4">Neta DAO</h2></header>
+  <div class="pg-two"><div class="pg-neta"><a href="https://netadao.org" aria-label="Neta DAO"><img src="../assets/logos/neta-mark-paper.png" alt="" width="251" height="192"></a><p class="ld-lede">Ludum is a Neta DAO project, alongside Neta DAO Academy.</p></div>
+  <div style="display:grid;gap:20px;justify-items:start"><p class="ld-body" style="color:var(--ink-2)">The Academy teaches; Ludum builds games. They share a parent and a habit of working in public, not a look: the Academy is quiet and Ludum is loud.</p><div class="ld-tags" style="gap:24px"><a class="ld-link ld-link--out" href="https://netadao.org">netadao.org<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a><a class="ld-link ld-link--out" href="https://academy.netadao.org">academy.netadao.org<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a></div></div></div>
+</div></section></main><footer class="ld-footer" data-theme="press">
+  <span class="ld-footer__band" aria-hidden="true"></span>
+  <div class="ld-wrap ld-footer__inner">
+    <div class="ld-footer__top">
+      <p class="ld-footer__name" aria-hidden="true">Ludum</p>
+      <p class="ld-footer__line">Serious games for a more <em>interesting</em> world.</p>
+    </div>
+    <div class="ld-footer__cols">
+      <nav aria-label="Projects"><h2>Projects</h2><ul><li><a href="1830-juno-edition.html">1830: Juno Edition</a></li><li><a href="20-cosmos.html">20 Cosmos</a></li><li><a href="projects.html">All projects</a></li></ul></nav>
+      <nav aria-label="Ludum"><h2>Ludum</h2><ul><li><a href="notes.html">Notes</a></li><li><a href="about.html">About</a></li><li><a href="about.html#why-games">Why games</a></li></ul></nav>
+      <div><h2>Play</h2><p>Ludum publishes the games; they run on play.netadao.org.</p><a class="ld-link ld-link--out" href="https://play.netadao.org">play.netadao.org<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a></div>
+      <div class="ld-footer__neta"><h2>A Neta DAO project</h2><a href="https://netadao.org" aria-label="Neta DAO"><img src="../assets/logos/neta-mark-night.png" alt="" width="251" height="192"></a><p>Sister to <a class="ld-inline" href="https://academy.netadao.org">Neta DAO Academy</a>.</p></div>
+    </div>
+    <p class="ld-footer__print"><span>© 2026 Neta DAO</span><span>ludum.netadao.org</span><span>Games by Neta DAO</span></p>
+  </div>
+</footer>
+<script src="../design-system/js/ludum.js"></script>
+<script>Ludum.enhance();</script>
+</body>
+</html>
