@@ -56,6 +56,17 @@
     return b;
   }
   function stateWord(s) { return typeof s === 'string' ? s.replace(/_/g, ' ') : 'unavailable'; }
+  /* The case's status, from this browser's chain read and the proposals linked to it by decoding (gov-case.js). */
+  function caseStatusText(st) {
+    if (!st) return 'unavailable';
+    var ids = function (list) { return list.map(function (x) { return '#' + x.id + ' ' + stateWord(x.status); }).join(', '); };
+    if (st.kind === 'no-dispute') return 'No dispute: the game is ' + stateWord(st.state);
+    if (st.kind === 'disputed') return 'Disputed · no live appeal proposal' + (st.proposals.length ? ' (earlier: ' + ids(st.proposals) + ')' : '');
+    if (st.kind === 'appeal-pending') return 'Disputed · appeal pending: ' + ids(st.proposals);
+    if (st.kind === 'resolved') return 'Resolved · ' + stateWord(st.resolution);
+    if (st.kind === 'dispute-ended') return 'The dispute ended without a resolution record (the game is ' + stateWord(st.state) + ')';
+    return 'unavailable';
+  }
   function tsFacts(ns) { var s = G.nanosToSecs(ns); return { secs: s, iso: G.isoFromSecs(s) }; }
 
   /* ---- Countdowns: derived from a chain deadline and this browser's clock, ticking once a second. ---- */
@@ -198,15 +209,21 @@
     document.title = 'Escrow game #' + id + ' — Disputes — Ludum';
     var cid = Number(id);
     var facts = null, notFound = false;
-    Promise.all([reader.smart(P.escrow, { game: { chain_game_id: cid } }), reader.smart(P.escrow, { seats: { chain_game_id: cid } }), G.readAllProposals(reader)]).then(function (r) {
+    /* B2 (§5 `case`): the server record is fetched alongside the chain read and shown only once both have answered,
+       checked against this browser's chain facts (gov-case.js). It never feeds renderPropose. */
+    var chainRead = null, serverSeq = 0;
+    var expect = { chainGameId: id, contract: P.escrow, chainId: P.chainId };
+    var serverFirst = fetchServer();
+    var chainDone = Promise.all([reader.smart(P.escrow, { game: { chain_game_id: cid } }), reader.smart(P.escrow, { seats: { chain_game_id: cid } }), G.readAllProposals(reader)]).then(function (r) {
       var gr = r[0].data, game = gr.game, d = game.dispute, at = r[0].observedAt;
       var seats = (r[1].data && r[1].data.seats) || [];
       var links = linkIndex(r[2].proposals)[id] || [];
       var rt = tsFacts(gr.deadlines && gr.deadlines.resolver_timeout_at);
       facts = { game: game, deadlines: gr.deadlines, resolverTimeoutSecs: rt.secs, observedAt: at };
+      chainRead = { game: game, seats: seats, observedAt: at };
       clear(host);
       host.appendChild(h('p', { class: 'gv-status' }, ['Chain facts from escrow ' + P.escrow + ' on ' + P.chainId + '. ', readTime(at)]));
-      host.appendChild(meta([['State', stateWord(game.state)], ['Resolver', mono(game.resolver)], ['Pool', mono(G.fmtJunox(game.pool))], ['Ante (gross)', mono(G.fmtJunox(game.ante_gross))], ['Linked proposal', proposalLinks(links)]]));
+      host.appendChild(meta([['Case', caseStatusText(window.LudumCase ? LudumCase.caseStatus(game, links) : null)], ['State', stateWord(game.state)], ['Resolver', mono(game.resolver)], ['Pool', mono(G.fmtJunox(game.pool))], ['Ante (gross)', mono(G.fmtJunox(game.ante_gross))], ['Linked proposal', proposalLinks(links)]]));
       host.appendChild(h('h3', { class: 'gv-h3', text: 'Dispute' }));
       host.appendChild(d ? meta([['Challenger', mono(d.challenger)], ['Bond', mono(G.fmtJunox(d.bond))], ['Evidence hash', mono(d.evidence_hash)], ['Disputed at', mono(tsFacts(d.disputed_at).iso)], ['Resolution', d.resolution ? stateWord(d.resolution) + ' · ' + tsFacts(d.resolved_at).iso : 'none yet']])
         : h('p', { class: 'gv-hint', text: 'This game has no dispute record.' }));
@@ -221,12 +238,62 @@
       host.appendChild(gr.latest_checkpoint ? payloadMeta(gr.latest_checkpoint.payload, [['Accepted at', mono(tsFacts(gr.latest_checkpoint.accepted_at).iso)]]) : h('p', { class: 'gv-hint', text: 'No checkpoint was accepted.' }));
       renderPropose();
     }).catch(function (e) {
-      facts = null;
+      facts = null; chainRead = null;
       notFound = /not found/i.test(why(e));
       if (notFound) clear(host).appendChild(h('div', { class: 'ld-empty' }, [h('p', null, [h('strong', { text: 'No such game' }), 'Escrow ' + P.escrow + ' has no game #' + id + '.'])]));
       else unavailable(host, why(e));
       renderPropose();
     });
+    Promise.all([chainDone, serverFirst.promise]).then(function (r) { if (r[1].seq === serverSeq) renderServer(r[1].outcome); });
+
+    /* ---- B2: the server record ---- */
+    function fetchServer() {
+      var seq = ++serverSeq;
+      var promise = window.LudumCase ? LudumCase.fetchCase(window.LudumSession, id, expect) : Promise.resolve({ kind: 'no-client' });
+      return { seq: seq, promise: promise.then(function (outcome) { return { seq: seq, outcome: outcome }; }) };
+    }
+    function rereadServer() {
+      var el = $('gv-server'); if (!el) return;
+      clear(el).appendChild(h('p', { class: 'gv-status', role: 'status', text: 'Reading the server record…' }));
+      fetchServer().promise.then(function (r) { if (r.seq === serverSeq) renderServer(r.outcome); });
+    }
+    function serverNote(el, strong, text, retry) {
+      clear(el).appendChild(h('div', { class: 'ld-empty', role: 'status', 'data-server-state': strong.replace(/[^A-Za-z]+/g, '-').replace(/-$/, '').toLowerCase() }, [h('p', null, [h('strong', { text: strong }), text + ' ',
+        retry ? h('button', { class: 'gv-linkbtn', type: 'button', onclick: rereadServer, text: 'Read the server record again' }) : null])]));
+    }
+    function factText(f, fmt) {
+      if (!f || f.provenance === 'unavailable') return h('span', null, ['unavailable', f && f.reason ? ' — ' + f.reason : '']);
+      var src = f.provenance === 'server-recorded' ? 'server record' : f.provenance === 'chain-confirmed' ? 'server’s chain read (quorum)' : f.provenance === 'chain-observed' ? 'server’s chain read' : f.provenance;
+      return h('span', null, [fmt ? fmt(f.value) : '', ' ', h('span', { class: 'gv-read gv-read--src', text: src + (f.observedAt ? ', read ' + f.observedAt.replace('T', ' ').replace(/\.\d+Z$/, 'Z') : '') })]);
+    }
+    function renderServer(outcome) {
+      var el = $('gv-server'); if (!el) return;
+      var k = outcome && outcome.kind, detail = outcome && outcome.detail ? ' (' + outcome.detail + ')' : '';
+      if (k === 'no-client') return serverNote(el, 'Not available here. ', 'This page has no connection to play.netadao.org, so only the chain facts are shown.', false);
+      if (k === 'unreachable') return serverNote(el, 'Unavailable. ', 'play.netadao.org could not be reached from this browser. Nothing from the server is shown.', true);
+      if (k === 'rate-limited') return serverNote(el, 'Busy. ', 'play.netadao.org asked this browser to slow down. Nothing from the server is shown.', true);
+      if (k === 'unavailable') return serverNote(el, 'Unavailable. ', 'The server could not produce this record' + detail + '. Nothing from the server is shown.', true);
+      if (k === 'bad-request') return serverNote(el, 'Refused. ', 'The server refused the request for game #' + id + detail + '.', false);
+      if (k === 'unexpected') return serverNote(el, 'Unavailable. ', 'The server answered unexpectedly (HTTP ' + outcome.status + '). Nothing from it is shown.', true);
+      if (k === 'not-found') return serverNote(el, 'No such game. ', chainRead ? 'The server reports no escrow game #' + id + ', but this browser read one from the chain. The two disagree, so nothing from the server is shown.' : 'The server also reports that escrow ' + P.escrow + ' has no game #' + id + '.', !!chainRead);
+      if (k === 'invalid') return serverNote(el, 'Rejected. ', 'The server’s answer is not a valid case record for game #' + id + ', so none of it is shown: ' + outcome.problems.join('; ') + '.', true);
+      if (k !== 'ok') return serverNote(el, 'Unavailable. ', 'The server record could not be read.', true);
+      var rec = outcome.record, cross = LudumCase.crossCheck(rec, chainRead);
+      if (cross.agree === false) return serverNote(el, 'Disagrees with the chain. ', 'The server’s record for game #' + id + ' does not match this browser’s chain read, so none of it is shown: ' + cross.problems.join('; ') + '.', true);
+      clear(el);
+      el.appendChild(h('p', { class: 'gv-status', 'data-server-state': cross.agree === null ? 'unchecked' : 'agrees' }, [cross.agree === null ? 'Not cross-checked: this browser could not read the chain, so the server’s record is shown as the server’s alone.' : 'Seats, challenger, bond and evidence hash agree with the chain facts above.'].concat(cross.notes.map(function (n) { return ' Note: ' + n + '.'; }))));
+      var verdict = { 'server-log': 'the challenger’s evidence hash equals the server’s log hash', 'server-board': 'the challenger’s evidence hash equals the server’s terminal board hash', 'neither': 'the challenger’s evidence hash matches neither of the server’s hashes' };
+      el.appendChild(meta([['Escrow state', factText(rec.escrow, stateWord)], ['Evidence', factText(rec.evidenceMatches, function (v) { return verdict[v]; })]]));
+      el.appendChild(h('h3', { class: 'gv-h3', text: 'Server’s terminal record' }));
+      var t = rec.serverTerminal;
+      if (!t.value) el.appendChild(h('p', { class: 'gv-hint' }, [factText(t)]));
+      else {
+        el.appendChild(meta([['Ended by', mono(t.value.reason)], ['Log length', mono(t.value.logLen)], ['Log hash', mono(t.value.logHash)], ['Board hash', mono(t.value.appraisalStateHash)], ['Source', factText(t)]]));
+        el.appendChild(ledger('Final net worth by seat', 'in-game dollars · not JUNOX', [{ t: 'Seat' }, { t: 'Wallet' }, { t: 'In-game $', num: true }],
+          t.value.totalsBySeat.map(function (x) { return [String(x.chainSeatIndex), mono(rec.seats[x.chainSeatIndex].wallet), mono('$' + x.dollars)]; })));
+      }
+      el.appendChild(h('p', { class: 'gv-hint' }, [h('button', { class: 'gv-linkbtn', type: 'button', onclick: rereadServer, text: 'Read the server record again' })]));
+    }
 
     function payloadMeta(p, extra) {
       return meta(extra.concat([['Seq', mono(p.seq)], ['Log hash', mono(p.log_hash)], ['Appraisal state hash', mono(p.appraisal_state_hash)], ['Weights', mono((p.settlement_weights || []).join(' · '))]]));

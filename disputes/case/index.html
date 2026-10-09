@@ -21,6 +21,7 @@
 .gv-status strong { color: var(--ink); font-weight: 500; }
 .gv-status--bad { color: var(--red); padding: 12px 16px; border: 2px solid var(--red); }
 .gv-read { font: 400 12px/16px var(--font-mono); color: var(--ink-3); white-space: nowrap; }
+.gv-read--src { display: block; white-space: normal; overflow-wrap: anywhere; margin-top: 4px; }
 .gv-hint { margin: 0; max-width: 64ch; font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
 .gv-mono { font-family: var(--font-mono); overflow-wrap: anywhere; }
 .gv-meta { margin-bottom: 24px; }
@@ -56,7 +57,8 @@
 <header class="ld-wrap pg-head"><p class="ld-label pg-head__kicker">Disputes · <a class="ld-link" href="/disputes/">Register</a></p><div class="pg-head__row"><h1 class="pg-head__title" id="gv-case-title">Case</h1><div><p class="pg-head__dek">One escrow game’s dispute, from the chain: seats, challenger, bond, evidence, deadlines and the stored settlement.</p></div></div></header>
 <div class="ld-wrap gv-panel"><div id="gv-pins" aria-live="polite"><p class="gv-status">Checking the Ludum DAO pins on uni-7…</p></div><div id="gv-wallet"></div></div>
 <section class="ld-section" aria-labelledby="c1"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">01</span><h2 class="ld-sechead__title" id="c1">Chain facts</h2></header><div id="gv-case" aria-live="polite"><p class="gv-status">Reading uni-7…</p></div></div></section>
-<section class="ld-section" aria-labelledby="c2"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">02</span><h2 class="ld-sechead__title" id="c2">Create appeal proposal</h2><p class="ld-sechead__dek">For Ludum DAO governors only. Uphold or Annul; nothing moves until the DAO votes and a member executes.</p></header><div id="gv-propose" aria-live="polite"></div></div></section>
+<section class="ld-section" aria-labelledby="c3"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">02</span><h2 class="ld-sechead__title" id="c3">Server record</h2><p class="ld-sechead__dek">What play.netadao.org recorded for this game, checked against the chain facts above. It informs; it never enables an action.</p></header><div id="gv-server" aria-live="polite"><p class="gv-status">Waiting for the chain facts…</p></div></div></section>
+<section class="ld-section" aria-labelledby="c2"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">03</span><h2 class="ld-sechead__title" id="c2">Create appeal proposal</h2><p class="ld-sechead__dek">For Ludum DAO governors only. Uphold or Annul; nothing moves until the DAO votes and a member executes.</p></header><div id="gv-propose" aria-live="polite"></div></div></section>
 </main><footer class="ld-footer" data-theme="press">
   <span class="ld-footer__band" aria-hidden="true"></span>
   <div class="ld-wrap ld-footer__inner">
@@ -65,7 +67,9 @@
   </div>
 </footer>
 <script src="/design-system/js/ludum.js"></script>
+<script src="/platform/js/session.js"></script>
 <script src="/platform/js/gov.js"></script>
+<script src="/platform/js/gov-case.js"></script>
 <script src="/platform/js/gov-page.js"></script>
 </body>
 </html>
