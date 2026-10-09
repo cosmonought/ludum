@@ -40,11 +40,12 @@
 .pg-flow__box--play li { border-top-color: #3A3631; }
 .pg-neta { display: flex; gap: 24px; align-items: center; }
 .pg-neta img { width: 96px; height: auto; }
-.pg-close__grid { display: grid; grid-template-columns: 7fr 5fr; gap: var(--ld-gutter); align-items: end; padding-top: var(--space-6, 32px); border-top: 2px solid var(--rule-strong); }
-.pg-close__grid .ld-lede { margin: 0 0 20px; max-width: 34ch; }
+.pg-close { padding-top: var(--space-6, 32px); border-top: 2px solid var(--rule-strong); }
+.pg-close .ld-epigraph { max-width: 40ch; }
+.pg-close .ld-epigraph p { font-size: 20px; line-height: 30px; }
+.pg-keys--open { border-top: 0; }
 .pg-next { isolation: isolate; padding-block: var(--space-8, 64px); }
 @media (max-width: 1023px) {
-  .pg-close__grid { grid-template-columns: 1fr; gap: 32px; }
   .pg-head__row, .pg-two { grid-template-columns: 1fr; gap: 28px; }
   .pg-split__side, .pg-split__main { grid-column: 1 / 13; }
   .pg-split__side { margin-bottom: 24px; }
@@ -71,19 +72,19 @@
   </div>
 </header><main id="main">
 <header class="ld-wrap pg-head"><p class="ld-label pg-head__kicker">Projects · 2 · Catalogue order</p><div class="pg-head__row"><h1 class="pg-head__title">Projects</h1><div><p class="pg-head__dek">Every game Ludum publishes, numbered in the order it began. Statuses mean what they say.</p></div></div></header>
-<section class="ld-wrap" aria-label="Catalogue"><div class="ld-filters"><div class="ld-tabs" data-ld-filter="catalogue" role="group" aria-label="Filter projects by status"><button type="button" data-value="all" aria-pressed="true">All <span class="ld-tabs__count">2</span></button><button type="button" data-value="playable" aria-pressed="false">Playable <span class="ld-tabs__count">0</span></button><button type="button" data-value="dev" aria-pressed="false">In development <span class="ld-tabs__count">2</span></button><button type="button" data-value="experimental" aria-pressed="false">Experimental <span class="ld-tabs__count">0</span></button><button type="button" data-value="research" aria-pressed="false">Research <span class="ld-tabs__count">0</span></button><button type="button" data-value="archive" aria-pressed="false">Archive <span class="ld-tabs__count">0</span></button></div><span class="ld-filters__count" data-ld-filter-count="catalogue" aria-live="polite">2 projects</span></div><ol class="ld-catalogue" id="catalogue"><li class="ld-entry" data-ld-status="dev">
+<section class="ld-wrap" aria-label="Catalogue"><div class="ld-filters"><div class="ld-tabs" data-ld-filter="catalogue" role="group" aria-label="Filter projects by status"><button type="button" data-value="all" aria-pressed="true">All <span class="ld-tabs__count">2</span></button><button type="button" data-value="playable" aria-pressed="false">Playable <span class="ld-tabs__count">0</span></button><button type="button" data-value="dev" aria-pressed="false">In development <span class="ld-tabs__count">0</span></button><button type="button" data-value="experimental" aria-pressed="false">Experimental <span class="ld-tabs__count">1</span></button><button type="button" data-value="research" aria-pressed="false">Research <span class="ld-tabs__count">1</span></button><button type="button" data-value="archive" aria-pressed="false">Archive <span class="ld-tabs__count">0</span></button></div><span class="ld-filters__count" data-ld-filter-count="catalogue" aria-live="polite">2 projects</span></div><ol class="ld-catalogue" id="catalogue"><li class="ld-entry" data-ld-status="experimental">
   <span class="ld-entry__no">LUD—01</span>
   <div class="ld-entry__main"><h3 class="ld-entry__title"><a href="/projects/project-18xx/">Project 18XX</a></h3><p class="ld-entry__dek">Railroads and a stock market, at three tables, being built for Juno.</p></div>
   <span class="ld-entry__kind"><small>Family</small>18xx · economic</span>
-  <span class="ld-entry__status"><span class="ld-stamp ld-stamp--dev ld-stamp--s">In development</span></span>
+  <span class="ld-entry__status"><span class="ld-stamp ld-stamp--experimental ld-stamp--s">Experimental</span></span>
   <span class="ld-entry__year">2026</span>
   <span class="ld-entry__go" aria-hidden="true"><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></span>
   <span class="ld-entry__thumb" aria-hidden="true"><img src="/assets/project-18xx/p18-table-18xx.webp" alt=""></span>
-</li><li class="ld-entry" data-ld-status="dev">
+</li><li class="ld-entry" data-ld-status="research">
   <span class="ld-entry__no">LUD—02</span>
   <div class="ld-entry__main"><h3 class="ld-entry__title"><a href="/projects/20-cosmos/">20 Cosmos</a></h3><p class="ld-entry__dek">Robber barons in the internet age: blockchains, validators and the channels between them.</p></div>
   <span class="ld-entry__kind"><small>Family</small>18xx · network</span>
-  <span class="ld-entry__status"><span class="ld-stamp ld-stamp--dev ld-stamp--s">In development</span></span>
+  <span class="ld-entry__status"><span class="ld-stamp ld-stamp--research ld-stamp--s">Research</span></span>
   <span class="ld-entry__year">2026</span>
   <span class="ld-entry__go" aria-hidden="true"><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></span>
   <span class="ld-entry__thumb" aria-hidden="true"><img src="/assets/20-cosmos/c20-machine-hall.webp" alt=""></span>
@@ -93,8 +94,16 @@
 <section class="ld-section" aria-labelledby="key-h"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">02</span><h2 class="ld-sechead__title" id="key-h">What the statuses mean</h2></header><ul class="pg-keys"><li><span><span class="ld-stamp ld-stamp--playable">Playable</span></span><span>Runs on play.netadao.org now. PLAY takes you straight there.</span></li><li><span><span class="ld-stamp ld-stamp--dev">In development</span></span><span>Being built, in public. It opens on play.netadao.org first.</span></li><li><span><span class="ld-stamp ld-stamp--experimental">Experimental</span></span><span>A playable prototype. Rules and balance may change between sessions.</span></li><li><span><span class="ld-stamp ld-stamp--research">Research</span></span><span>Study and writing about games, not a game itself.</span></li><li><span><span class="ld-stamp ld-stamp--archive">Archive</span></span><span>Finished or retired, kept on record.</span></li></ul></div></section></main><footer class="ld-footer" data-theme="press">
   <span class="ld-footer__band" aria-hidden="true"></span>
   <div class="ld-wrap ld-footer__inner">
+    <a class="ld-footer__name" href="/">Ludum</a>
+    <nav class="ld-footer__nav" aria-label="Neta DAO">
+      <ul class="ld-footer__sites"><li><a href="https://academy.netadao.org">Academy</a></li><li><a href="https://fork.netadao.org">Fork</a></li><li><a href="https://ludum.netadao.org" aria-current="true">Ludum</a></li></ul>
+      <ul class="ld-footer__marks">
+        <li><a class="ld-footer__icon" href="https://x.com/Neta_DAO" aria-label="Neta DAO on X"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117Z"/></svg></a></li>
+        <li><a class="ld-footer__icon" href="https://discord.com/invite/gvjC86WXC2" aria-label="Neta DAO on Discord"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515c-.074.127-.158.298-.217.432a18.27 18.27 0 0 0-5.487 0 4.64 4.64 0 0 0-.218-.432A19.736 19.736 0 0 0 4.625 4.37 20.02 20.02 0 0 0 1 18.855a19.9 19.9 0 0 0 5.993 3.03 14.62 14.62 0 0 0 1.226-1.994 12.7 12.7 0 0 1-1.93-.934c.162-.12.32-.246.474-.373a14.18 14.18 0 0 0 12.281 0c.155.127.313.252.475.373-.616.366-1.265.68-1.93.934a14.49 14.49 0 0 0 1.225 1.994 19.87 19.87 0 0 0 5.994-3.03A20.03 20.03 0 0 0 20.317 4.37ZM8.02 15.332c-1.17 0-2.128-1.065-2.128-2.366S6.85 10.6 8.02 10.6c1.18 0 2.147 1.075 2.128 2.366 0 1.301-.947 2.366-2.128 2.366Zm7.974 0c-1.17 0-2.128-1.065-2.128-2.366s.958-2.366 2.128-2.366c1.18 0 2.147 1.075 2.128 2.366 0 1.301-.947 2.366-2.128 2.366Z"/></svg></a></li>
+        <li><a class="ld-footer__neta" href="https://netadao.org" aria-label="Neta DAO"><img src="/assets/logos/neta-mark-loop.webp" alt="" width="160" height="106" loading="lazy"></a></li>
+      </ul>
+    </nav>
     <p class="ld-footer__print">© 2026 Neta DAO</p>
-    <a class="ld-footer__neta" href="https://netadao.org"><span>A Neta DAO project</span><img src="/assets/logos/neta-mark-night.png" alt="Neta DAO" width="251" height="192"></a>
   </div>
 </footer>
 <script src="/design-system/js/ludum.js"></script>

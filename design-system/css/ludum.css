@@ -491,14 +491,31 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 /* ---------- 19. Play band: the way out to play.netadao.org ---------- */
 
 /* ---------- 20. Footer ---------- */
-/* One quiet line under the Neta band: the copyright, and the way back to Neta DAO. The nav already carries everything else. */
+/* The footer every Neta DAO site shares, set in Ludum's frame: the name, the family's addresses, X and Discord as their
+   own marks, Neta DAO's animated mark, the copyright. One line on desktop; it wraps, never grows. */
 .ld-footer { background: var(--frame); color: var(--on-frame); --focus: var(--yellow); }
 .ld-footer__band { display: block; height: 8px; background: linear-gradient(90deg, var(--neta-pink), var(--neta-cyan)); }   /* the Neta line, full strength */
-.ld-footer__inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 32px; padding-block: 24px; }
+.ld-footer__inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 32px; padding-block: 20px; }
+.ld-footer__name { font: 400 28px/.8 var(--font-display); letter-spacing: -.005em; text-transform: uppercase; color: var(--on-frame); text-decoration: none; padding-top: 3px; }
+.ld-footer__name:hover { color: var(--yellow); }
+.ld-footer__nav { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px; margin-left: auto; }
+.ld-footer__sites, .ld-footer__marks { display: flex; flex-wrap: wrap; align-items: center; margin: 0; padding: 0; list-style: none; }
+.ld-footer__sites { gap: 8px 24px; padding-right: 32px; border-right: 1px solid var(--rule); }
+.ld-footer__sites a { font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); text-decoration: none; }
+.ld-footer__sites a:hover { color: var(--yellow); }
+.ld-footer__sites a[aria-current] { color: var(--on-frame); box-shadow: inset 0 -2px 0 var(--yellow); }
+.ld-footer__marks { gap: 20px; }
+.ld-footer__icon { display: grid; place-items: center; width: 32px; height: 32px; color: var(--on-frame); transition: color var(--ld-shift); }
+.ld-footer__icon:hover { color: var(--yellow); }
+.ld-footer__icon svg { display: block; width: 20px; height: 20px; }
+.ld-footer__neta { display: block; }
+.ld-footer__neta img { display: block; width: auto; height: 30px; mix-blend-mode: lighten; }   /* Neta DAO's loop, on the frame */
 .ld-footer__print { margin: 0; font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
-.ld-footer__neta { display: inline-flex; align-items: center; gap: 14px; text-decoration: none; font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); }
-.ld-footer__neta img { width: 40px; height: auto; }
-.ld-footer__neta:hover { color: var(--yellow); }
+@media (max-width: 1023px) { .ld-footer__print { flex-basis: 100%; } }
+@media (max-width: 599px) {
+  .ld-footer__nav { margin-left: 0; flex-basis: 100%; justify-content: space-between; }
+  .ld-footer__sites { padding-right: 0; border-right: 0; }
+}
 
 /* ---------- 21. Project masthead: the poster at the top of a project page ---------- */
 .ld-mast { position: relative; overflow: hidden; }

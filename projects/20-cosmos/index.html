@@ -40,11 +40,12 @@
 .pg-flow__box--play li { border-top-color: #3A3631; }
 .pg-neta { display: flex; gap: 24px; align-items: center; }
 .pg-neta img { width: 96px; height: auto; }
-.pg-close__grid { display: grid; grid-template-columns: 7fr 5fr; gap: var(--ld-gutter); align-items: end; padding-top: var(--space-6, 32px); border-top: 2px solid var(--rule-strong); }
-.pg-close__grid .ld-lede { margin: 0 0 20px; max-width: 34ch; }
+.pg-close { padding-top: var(--space-6, 32px); border-top: 2px solid var(--rule-strong); }
+.pg-close .ld-epigraph { max-width: 40ch; }
+.pg-close .ld-epigraph p { font-size: 20px; line-height: 30px; }
+.pg-keys--open { border-top: 0; }
 .pg-next { isolation: isolate; padding-block: var(--space-8, 64px); }
 @media (max-width: 1023px) {
-  .pg-close__grid { grid-template-columns: 1fr; gap: 32px; }
   .pg-head__row, .pg-two { grid-template-columns: 1fr; gap: 28px; }
   .pg-split__side, .pg-split__main { grid-column: 1 / 13; }
   .pg-split__side { margin-bottom: 24px; }
@@ -74,12 +75,12 @@
   <span class="ld-mast__edge" aria-hidden="true"></span>
   <div class="ld-wrap ld-mast__grid">
     <p class="ld-mast__kicker">LUD—02 · 18xx · Interchain infrastructure</p>
-    <div class="ld-mast__status"><span class="ld-stamp ld-stamp--dev">In development</span></div>
+    <div class="ld-mast__status"><span class="ld-stamp ld-stamp--research">Research</span></div>
     <h1 class="ld-mast__title" id="mast-20"><span class="ld-mast__num">20</span> <span class="ld-mast__word">Cosmos</span><span class="ld-mast__name">Robber barons of the internet age</span></h1>
     <figure class="ld-mast__art ld-lineart" data-ld-reveal><img src="/assets/20-cosmos/c20-boardroom.webp" alt="An engraving in steel blue: executives in dark suits around a glass table in a skyscraper boardroom at night, a glowing hexagonal network on the table, server racks behind a glass wall and the city below." width="1376" height="768"></figure>
     <p class="ld-mast__dek">Robber barons in the internet age: an 18xx game of blockchains, validators and the channels between them, loosely based on the Cosmos ecosystem.</p>
     <div class="ld-mast__verbs"><ol class="ld-mech ld-mech--row"><li><span class="ld-mech__no">01</span><span class="ld-mech__verb">Networks</span><p class="ld-mech__gloss">What gets connected, and what is left at the end of the line.</p></li><li><span class="ld-mech__no">02</span><span class="ld-mech__verb">Capital</span><p class="ld-mech__gloss">Who pays for the track, and who is paid by it.</p></li><li><span class="ld-mech__no">03</span><span class="ld-mech__verb">Routes</span><p class="ld-mech__gloss">Where value travels, and how fast.</p></li><li><span class="ld-mech__no">04</span><span class="ld-mech__verb">Governance</span><p class="ld-mech__gloss">Who sets the rules for shared infrastructure.</p></li><li><span class="ld-mech__no">05</span><span class="ld-mech__verb">Coordination</span><p class="ld-mech__gloss">What no one company can build alone.</p></li><li><span class="ld-mech__no">06</span><span class="ld-mech__verb">Speculation</span><p class="ld-mech__gloss">What a network’s future is worth today.</p></li></ol></div>
-    <div class="ld-mast__foot"><dl class="ld-meta"><div><dt>Status</dt><dd><span class="ld-stamp ld-stamp--dev ld-stamp--s">In development</span></dd></div><div><dt>Family</dt><dd>18xx</dd></div><div><dt>Setting</dt><dd>The Cosmos ecosystem, loosely</dd></div><div><dt>Plays on</dt><dd>play.netadao.org, when ready</dd></div></dl><div class="ld-mast__play"><p class="ld-play ld-play--soon ld-play--l"><span class="ld-play__word">Play</span><span class="ld-play__what">In development · not yet on play.netadao.org</span></p></div></div>
+    <div class="ld-mast__foot"><dl class="ld-meta"><div><dt>Status</dt><dd><span class="ld-stamp ld-stamp--research ld-stamp--s">Research</span></dd></div><div><dt>Family</dt><dd>18xx</dd></div><div><dt>Setting</dt><dd>The Cosmos ecosystem, loosely</dd></div><div><dt>Plays on</dt><dd>play.netadao.org, when ready</dd></div></dl><div class="ld-mast__play"><p class="ld-play ld-play--soon ld-play--l"><span class="ld-play__word">Play</span><span class="ld-play__what">Research · not yet on play.netadao.org</span></p></div></div>
   </div>
 </section>
 <div class="ld-pj ld-pj--cosmos" data-theme="press">
@@ -109,14 +110,22 @@
 </figure><div><ul class="ld-legend"><li><span class="ld-legend__sw" style="background:#2A6FB7;border-color:#EDE6D6"></span>Core zone</li><li><span class="ld-legend__sw" style="background:#F4C430;border-color:#EDE6D6"></span>Alliance zone</li><li><span class="ld-legend__sw" style="background:repeating-linear-gradient(135deg,#EDE6D6 0 2px,#0B0F17 2px 6px);border-color:#EDE6D6"></span>Emerging zone</li><li><span class="ld-legend__sw" style="background:repeating-linear-gradient(45deg,#A9B3C2 0 1px,#0B0F17 1px 5px),repeating-linear-gradient(-45deg,#A9B3C2 0 1px,transparent 1px 5px);border-color:#EDE6D6"></span>Frontier zone</li><li><span class="ld-legend__sw" style="background:#2A3140;border-color:#EDE6D6"></span>Neutral</li></ul></div></div></div>
 </div></section>
 <section class="ld-section" id="c-development" aria-labelledby="cdev-h"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">03</span><h2 class="ld-sechead__title" id="cdev-h">Development</h2></header>
-  <div class="pg-two"><div style="display:grid;gap:24px;justify-items:start"><p class="ld-lede">In development. The world comes first, then the rules.</p><p class="ld-play ld-play--soon ld-play--l"><span class="ld-play__word">Play</span><span class="ld-play__what">In development · not yet on play.netadao.org</span></p></div><dl class="ld-meta"><div><dt>Status</dt><dd><span class="ld-stamp ld-stamp--dev ld-stamp--s">In development</span></dd></div><div><dt>Rules</dt><dd>Not yet published</dd></div></dl></div>
+  <div class="pg-two"><div style="display:grid;gap:24px;justify-items:start"><p class="ld-lede">In development. The world comes first, then the rules.</p><p class="ld-play ld-play--soon ld-play--l"><span class="ld-play__word">Play</span><span class="ld-play__what">Research · not yet on play.netadao.org</span></p></div><dl class="ld-meta"><div><dt>Status</dt><dd><span class="ld-stamp ld-stamp--research ld-stamp--s">Research</span></dd></div><div><dt>Rules</dt><dd>Not yet published</dd></div></dl></div>
 </div></section>
 
 </div><section class="pg-next" aria-label="Next project"><div class="ld-wrap"><nav class="ld-next" aria-label="Next project"><div><span class="ld-next__label">Next project · LUD—01</span><p class="ld-next__title"><a href="/projects/project-18xx/">Project 18XX</a></p></div><svg class="ld-icon ld-icon--48" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></nav></div></section></main><footer class="ld-footer" data-theme="press">
   <span class="ld-footer__band" aria-hidden="true"></span>
   <div class="ld-wrap ld-footer__inner">
+    <a class="ld-footer__name" href="/">Ludum</a>
+    <nav class="ld-footer__nav" aria-label="Neta DAO">
+      <ul class="ld-footer__sites"><li><a href="https://academy.netadao.org">Academy</a></li><li><a href="https://fork.netadao.org">Fork</a></li><li><a href="https://ludum.netadao.org" aria-current="true">Ludum</a></li></ul>
+      <ul class="ld-footer__marks">
+        <li><a class="ld-footer__icon" href="https://x.com/Neta_DAO" aria-label="Neta DAO on X"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117Z"/></svg></a></li>
+        <li><a class="ld-footer__icon" href="https://discord.com/invite/gvjC86WXC2" aria-label="Neta DAO on Discord"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515c-.074.127-.158.298-.217.432a18.27 18.27 0 0 0-5.487 0 4.64 4.64 0 0 0-.218-.432A19.736 19.736 0 0 0 4.625 4.37 20.02 20.02 0 0 0 1 18.855a19.9 19.9 0 0 0 5.993 3.03 14.62 14.62 0 0 0 1.226-1.994 12.7 12.7 0 0 1-1.93-.934c.162-.12.32-.246.474-.373a14.18 14.18 0 0 0 12.281 0c.155.127.313.252.475.373-.616.366-1.265.68-1.93.934a14.49 14.49 0 0 0 1.225 1.994 19.87 19.87 0 0 0 5.994-3.03A20.03 20.03 0 0 0 20.317 4.37ZM8.02 15.332c-1.17 0-2.128-1.065-2.128-2.366S6.85 10.6 8.02 10.6c1.18 0 2.147 1.075 2.128 2.366 0 1.301-.947 2.366-2.128 2.366Zm7.974 0c-1.17 0-2.128-1.065-2.128-2.366s.958-2.366 2.128-2.366c1.18 0 2.147 1.075 2.128 2.366 0 1.301-.947 2.366-2.128 2.366Z"/></svg></a></li>
+        <li><a class="ld-footer__neta" href="https://netadao.org" aria-label="Neta DAO"><img src="/assets/logos/neta-mark-loop.webp" alt="" width="160" height="106" loading="lazy"></a></li>
+      </ul>
+    </nav>
     <p class="ld-footer__print">© 2026 Neta DAO</p>
-    <a class="ld-footer__neta" href="https://netadao.org"><span>A Neta DAO project</span><img src="/assets/logos/neta-mark-night.png" alt="Neta DAO" width="251" height="192"></a>
   </div>
 </footer>
 <script src="/design-system/js/ludum.js"></script>

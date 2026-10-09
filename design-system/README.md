@@ -6,7 +6,7 @@ Ludum is Neta DAO's game publisher, and this is its house style: radical game pu
 - **play.netadao.org** is where the games run.
 - Every PLAY on Ludum leaves for play.netadao.org and says so. Ludum never stands between a player and a game, and nobody has to come through Ludum to play. PLAY wears Neta DAO's cyan (`neta-cyan`), because Play is Neta DAO's.
 - Homepage priority is fixed: **the games first, then what can be played, then the writing.**
-- Today both games — **Project 18XX** and **20 Cosmos** — are **In development**. Nothing is playable yet, so every project shows the in-development PLAY plate (`ld-play--soon`) while the nav and footer keep the global PLAY. Switch a game to a linked PLAY and a PLAYABLE stamp in the same change, the day it opens.
+- Today **Project 18XX** is **Experimental**, a playable prototype, so its feature and masthead carry a linked PLAY to play.netadao.org; **20 Cosmos** is **Research** and shows the struck-through PLAY plate (`ld-play--soon`). The nav keeps the global PLAY. Change a game's stamp and its PLAY in the same change, the day its state changes.
 
 ## Content fundamentals
 
@@ -16,7 +16,7 @@ Ludum is Neta DAO's game publisher, and this is its house style: radical game pu
 - **Casing.** Display type is always uppercase (Anton). Running text is sentence case. Mono labels and actions are uppercase and tracked; mono data is sentence case.
 - **Names.** The first game is **Project 18XX**; its tables are 18XX, 18XX+ and 18XX+: A Level Playing Field.
 - **Never.** Hype words ("revolutionary", "next-gen", "the future of"), "Web3", rocket-and-moon talk, emoji, exclamation marks, real chain names or logos on 20 Cosmos material.
-- **Real lines to reuse.** "Serious games for a more interesting world." · "Games are models you can enter." · "Railways for a multichain world." · "Railways built empires. Blockchains connect them." · "Nothing is playable yet."
+- **Real lines to reuse.** "The serious business of play." · "We make serious games about capital, conflict, and coordination." · "Games are models you can enter." · "Railways for a multichain world." · "Railways built empires. Blockchains connect them."
 - Sample copy in the templates (note titles, dates, bylines) is illustrative and marked so in each card.
 
 ## Visual foundations
@@ -52,7 +52,7 @@ Ludum is Neta DAO's game publisher, and this is its house style: radical game pu
 
 A small drawn set (22 icons) in the bundle: 24px grid, 2px square-capped strokes on `currentColor` — `Ludum.icon(name, cls, label)` returns the SVG; `Ludum.icons` holds them. `arrow-out` always means "this leaves Ludum". Icons go beside words; an icon alone carries a label. No emoji, no brand or chain logos. Anton has no ↗ glyph, so arrows are always these SVGs. See **Icons**.
 
-The **Neta DAO mark** in `assets/Logos/` is Neta DAO's supplied artwork: copy it, link it to netadao.org, never redraw or recolour it (`neta-mark-paper.png` on stock, `neta-mark-night.png` on the frame). Ludum has no drawn logo: its **Wordmark** is the name set live in Anton.
+The **Neta DAO mark** in `assets/Logos/` is Neta DAO's supplied artwork: copy it, link it to netadao.org, never redraw or recolour it (`neta-mark-loop.webp`, its animated loop, in the footer; `neta-mark-night.png` still on the frame; `neta-mark-paper.png` on stock). Ludum has no drawn logo: its **Wordmark** is the name set live in Anton.
 
 ## Using the system
 

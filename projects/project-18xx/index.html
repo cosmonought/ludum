@@ -40,11 +40,12 @@
 .pg-flow__box--play li { border-top-color: #3A3631; }
 .pg-neta { display: flex; gap: 24px; align-items: center; }
 .pg-neta img { width: 96px; height: auto; }
-.pg-close__grid { display: grid; grid-template-columns: 7fr 5fr; gap: var(--ld-gutter); align-items: end; padding-top: var(--space-6, 32px); border-top: 2px solid var(--rule-strong); }
-.pg-close__grid .ld-lede { margin: 0 0 20px; max-width: 34ch; }
+.pg-close { padding-top: var(--space-6, 32px); border-top: 2px solid var(--rule-strong); }
+.pg-close .ld-epigraph { max-width: 40ch; }
+.pg-close .ld-epigraph p { font-size: 20px; line-height: 30px; }
+.pg-keys--open { border-top: 0; }
 .pg-next { isolation: isolate; padding-block: var(--space-8, 64px); }
 @media (max-width: 1023px) {
-  .pg-close__grid { grid-template-columns: 1fr; gap: 32px; }
   .pg-head__row, .pg-two { grid-template-columns: 1fr; gap: 28px; }
   .pg-split__side, .pg-split__main { grid-column: 1 / 13; }
   .pg-split__side { margin-bottom: 24px; }
@@ -74,12 +75,12 @@
   <span class="ld-mast__edge" aria-hidden="true"></span>
   <div class="ld-wrap ld-mast__grid">
     <p class="ld-mast__kicker">LUD—01 · 18xx · The gilded boardroom</p>
-    <div class="ld-mast__status"><span class="ld-stamp ld-stamp--dev">In development</span></div>
+    <div class="ld-mast__status"><span class="ld-stamp ld-stamp--experimental">Experimental</span></div>
     <h1 class="ld-mast__title" id="mast-p18"><span class="ld-mast__name">Project</span><span class="ld-mast__num ld-gilt">18XX</span></h1>
-    <figure class="ld-mast__art ld-lineart" data-ld-reveal><img src="/assets/project-18xx/p18-board-meeting.webp" alt="A gold line drawing of railroad financiers in top hats and frock coats leaning over a boardroom table, a glowing network of hexagons and routes on the map between them." width="1350" height="696"></figure>
-    <p class="ld-mast__dek">Railroads, a stock market and the people who run both: an 18xx game being built for play on Juno, at three tables.</p>
+    <figure class="ld-mast__art ld-lineart" data-ld-reveal><img src="/assets/project-18xx/p18-breakthrough.webp" alt="A gold line drawing of a steam locomotive bursting head-on through a torn share certificate, its headlight blazing and paper fragments flying." width="1376" height="768"></figure>
+    <p class="ld-mast__dek">Railroads, a stock market and the people who run both: an 18xx game being built for play on Juno, at three tables. Based on the classic <i>1830: Railways and Robber Barons</i> by Francis Tresham.</p>
     <div class="ld-mast__verbs"><ol class="ld-mech ld-mech--row ld-mech--six"><li><span class="ld-mech__no">01</span><span class="ld-mech__verb">Buy</span><p class="ld-mech__gloss">Shares in the railroads. The largest holder becomes president and runs the company.</p></li><li><span class="ld-mech__no">02</span><span class="ld-mech__verb">Sell</span><p class="ld-mech__gloss">Shares back to the market, and the price falls with them.</p></li><li><span class="ld-mech__no">03</span><span class="ld-mech__verb">Operate</span><p class="ld-mech__gloss">Lay track, place stations, run trains for revenue.</p></li><li><span class="ld-mech__no">04</span><span class="ld-mech__verb">Withhold</span><p class="ld-mech__gloss">Keep the revenue in the treasury or pay it out as dividends. The share price answers either way.</p></li><li><span class="ld-mech__no">05</span><span class="ld-mech__verb">Rust</span><p class="ld-mech__gloss">New trains make old ones obsolete. Whole fleets vanish at a phase change.</p></li><li><span class="ld-mech__no">06</span><span class="ld-mech__verb">Bankrupt</span><p class="ld-mech__gloss">A president who cannot buy a required train pays from their own pocket. Fail that, and the game ends.</p></li></ol></div>
-    <div class="ld-mast__foot"><dl class="ld-meta"><div><dt>Status</dt><dd><span class="ld-stamp ld-stamp--dev ld-stamp--s">In development</span></dd></div><div><dt>Family</dt><dd>18xx · economic strategy</dd></div><div><dt>Network</dt><dd>Juno</dd></div><div><dt>Tables</dt><dd>18XX · 18XX+ · A Level Playing Field</dd></div></dl><div class="ld-mast__play"><p class="ld-play ld-play--soon ld-play--l"><span class="ld-play__word">Play</span><span class="ld-play__what">In development · not yet on play.netadao.org</span></p></div></div>
+    <div class="ld-mast__foot"><dl class="ld-meta"><div><dt>Status</dt><dd><span class="ld-stamp ld-stamp--experimental ld-stamp--s">Experimental</span></dd></div><div><dt>Family</dt><dd>18xx · economic strategy</dd></div><div><dt>Network</dt><dd>Juno</dd></div><div><dt>Tables</dt><dd>18XX · 18XX+ · A Level Playing Field</dd></div></dl><div class="ld-mast__play"><a class="ld-play ld-play--l" href="https://play.netadao.org" aria-label="Play Project 18XX, on play.netadao.org"><span class="ld-play__word">Play</span><span class="ld-play__what">Project 18XX</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a></div></div>
   </div>
 </section>
 <div class="ld-pj ld-pj--p18" data-theme="press">
@@ -121,14 +122,22 @@
 </figure></div>
 </div></section>
 <section class="ld-section" id="development" aria-labelledby="dev-h"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">05</span><h2 class="ld-sechead__title" id="dev-h">Development</h2></header>
-  <div class="pg-two"><div style="display:grid;gap:24px;justify-items:start"><p class="ld-lede">In development, in public.</p><p class="ld-play ld-play--soon ld-play--l"><span class="ld-play__word">Play</span><span class="ld-play__what">In development · not yet on play.netadao.org</span></p></div><dl class="ld-meta"><div><dt>Status</dt><dd><span class="ld-stamp ld-stamp--dev ld-stamp--s">In development</span></dd></div><div><dt>Network</dt><dd>Juno</dd></div></dl></div>
+  <div class="pg-two"><div style="display:grid;gap:24px;justify-items:start"><p class="ld-lede">In development, in public.</p><a class="ld-play ld-play--l" href="https://play.netadao.org" aria-label="Play Project 18XX, on play.netadao.org"><span class="ld-play__word">Play</span><span class="ld-play__what">Project 18XX</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a></div><dl class="ld-meta"><div><dt>Status</dt><dd><span class="ld-stamp ld-stamp--experimental ld-stamp--s">Experimental</span></dd></div><div><dt>Network</dt><dd>Juno</dd></div></dl></div>
 </div></section>
 
 </div><section class="pg-next" aria-label="Next project"><div class="ld-wrap"><nav class="ld-next" aria-label="Next project"><div><span class="ld-next__label">Next project · LUD—02</span><p class="ld-next__title"><a href="/projects/20-cosmos/">20 Cosmos</a></p></div><svg class="ld-icon ld-icon--48" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></nav></div></section></main><footer class="ld-footer" data-theme="press">
   <span class="ld-footer__band" aria-hidden="true"></span>
   <div class="ld-wrap ld-footer__inner">
+    <a class="ld-footer__name" href="/">Ludum</a>
+    <nav class="ld-footer__nav" aria-label="Neta DAO">
+      <ul class="ld-footer__sites"><li><a href="https://academy.netadao.org">Academy</a></li><li><a href="https://fork.netadao.org">Fork</a></li><li><a href="https://ludum.netadao.org" aria-current="true">Ludum</a></li></ul>
+      <ul class="ld-footer__marks">
+        <li><a class="ld-footer__icon" href="https://x.com/Neta_DAO" aria-label="Neta DAO on X"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117Z"/></svg></a></li>
+        <li><a class="ld-footer__icon" href="https://discord.com/invite/gvjC86WXC2" aria-label="Neta DAO on Discord"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515c-.074.127-.158.298-.217.432a18.27 18.27 0 0 0-5.487 0 4.64 4.64 0 0 0-.218-.432A19.736 19.736 0 0 0 4.625 4.37 20.02 20.02 0 0 0 1 18.855a19.9 19.9 0 0 0 5.993 3.03 14.62 14.62 0 0 0 1.226-1.994 12.7 12.7 0 0 1-1.93-.934c.162-.12.32-.246.474-.373a14.18 14.18 0 0 0 12.281 0c.155.127.313.252.475.373-.616.366-1.265.68-1.93.934a14.49 14.49 0 0 0 1.225 1.994 19.87 19.87 0 0 0 5.994-3.03A20.03 20.03 0 0 0 20.317 4.37ZM8.02 15.332c-1.17 0-2.128-1.065-2.128-2.366S6.85 10.6 8.02 10.6c1.18 0 2.147 1.075 2.128 2.366 0 1.301-.947 2.366-2.128 2.366Zm7.974 0c-1.17 0-2.128-1.065-2.128-2.366s.958-2.366 2.128-2.366c1.18 0 2.147 1.075 2.128 2.366 0 1.301-.947 2.366-2.128 2.366Z"/></svg></a></li>
+        <li><a class="ld-footer__neta" href="https://netadao.org" aria-label="Neta DAO"><img src="/assets/logos/neta-mark-loop.webp" alt="" width="160" height="106" loading="lazy"></a></li>
+      </ul>
+    </nav>
     <p class="ld-footer__print">© 2026 Neta DAO</p>
-    <a class="ld-footer__neta" href="https://netadao.org"><span>A Neta DAO project</span><img src="/assets/logos/neta-mark-night.png" alt="Neta DAO" width="251" height="192"></a>
   </div>
 </footer>
 <script src="/design-system/js/ludum.js"></script>
