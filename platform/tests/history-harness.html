@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en" data-theme="stock">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://netadao.org/radio/radio.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://netadao.org; font-src 'self'; media-src https://s3.radio.co; connect-src 'self' https://play.netadao.org https://juno.api.t.stavr.tech https://d3d68n2c5eingb.cloudfront.net; frame-src https://netadao.org https://www.netadao.org https://academy.netadao.org https://fork.netadao.org https://ludum.netadao.org https://play.netadao.org; object-src 'none'; base-uri 'none'; form-action 'self'; upgrade-insecure-requests">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>History harness — Ludum (test only)</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="/design-system/css/ludum.css">
+<link rel="stylesheet" href="/me/me.css">
+</head>
+<!-- TEST ONLY (Lane C): /me/'s markup with the local LudumSession mock in place of platform/js/session.js.
+     Serve the worktree root (python -m http.server) and open /platform/tests/history-harness.html. -->
+<body class="ld-page">
+<main id="main" data-ludum-history>
+<header class="ld-wrap me-head">
+  <p class="ld-label me-head__kicker">Account · Ludum · mock session</p>
+  <h1 class="me-head__title">Your games</h1>
+  <div data-me-profile aria-live="polite"><p class="ld-lede">Checking your session on Play…</p></div>
+</header>
+<section class="ld-section" aria-labelledby="m1" data-me-games hidden><div class="ld-wrap">
+  <header class="ld-sechead"><span class="ld-sechead__no">01</span><h2 class="ld-sechead__title" id="m1">Games ledger</h2></header>
+  <figure class="ld-ledger ld-ledger--stack me-ledger">
+    <figcaption class="ld-ledger__cap"><span class="ld-ledger__title">Your tables</span><span class="ld-label">Mock data</span></figcaption>
+    <div class="ld-ledger__scroll"><table>
+      <thead>
+        <tr class="me-group"><th scope="colgroup" colspan="4">Game</th><th scope="colgroup" colspan="2" class="me-junox-first">JUNOX (escrow)</th><th scope="colgroup" colspan="2" class="me-ingame-first">In-game (not money)</th><th scope="colgroup" colspan="2"></th></tr>
+        <tr><th scope="col">Product</th><th scope="col">Date</th><th scope="col">Table</th><th scope="col">Escrow</th><th scope="col" class="is-num me-junox-first">Ante</th><th scope="col" class="is-num">Net</th><th scope="col" class="is-num me-ingame-first">Rank</th><th scope="col" class="is-num">Net worth</th><th scope="col">Dispute</th><th scope="col"><span class="ld-label-s">Details</span></th></tr>
+      </thead>
+      <tbody data-me-rows></tbody>
+    </table></div>
+  </figure>
+  <p class="me-status" data-me-status role="status"></p>
+  <button class="ld-btn ld-btn--secondary me-more" type="button" data-me-more hidden>Show older games</button>
+</div></section>
+<dialog class="me-drawer" data-me-drawer aria-labelledby="me-drawer-title">
+  <div class="me-drawer__bar"><h2 class="me-drawer__title" id="me-drawer-title">Game details</h2><button class="ld-btn ld-btn--secondary" type="button" data-me-close>Close</button></div>
+  <div class="me-drawer__body" data-me-drawer-body></div>
+</dialog>
+</main>
+<script src="/design-system/js/ludum.js"></script>
+<script src="/platform/tests/history-mock-session.js"></script>
+<script src="/platform/js/history.js"></script>
+</body>
+</html>
