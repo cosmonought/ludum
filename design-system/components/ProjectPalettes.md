@@ -8,15 +8,15 @@ How colour is shared out: one house palette, and a field of its own for each gam
 
 **A project field** sets five roles with one class:
 
-| Role | 1830: Juno Edition (`ld-pj--1830`) | 20 Cosmos (`ld-pj--cosmos`) |
+| Role | Project 18XX (`ld-pj--p18`) | 20 Cosmos (`ld-pj--cosmos`) |
 |---|---|---|
-| `--pj-ground` | `p1830-stock` | `p20c-night` |
-| `--pj-ink` | `p1830-coal` | `p20c-cream` |
-| `--pj-accent` (numerals, the sun) | `p1830-red` | `p20c-yellow` |
-| `--pj-accent-2` (highlighter, second pigment) | `yellow` | `p20c-blue` |
-| `--pj-signal` (small marks, routes) | `red-ink` | `p20c-line` |
+| `--pj-ground` | `p18-ground` | `p20c-night` |
+| `--pj-ink` | `p18-paper` | `p20c-cream` |
+| `--pj-accent` (numerals, the sun) | `p18-gold` | `p20c-yellow` |
+| `--pj-accent-2` (highlighter, second pigment) | `p18-gilt` | `p20c-blue` |
+| `--pj-signal` (small marks, routes) | `p18-gold` | `p20c-line` |
 
-- The field carries its theme: 1830 `data-theme="stock"`, 20 Cosmos `data-theme="press"`. A project never re-tints with the site's theme.
-- 1830 is red, black and cream — railway capitalism: share certificates, coal, a red sun. Its tile phases (yellow, green, brown, grey) appear only on maps and charts.
+- The field carries its theme: both games pin `data-theme="press"`. A project never re-tints with the site's theme.
+- **Project 18XX** is the gilded boardroom of its own title art and paintings: near-black and walnut, gold leaf, paper-white text (`p18-text-dim` and `p18-text-muted` for second and third ink). The colours are the game's own, taken from its repository (its palette, board data and art); its gold is not the house `yellow`, and its gilt gradient (`ld-gilt`) is its alone. The board's colours — dark-green land, the tile tiers yellow → green → brown → grey, off-board red, coal — appear only on the board and in charts.
 - 20 Cosmos is the night of an operating chart, not of outer space: cream linework, a yellow signal, zone blue, a light route blue.
 - A new project chooses its accent from the house pigments first. Two projects never share both ground and accent.
