@@ -85,7 +85,7 @@
       }));
       draw('all');
       var ledgerEl = cases.length
-        ? R.el('figure', { class: 'ld-ledger ld-ledger--stack' }, [R.el('div', { class: 'ld-ledger__scroll' }, [R.el('table', null, [
+        ? R.el('figure', { class: 'ld-ledger ld-ledger--stack' }, [R.el('div', { class: 'ld-ledger__scroll', tabindex: '0', role: 'region', 'aria-label': 'Conduct cases' }, [R.el('table', null, [
             R.el('thead', null, [R.el('tr', null, ['Case', 'Table', 'Category', 'Reported', 'Reports', 'Opened (UTC)', 'Last report', 'Status', ''].map(function (t) { return R.el('th', { scope: 'col', class: t === 'Reports' ? 'is-num' : null, text: t }); }))]), tbody])]),
             R.el('p', { class: 'ld-ledger__note', text: 'Parties appear by display name and account fingerprint, never by username, wallet or id.' + (q.unreadable ? ' ' + q.unreadable + ' case' + (q.unreadable === 1 ? '' : 's') + ' could not be read just now and ' + (q.unreadable === 1 ? 'is' : 'are') + ' not listed.' : '') })])
         : R.notice('No cases', 'There is nothing to review.' + (q.unreadable ? ' ' + q.unreadable + ' could not be read just now.' : ''), 'wait');

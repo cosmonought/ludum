@@ -1,0 +1,13 @@
+/* Ludum · governance.css — the few layout helpers the governance pages need beyond the records layer (records.css).
+   No colour, type or component of its own: everything visible is the Design System's. */
+.gv-wallet-acts { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
+.gv-wallet-acts button.ld-link { border: 0; background-color: transparent; cursor: pointer; }   /* the Design's link, as a button */
+.gv-wallet-acts button[aria-disabled="true"] { cursor: not-allowed; opacity: .55; }
+.gv-filters { margin-bottom: 16px; }
+.gv-weights { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+.gv-submit { max-width: 720px; }
+.gv-prewrap { white-space: pre-wrap; overflow-wrap: anywhere; }
+.gv-chain { margin-top: -8px; }
+.gv-server { margin-top: 24px; padding: 0; }
+.ld-code { max-width: 100%; overflow-x: auto; }
+.ld-btn[aria-disabled="true"] { cursor: not-allowed; opacity: .55; }

@@ -4,43 +4,15 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://netadao.org/radio/radio.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://netadao.org; font-src 'self'; media-src https://s3.radio.co; connect-src 'self' https://play.netadao.org https://juno.api.t.stavr.tech https://d3d68n2c5eingb.cloudfront.net; frame-src https://netadao.org https://www.netadao.org https://academy.netadao.org https://fork.netadao.org https://ludum.netadao.org https://play.netadao.org; object-src 'none'; base-uri 'none'; form-action 'self'; upgrade-insecure-requests">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Disputes — Ludum</title>
-<meta name="description" content="The register of disputed escrow games on uni-7, read live from the chain.">
-<link rel="canonical" href="https://ludum.netadao.org/disputes/">
+<title>Appeals &amp; Disputes — Ludum</title>
+<meta name="description" content="Disputed escrow games and the Ludum DAO’s appeals on uni-7, read live from the chain.">
 <meta name="robots" content="noindex">
+<link rel="canonical" href="https://ludum.netadao.org/disputes/">
 <meta name="theme-color" content="#0B0B0B">
 <link rel="preload" href="/design-system/fonts/Anton-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/design-system/css/ludum.css">
 <link rel="stylesheet" href="/platform/css/records.css">
-<style>.pg-head { padding-block: var(--space-8, 64px) var(--space-6, 32px); }
-.pg-head__kicker { margin: 0 0 24px; }
-.pg-head__title { margin: 0; font: 400 var(--ld-d1)/.84 var(--font-display); text-transform: uppercase; letter-spacing: -.005em; overflow-wrap: anywhere; }
-.pg-head__row { display: grid; grid-template-columns: 7fr 5fr; gap: var(--ld-gutter); align-items: end; }
-.pg-head__dek { margin: 0; max-width: 40ch; font: 400 22px/32px var(--font-sans); }
-.gv-panel { display: grid; gap: 16px; padding-block: 0 var(--space-6, 32px); }
-.gv-status { margin: 0; font: 400 14px/22px var(--font-mono); color: var(--ink-2); overflow-wrap: anywhere; }
-.gv-status strong { color: var(--ink); font-weight: 500; }
-.gv-status--bad { color: var(--red); padding: 12px 16px; border: 2px solid var(--red); }
-.gv-read { font: 400 12px/16px var(--font-mono); color: var(--ink-3); white-space: nowrap; }
-.gv-hint { margin: 0; max-width: 64ch; font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
-.gv-mono { font-family: var(--font-mono); overflow-wrap: anywhere; }
-.gv-meta { margin-bottom: 24px; }
-.gv-meta dd, main .ld-empty p { overflow-wrap: anywhere; }
-.gv-h3 { margin: 32px 0 12px; font: 400 var(--ld-d4)/1 var(--font-display); text-transform: uppercase; overflow-wrap: anywhere; }
-.gv-wallet-row { display: grid; gap: 12px; justify-items: start; }
-.gv-choices, .gv-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
-.gv-check { display: flex; gap: 10px; align-items: flex-start; margin: 8px 0 20px; font: 400 15px/24px var(--font-sans); }
-.gv-check input { margin-top: 5px; width: 18px; height: 18px; }
-.gv-tx { display: grid; gap: 12px; margin-top: 20px; padding: 20px; border: 2px solid var(--rule-strong); }
-.gv-json { margin: 0; padding: 14px; overflow-x: auto; background: var(--paper-2); font: 400 13px/20px var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
-.gv-card { padding-block: 24px; border-top: 2px solid var(--rule-strong); }
-.gv-card__head .gv-h3 { margin-top: 8px; }
-.gv-details summary { cursor: pointer; font: 500 12px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; padding: 8px 0; }
-.gv-details .gv-json + .gv-json { margin-top: 8px; }
-.gv-count { font: 500 13px/20px var(--font-mono); color: var(--red); white-space: nowrap; }
-.gv-linkbtn { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; }
-@media (max-width: 1023px) { .pg-head__row { grid-template-columns: 1fr; gap: 28px; } }
-@media (max-width: 599px) { .pg-head__dek { font-size: 19px; line-height: 28px; } .gv-choices .ld-btn, .gv-actions .ld-btn { width: 100%; } }</style>
+<link rel="stylesheet" href="/platform/css/governance.css">
 <script src="https://netadao.org/radio/radio.js" defer></script>
 </head>
 <body class="ld-page" data-gov-page="register">
@@ -54,11 +26,9 @@
     <button class="ld-nav__menu" type="button" aria-expanded="false" aria-controls="ld-menu"><span class="ld-nav__menu-word">Menu</span><span class="ld-nav__burger" aria-hidden="true"></span></button>
   </div>
 </header><main id="main">
-<header class="ld-wrap pg-head"><p class="ld-label pg-head__kicker">Governance · Ludum DAO</p><div class="pg-head__row"><h1 class="pg-head__title" id="gv-title">Disputes</h1><div><p class="pg-head__dek">Every disputed escrow game on uni-7, read live from the chain. The Ludum DAO resolves them by proposal and vote.</p></div></div></header>
-<div class="ld-wrap gv-panel"><div id="gv-pins" aria-live="polite"><p class="gv-status">Checking the Ludum DAO pins on uni-7…</p></div><div id="gv-wallet"></div></div>
-<section class="ld-section" aria-labelledby="d1"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">01</span><h2 class="ld-sechead__title" id="d1">Open disputes</h2><p class="ld-sechead__dek">Disputed games, their resolver deadline and any linked proposal.</p></header><div id="gv-register" aria-live="polite"><p class="gv-status">Reading uni-7…</p></div></div></section>
-<section class="ld-section" aria-labelledby="d2"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">02</span><h2 class="ld-sechead__title" id="d2">Resolved</h2><p class="ld-sechead__dek">Disputes the chain records as resolved.</p></header><div id="gv-resolved" aria-live="polite"><p class="gv-status">Reading uni-7…</p></div></div></section>
-<section class="ld-section" aria-labelledby="d3"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">03</span><h2 class="ld-sechead__title" id="d3">Proposals</h2></header><p class="gv-hint">Appeal proposals, votes and execution are on the <a class="ld-link" href="/governance/">governance page</a>.</p></div></section>
+<div id="gv-frame"><header class="ld-wrap ld-rechead"><div class="ld-rechead__kicker"><span class="ld-label">Ludum DAO · uni-7</span></div><div class="ld-rechead__row"><h1 class="ld-rechead__title">Appeals &amp; Disputes</h1><div><p class="ld-rechead__dek" aria-live="polite">Reading Juno…</p></div></div></header></div>
+<div id="gv-body" aria-live="polite"></div>
+<noscript><div class="ld-wrap"><p class="ld-lede">This page reads the Ludum DAO and the escrow from Juno in your browser, and needs JavaScript.</p></div></noscript>
 </main><footer class="ld-footer" data-theme="press">
   <span class="ld-footer__band" aria-hidden="true"></span>
   <div class="ld-wrap ld-footer__inner">

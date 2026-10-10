@@ -198,7 +198,8 @@
     if (opts.foot) parts.push(el('tfoot', null, [opts.foot]));
     return el('figure', { class: 'ld-ledger ld-ledger--stack' }, [
       opts.title ? el('figcaption', { class: 'ld-ledger__cap' }, [el('span', { class: 'ld-ledger__title', text: opts.title }), opts.unit ? el('span', { class: 'ld-label-s ld-muted', text: opts.unit }) : null]) : null,
-      el('div', { class: 'ld-ledger__scroll' }, [el('table', null, parts)]),
+      /* A scroll region a keyboard can reach (WCAG 2.1.1: axe scrollable-region-focusable). */
+      el('div', { class: 'ld-ledger__scroll', tabindex: '0', role: 'region', 'aria-label': opts.title || opts.label || 'Table' }, [el('table', null, parts)]),
       opts.note ? el('p', { class: 'ld-ledger__note', text: opts.note }) : null
     ]);
   }

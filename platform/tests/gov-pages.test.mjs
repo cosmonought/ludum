@@ -35,9 +35,9 @@ function htmlUnder(dir) {
 }
 const PAGES = [...htmlUnder(path.join(ROOT, "disputes")), ...htmlUnder(path.join(ROOT, "governance"))];
 
-test("the three B1 pages exist", () => {
+test("the governance pages exist (B1's three, and the design's New appeal and Proposal)", () => {
   const rel = PAGES.map((p) => path.relative(ROOT, p).split(path.sep).join("/")).sort();
-  assert.deepEqual(rel, ["disputes/case/index.html", "disputes/index.html", "governance/index.html"]);
+  assert.deepEqual(rel, ["disputes/case/index.html", "disputes/index.html", "governance/index.html", "governance/new/index.html", "governance/proposal/index.html"]);
 });
 
 for (const file of PAGES) {

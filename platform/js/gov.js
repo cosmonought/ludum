@@ -159,12 +159,23 @@
   function proposalTitle(chainGameId, outcome) {
     return 'Appeal: escrow game #' + u64Number(chainGameId) + ' — ' + OUTCOMES[outcome];
   }
+  /** A proposer's own title (the New appeal form): 1 to 140 characters of plain text once trimmed. */
+  var TITLE_MAX = 140;
+  var RATIONALE_MAX = 4000;
+  function checkTitle(title) {
+    var t = String(title == null ? '' : title).replace(/\s+/g, ' ').trim();
+    if (!t || t.length > TITLE_MAX || /[\u0000-\u001f\u007f]/.test(t)) throw new Error('the title is 1 to ' + TITLE_MAX + ' characters of plain text');
+    return t;
+  }
   function caseUrl(chainGameId) { return PINS.caseUrlBase + u64Number(chainGameId); }
 
   /* The case summary that goes on chain: chain facts only, then the case URL. */
   function proposalDescription(facts) {
     var id = u64Number(facts.chainGameId);
-    var lines = ['Escrow ' + PINS.escrowVersion + ' game #' + id + ' on ' + PINS.chainId + ' (' + PINS.escrow + ') is disputed.'];
+    var rationale = typeof facts.rationale === 'string' ? facts.rationale.replace(/\r\n?/g, '\n').trim() : '';
+    if (rationale.length > RATIONALE_MAX) throw new Error('the rationale is at most ' + RATIONALE_MAX + ' characters');
+    var lines = rationale ? [rationale, '', '— Case facts, read from the chain —'] : [];
+    lines.push('Escrow ' + PINS.escrowVersion + ' game #' + id + ' on ' + PINS.chainId + ' (' + PINS.escrow + ') is disputed.');
     if (facts.challenger) lines.push('Challenger: ' + facts.challenger + '.');
     if (facts.bond) lines.push('Bond: ' + facts.bond + ' ' + PINS.denom + '.');
     if (facts.evidenceHash) lines.push('Evidence hash: ' + facts.evidenceHash + '.');
@@ -185,7 +196,7 @@
     var outcome = opts.outcome;
     var b64 = resolveB64(opts.chainGameId, outcome, outcome === 'replace' ? opts.payload : undefined);
     var msg = { propose: { msg: { propose: {
-      title: proposalTitle(opts.chainGameId, outcome),
+      title: opts.title === undefined ? proposalTitle(opts.chainGameId, outcome) : checkTitle(opts.title),
       description: opts.description,
       msgs: [{ wasm: { execute: { contract_addr: PINS.escrow, msg: b64, funds: [] } } }],
       vote: opts.voteYes === true ? { vote: 'yes' } : null
@@ -519,10 +530,125 @@
     });
   }
 
+  /* ================= v1.1 design integration: pure models for the appeal pages ================= */
+
+  function big(x) { var t = String(x == null ? '' : x); if (!/^\d+$/.test(t)) throw new Error('not a whole amount'); return BigInt(t); }
+
+  /** The escrow's own arithmetic (payout.rs proportional_split): each seat floor(pool × w ÷ Σw); the rest is dust. */
+  function splitPool(pool, weights) {
+    var P = big(pool), sum = BigInt(0);
+    var ws = (weights || []).map(function (w) { var v = big(w); sum += v; return v; });
+    if (sum === BigInt(0)) throw new Error('the weights sum to zero');
+    var paid = BigInt(0);
+    var amounts = ws.map(function (w) { var a = P * w / sum; paid += a; return a.toString(); });
+    return { amounts: amounts, dust: (P - paid).toString() };
+  }
+
+  /** What each resolution would send, from this browser's chain read (escrow 2.1.0 execute/dispute.rs):
+   *   uphold  -- the bond joins the pool; pool + bond paid by the stored weights;
+   *   replace -- the pool paid by the corrected weights (known only once a proposal carries them); bond back;
+   *   annul   -- every seat's net deposit back; bond back;
+   *   timeout -- after the resolver deadline a seat can take the exit: a TRUSTED stored settlement pays the pool by its
+   *              weights and the bond goes back; an untrusted one refunds (or settles on a trusted checkpoint).
+   *  `trusted`: the stored settlement's signer key is not compromised (true / false / null = not known). */
+  function outcomePreviews(game, opts) {
+    opts = opts || {};
+    var d = game && game.dispute, st = game && game.settlement;
+    var bond = d ? String(d.bond) : '0';
+    var weights = st && st.payload ? st.payload.settlement_weights : null;
+    var out = { bond: bond };
+    try { out.uphold = weights ? splitPool(big(game.pool) + big(bond), weights) : null; } catch (e) { out.uphold = null; }
+    out.annul = { amounts: (game && game.seats || []).map(function (s) { return String(s.net_deposit); }) };
+    var payload = opts.replacePayload || null;
+    try { out.replace = payload ? splitPool(game.pool, payload.settlement_weights) : null; } catch (e) { out.replace = null; }
+    out.trusted = opts.trusted === true ? true : opts.trusted === false ? false : null;
+    try { out.timeout = weights && out.trusted !== false ? splitPool(game.pool, weights) : null; } catch (e) { out.timeout = null; }
+    out.replaceable = !(st && st.source === 'remedy_strike3');
+    return out;
+  }
+
+  var PROPOSAL_PHASES = Object.freeze({
+    open: { phase: 'open', label: 'Open', stamp: '' },
+    passed: { phase: 'passed', label: 'Passed', stamp: 'held' },
+    executed: { phase: 'executed', label: 'Executed', stamp: 'closed' },
+    rejected: { phase: 'failed', label: 'Rejected', stamp: 'failed' },
+    closed: { phase: 'failed', label: 'Closed', stamp: 'failed' },
+    execution_failed: { phase: 'failed', label: 'Execution failed', stamp: 'failed' },
+    vetoed: { phase: 'failed', label: 'Vetoed', stamp: 'failed' }
+  });
+  /** A proposal's phase for the filters (open · passed · executed · failed), its label and its stamp. */
+  function proposalPhase(status) {
+    return PROPOSAL_PHASES[status] || { phase: 'failed', label: String(status || 'unknown').replace(/_/g, ' '), stamp: 'failed' };
+  }
+
+  /** The proposal's own count, as fractions of its total power (DAO DAO proposal-single: votes.yes/no/abstain,
+   *  total_power). Quorum and threshold are the proposal's own, described, never assumed. */
+  function tallyOf(proposal) {
+    var v = (proposal && proposal.votes) || {};
+    var total, yes, no, abstain;
+    try { total = big(proposal.total_power); yes = big(v.yes || 0); no = big(v.no || 0); abstain = big(v.abstain || 0); } catch (e) { return null; }
+    var pct = function (x) { return total === BigInt(0) ? 0 : Number(x * BigInt(100000) / total) / 1000; };
+    var th = proposal.threshold || {};
+    var quorum = null, threshold = null;
+    var tq = th.threshold_quorum, ab = th.absolute_percentage, ac = th.absolute_count;
+    var describe = function (t) {
+      if (!t) return null;
+      if (t.majority) return { kind: 'majority', text: 'a majority of the votes cast' };
+      if (t.percent != null) return { kind: 'percent', percent: Number(t.percent) * 100, text: (Number(t.percent) * 100) + '% of the votes cast' };
+      return null;
+    };
+    if (tq) {
+      threshold = describe(tq.threshold);
+      if (tq.quorum && tq.quorum.percent != null) quorum = { percent: Number(tq.quorum.percent) * 100, text: (Number(tq.quorum.percent) * 100) + '% of all voting power' };
+      else if (tq.quorum && tq.quorum.majority) quorum = { percent: 50, text: 'a majority of all voting power' };
+    } else if (ab) {
+      threshold = { kind: 'absolute', percent: ab.percentage && ab.percentage.percent != null ? Number(ab.percentage.percent) * 100 : null, text: 'a share of all voting power' };
+    } else if (ac) {
+      threshold = { kind: 'count', text: 'an absolute count of ' + ac.threshold };
+    }
+    return { yes: pct(yes), no: pct(no), abstain: pct(abstain), turnout: pct(yes + no + abstain), total: total.toString(), quorum: quorum, threshold: threshold };
+  }
+  /** A proposal's expiration as whole seconds (at_time only; a height or "never" is not a time). */
+  function expirationSecs(proposal) {
+    var e = proposal && proposal.expiration;
+    return e && e.at_time ? nanosToSecs(String(e.at_time)) : null;
+  }
+
+  /* ---- reads (read-only smart queries and the tx index; nothing here signs) ---- */
+  function readProposal(reader, id) { return reader.smart(PINS.proposalSingle, { proposal: { proposal_id: u64Number(id, 'proposal_id') } }); }
+  function readGame(reader, id) { return reader.smart(PINS.escrow, { game: { chain_game_id: u64Number(id, 'chain_game_id') } }); }
+  function readSeats(reader, id) { return reader.smart(PINS.escrow, { seats: { chain_game_id: u64Number(id, 'chain_game_id') } }); }
+  function readCheckpoints(reader, id) { return reader.smart(PINS.escrow, { checkpoints: { chain_game_id: u64Number(id, 'chain_game_id') } }); }
+  function readSettlementPreview(reader, id) { return reader.smart(PINS.escrow, { settlement_preview: { chain_game_id: u64Number(id, 'chain_game_id') } }); }
+  function readSignerKey(reader, keyId) { return reader.smart(PINS.escrow, { signer_key: { key_id: Number(keyId) } }); }
+  function readTotalWeight(reader) { return reader.smart(PINS.cw4Group, { total_weight: {} }); }
+  function readPreProposeConfig(reader) { return reader.smart(PINS.preProposeSingle, { config: {} }); }
+  /** Transactions the chain's index holds for a CometBFT event query, oldest first (e.g. one proposal's txs). */
+  function readTxs(reader, query) {
+    return reader.get('/cosmos/tx/v1beta1/txs?query=' + encodeURIComponent(query) + '&order_by=ORDER_BY_ASC&pagination.limit=50')
+      .then(function (j) { return (j && j.tx_responses) || []; });
+  }
+  function proposalTxQuery(id) { return "wasm._contract_address='" + PINS.proposalSingle + "' AND wasm.proposal_id='" + u64Number(id, 'proposal_id') + "'"; }
+  /** The proposal-module action ("propose", "vote", "execute", "close") a tx took on proposal `id`, from its events. */
+  function proposalActionOf(tx, id) {
+    var events = (tx && tx.events) || [];
+    for (var i = 0; i < events.length; i++) {
+      var e = events[i];
+      if (e.type !== 'wasm') continue;
+      var attrs = {}; (e.attributes || []).forEach(function (a) { attrs[a.key] = a.value; });
+      if (attrs._contract_address === PINS.proposalSingle && String(attrs.proposal_id) === String(id) && attrs.action) return attrs.action;
+    }
+    return null;
+  }
+
   var LudumGov = {
     PINS: PINS, FAMILY_ORIGINS: FAMILY_ORIGINS, OUTCOMES: OUTCOMES,
     resolveMsg: resolveMsg, resolveB64: resolveB64, proposalTitle: proposalTitle, proposalDescription: proposalDescription, caseUrl: caseUrl,
-    replacePayload: replacePayload, replacePayloadProblem: replacePayloadProblem,
+    replacePayload: replacePayload, replacePayloadProblem: replacePayloadProblem, checkTitle: checkTitle, TITLE_MAX: TITLE_MAX, RATIONALE_MAX: RATIONALE_MAX,
+    splitPool: splitPool, outcomePreviews: outcomePreviews, proposalPhase: proposalPhase, tallyOf: tallyOf, expirationSecs: expirationSecs,
+    readProposal: readProposal, readGame: readGame, readSeats: readSeats, readCheckpoints: readCheckpoints, readSettlementPreview: readSettlementPreview,
+    readSignerKey: readSignerKey, readTotalWeight: readTotalWeight, readPreProposeConfig: readPreProposeConfig, readTxs: readTxs,
+    proposalTxQuery: proposalTxQuery, proposalActionOf: proposalActionOf,
     buildPropose: buildPropose, buildVote: buildVote, buildExecute: buildExecute, buildClose: buildClose,
     decodeResolve: decodeResolve, linksToGame: linksToGame, checkPins: checkPins,
     deadlineGuard: deadlineGuard, framingAllowed: framingAllowed,
