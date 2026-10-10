@@ -107,6 +107,11 @@ html:has(.ld-tabs-bar) { scroll-padding-top: calc(var(--ld-nav-h) + 4px + 64px);
 .ld-wrap { width: 100%; max-width: var(--frame-max, 1600px); margin-inline: auto; padding-inline: var(--ld-margin); }
 .ld-section { padding-block: var(--ld-section); }
 .ld-section + .ld-section { padding-top: 0; }
+/* a tinted panel: the ground changes, so its own padding returns on both sides, and the change is the boundary */
+.ld-section--tint { background: var(--paper-2); }
+.ld-section--tint + .ld-section, .ld-section + .ld-section--tint { padding-top: var(--ld-section); }
+/* the first section of a page sits as close under the nav as a hero does */
+main > .ld-section:first-child { padding-top: min(var(--ld-section), var(--space-8, 64px)); }
 .ld-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--ld-gutter); }
 @media (max-width: 599px) { .ld-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .ld-measure { max-width: var(--measure, 680px); }
@@ -200,6 +205,15 @@ html:has(.ld-tabs-bar) { scroll-padding-top: calc(var(--ld-nav-h) + 4px + 64px);
 .ld-giltframe img { display: block; width: 100%; height: 100%; object-fit: cover; }
 /* Line art: Project 18XX's gold drawings on black sit bare on the field; a mask fades their edges so no rectangle shows. */
 .ld-lineart { position: relative; margin: 0; }
+/* A picture's subject kept at the centre of its frame, whatever the frame's shape. On the img: ld-focal, --fx (the
+   subject's place across the picture, 0 to 1) and --ar (the picture's width over its height); its frame is a size
+   container (ld-focal-frame). For pictures wider than their frame, set with object-fit: cover; the picture's own
+   edges never come inside the frame, so a frame too wide to centre the subject keeps it as near the centre as it can. */
+.ld-focal-frame { container-type: size; }
+.ld-focal { object-position: calc(var(--fx, .5) * 100%) 50%; }
+@supports (width: 1cqw) {
+  .ld-focal-frame > img.ld-focal { object-position: clamp(calc(100cqw - var(--ar) * 100cqh), calc(50cqw - var(--fx, .5) * var(--ar) * 100cqh), 0px) 50%; }
+}
 .ld-lineart img { -webkit-mask-image: radial-gradient(ellipse 72% 70% at 50% 50%, #000 55%, transparent 100%); mask-image: radial-gradient(ellipse 72% 70% at 50% 50%, #000 55%, transparent 100%); }
 .ld-mast .ld-lineart img { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 22%, #000 100%), linear-gradient(0deg, transparent 0, #000 18%, #000 100%); mask-image: linear-gradient(90deg, transparent 0, #000 22%, #000 100%), linear-gradient(0deg, transparent 0, #000 18%, #000 100%); -webkit-mask-composite: source-in; mask-composite: intersect; }
 /* The game's own title art is gold on pure black: screen it onto any dark field so its black disappears. */
@@ -526,6 +540,8 @@ html:not(.ld-js) .ld-nav__drop:focus-within > .ld-nav__sub { display: block; }  
 :is(.ld-sechead, .ld-steps__title) + * > * > :is(.ld-meta, .ld-notes, .ld-keylist, .ld-achv, .ld-legend, .ld-disclose):first-child,
 :is(.ld-sechead, .ld-steps__title) + :is(.pg-two, .ld-twocol) > :is(.ld-meta, .ld-notes, .ld-keylist, .ld-achv, .ld-legend, .ld-disclose),
 :is(.ld-sechead, .ld-steps__title) + .ld-choices > .ld-choice:first-of-type { border-top: 0; }
+/* where the ground changes (the first section of a page, a tinted panel) the change is the boundary: its head draws no rule */
+:is(main > .ld-section:first-child, .ld-section--tint) > .ld-wrap > .ld-sechead:first-child { border-top: 0; padding-top: 0; }
 
 /* ---------- 17. Metadata strip ---------- */
 .ld-meta {
@@ -553,6 +569,12 @@ html:not(.ld-js) .ld-nav__drop:focus-within > .ld-nav__sub { display: block; }  
 .ld-statement__text em { font-style: normal; color: var(--red); }
 .ld-statement--frame { background: var(--frame); color: var(--on-frame); }
 .ld-statement--frame .ld-statement__text em { color: var(--yellow); }
+/* a statement with a reader beside it: the line at the left, the epigraph at the right, on the line's last baseline */
+.ld-statement__grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); column-gap: var(--ld-gutter); align-items: end; }
+.ld-statement__grid .ld-epigraph { justify-self: end; max-width: 30ch; }
+.ld-statement__grid .ld-epigraph p { font-size: 22px; line-height: 32px; color: var(--ink); }
+.ld-statement__grid .ld-epigraph figcaption { margin-top: 12px; color: var(--ink-2); }
+@media (max-width: 1023px) { .ld-statement__grid { grid-template-columns: 1fr; row-gap: 40px; } .ld-statement__grid .ld-epigraph { justify-self: start; } }
 
 /* ---------- 19. Play band: the way out to play.netadao.org ---------- */
 
@@ -751,6 +773,9 @@ html:not(.ld-js) .ld-nav__drop:focus-within > .ld-nav__sub { display: block; }  
 .ld-feature__art { grid-column: 7 / 13; grid-row: 1 / 6; position: relative; margin: 0; align-self: stretch; min-height: 520px; }
 .ld-feature__art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-print, 560ms) var(--ease-out); }
 .ld-feature__tape { position: absolute; z-index: 3; top: 18px; right: 18px; }
+/* a game's tape is in the game's own colour, never a status colour */
+.ld-pj--p18 .ld-tape { background: var(--p18-gold); color: var(--p18-ground); }
+.ld-pj--cosmos .ld-tape { background: var(--p20c-line); color: var(--p20c-night); }
 .ld-feature:hover .ld-feature__art img, .ld-feature.is-hover .ld-feature__art img { transform: scale(1.04); }
 .ld-feature--p18:hover .ld-feature__art img, .ld-feature--p18.is-hover .ld-feature__art img { transform: none; filter: brightness(1.18); }   /* the line drawing's glow comes up instead */
 .ld-feature--p18 .ld-feature__art img { transition: filter var(--dur-print, 560ms) var(--ease-out); }
@@ -764,6 +789,9 @@ html:not(.ld-js) .ld-nav__drop:focus-within > .ld-nav__sub { display: block; }  
   .ld-feature__dek { grid-column: 1 / 11; }
   .ld-feature__art { grid-column: 1 / 13; grid-row: 3; min-height: 0; aspect-ratio: 16 / 9; margin-top: 28px; }
   .ld-feature__dek { grid-row: 4; } .ld-feature__meta { grid-row: 5; } .ld-feature__actions { grid-row: 6; }
+}
+@media (min-width: 600px) and (max-width: 1023px) {
+  .ld-feature--p18 .ld-feature__art { aspect-ratio: 4 / 3; }   /* narrower than 16:9, so the man at the head of the table can sit near the centre */
 }
 @media (max-width: 599px) {
   .ld-feature__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); padding-block: 40px; }
@@ -860,6 +888,24 @@ html:not(.ld-js) .ld-nav__drop:focus-within > .ld-nav__sub { display: block; }  
 .ld-epigraph figcaption { margin-top: 8px; font: 500 11px/16px var(--font-mono); letter-spacing: .08em; color: var(--ink-3); }
 .ld-epigraph cite { font-style: italic; }
 .ld-epigraph + .ld-epigraph { margin-top: 28px; }
+.ld-epigraph__who::after { content: ', '; }
+/* the panel: how a page closes, centred and large, the reader and the work under it */
+.ld-epigraph--panel { max-width: none; text-align: center; }
+.ld-epigraph--panel p { margin-inline: auto; font: italic 400 44px/56px var(--font-sans); letter-spacing: -.01em; color: var(--ink); text-wrap: balance; }
+.ld-epigraph--panel figcaption { display: grid; justify-items: center; gap: 6px; margin-top: 28px; }
+.ld-epigraph--panel .ld-epigraph__who { font: 600 13px/16px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
+.ld-epigraph--panel .ld-epigraph__who::after { content: none; }
+.ld-epigraph--panel .ld-epigraph__work { font: 400 15px/22px var(--font-sans); color: var(--ink-2); }
+/* its section: as much space as the line needs, no more (48px above and below; 32px on phones) */
+.ld-section--close { padding-block: var(--space-7, 48px); }
+.ld-section:not(.ld-section--tint):has(+ .ld-section--close) { padding-bottom: var(--space-7, 48px); }
+.ld-section--tint + .ld-section--close { padding-top: var(--space-7, 48px); }
+@media (max-width: 1023px) { .ld-epigraph--panel p { font-size: 34px; line-height: 44px; } }
+@media (max-width: 599px) {
+  .ld-epigraph--panel p { font-size: 26px; line-height: 34px; } .ld-epigraph--panel figcaption { margin-top: 20px; }
+  .ld-section--close { padding-block: 32px; } .ld-section:not(.ld-section--tint):has(+ .ld-section--close) { padding-bottom: 32px; }
+  .ld-section--tint + .ld-section--close { padding-top: 32px; }
+}
 .ld-tag--p18 { --ld-tag: var(--p18-gold-deep); }
 .ld-tag--cosmos { --ld-tag: var(--blue); }
 .ld-tag--ludum { --ld-tag: var(--yellow); }
@@ -1067,7 +1113,7 @@ a.ld-tag:hover { background: var(--ink); color: var(--paper); }
 /* ---------- 34. Home hero: the statement, with the departures board beside it ---------- */
 .ld-hero { position: relative; overflow: hidden; }
 .ld-hero__edge { position: absolute; left: 0; top: 0; bottom: 0; width: 16px; background: repeating-linear-gradient(180deg, var(--ink) 0 6px, transparent 6px 11px); }
-.ld-hero__grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--ld-gutter); padding-block: var(--space-8, 64px) var(--space-9, 96px); align-items: start; }
+.ld-hero__grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--ld-gutter); padding-block: var(--space-8, 64px); align-items: start; }   /* the same margin above and below */
 .ld-hero__kicker { grid-column: 1 / 9; margin: 0 0 32px; }
 .ld-hero__title { grid-column: 1 / 9; grid-row: 2; margin: 0; font: 400 var(--ld-d1)/.86 var(--font-display); text-transform: uppercase; letter-spacing: -.005em; }
 .ld-hero__title > span { display: block; }
@@ -1090,7 +1136,7 @@ a.ld-tag:hover { background: var(--ink); color: var(--paper); }
 }
 @media (max-width: 599px) {
   .ld-hero__edge { width: 100%; height: 10px; bottom: auto; background: repeating-linear-gradient(90deg, var(--ink) 0 6px, transparent 6px 11px); }
-  .ld-hero__grid { grid-template-columns: 1fr; padding-block: 40px 56px; }
+  .ld-hero__grid { grid-template-columns: 1fr; padding-block: 40px; }
   .ld-hero__kicker, .ld-hero__title, .ld-hero__dek, .ld-hero__actions, .ld-hero__side { grid-column: 1; }
   .ld-hero__kicker { margin-bottom: 20px; }
   .ld-hero__title { font-size: 17.5vw; line-height: .9; }
@@ -1110,14 +1156,17 @@ a.ld-tag:hover { background: var(--ink); color: var(--paper); }
 .ld-board__cols { padding: 10px 22px 8px; border-bottom: 1px solid var(--rule); font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
 .ld-board__rows { margin: 0; padding: 0; list-style: none; }
 .ld-board__row { position: relative; isolation: isolate; padding: 18px 22px 16px; border-bottom: 1px solid var(--rule); transition: color var(--ld-wipe); }
-.ld-board__row::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--yellow); transform: scaleY(0); transform-origin: 50% 0; transition: transform var(--ld-wipe); }
-.ld-board__no { font: 500 13px/16px var(--font-mono); letter-spacing: .08em; color: var(--yellow); }
+.ld-board__row::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--bd-c, var(--yellow)); transform: scaleY(0); transform-origin: 50% 0; transition: transform var(--ld-wipe); }
+/* each game's row in its own colour: its number, its statuses and its flap */
+.ld-board__row--p18 { --bd-c: var(--p18-gold); }
+.ld-board__row--cosmos { --bd-c: var(--p20c-line); }
+.ld-board__no { font: 500 13px/16px var(--font-mono); letter-spacing: .08em; color: var(--bd-c, var(--yellow)); }
 .ld-board__title { font: 400 36px/.95 var(--font-display); text-transform: uppercase; text-decoration: none; color: inherit; }
 .ld-board__title::after { content: ''; position: absolute; inset: 0; }
 .ld-board__title:focus-visible { outline: none; }
 .ld-board__row:has(a:focus-visible) { outline: 3px solid var(--focus); outline-offset: -3px; }
 .ld-board__kind { display: block; margin-top: 8px; font: 400 13px/18px var(--font-mono); color: var(--ink-2); }
-.ld-board__status { justify-self: end; text-align: right; font: 600 12px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--yellow); }
+.ld-board__status { justify-self: end; text-align: right; font: 600 12px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--bd-c, var(--yellow)); }
 .ld-board__status > span { display: block; white-space: nowrap; }
 .ld-board__status > span + span { margin-top: 6px; }
 .ld-board__status > span::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 8px; background: currentColor; vertical-align: 1px; }

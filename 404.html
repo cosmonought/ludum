@@ -26,8 +26,7 @@
 .pg-split__main { grid-column: 4 / 13; min-width: 0; }
 .pg-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7, 48px); align-items: start; }
 .pg-keys { margin: 0; padding: 0; list-style: none; }   /* under a section head, whose rule is the only one above it */
-.pg-keys li { display: grid; grid-template-columns: 260px 1fr; gap: var(--ld-gutter); align-items: center; padding: 16px 0; border-bottom: 1px solid var(--rule); font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
-.pg-keys li:last-child { border-bottom: 0; }
+.pg-keys li { display: grid; grid-template-columns: 260px 1fr; gap: var(--ld-gutter); align-items: center; padding: 12px 0; font: 400 15px/24px var(--font-sans); color: var(--ink-2); }   /* no hairlines: the stamps line the rows up */
 .pg-flow { display: grid; grid-template-columns: 1fr 120px 1fr; align-items: stretch; }
 .pg-flow__box { padding: 28px 28px 30px; border: 2px solid var(--rule-strong); }
 .pg-flow__box h3 { margin: 0 0 14px; font: 400 var(--ld-d3)/.9 var(--font-display); text-transform: uppercase; font-weight: 400; }
@@ -42,9 +41,7 @@
 .pg-flow__box--play li { border-top-color: #3A3631; }
 .pg-neta { display: flex; gap: 24px; align-items: center; }
 .pg-neta img { width: 96px; height: auto; }
-.pg-close { padding-top: var(--space-6, 32px); border-top: 2px solid var(--rule-strong); }
-.pg-close .ld-epigraph { max-width: 40ch; }
-.pg-close .ld-epigraph p { font-size: 20px; line-height: 30px; }
+.pg-close { padding: 0; }   /* the closing Epigraph panel: no rule above it; its section sets the space */
 .pg-next { isolation: isolate; padding-block: var(--space-8, 64px); }
 @media (max-width: 1023px) {
   .pg-head__row, .pg-two { grid-template-columns: 1fr; gap: 28px; }
