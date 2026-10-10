@@ -154,7 +154,9 @@ test("the new pages load their scripts in order, with the §2.4 CSP first and th
   for (const [rel, script] of [["me/index.html", "me-record.js"], ["me/account/index.html", "account-page.js"], ["me/game/index.html", "game-record.js"], ["moderation/index.html", "moderation-page.js"], ["moderation/case/index.html", "moderation-page.js"]]) {
     const html = readFileSync(resolve(ROOT, rel), "utf8");
     const order = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
-    eq(order, ["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", "/platform/js/auth.js", "/platform/js/account-menu.js", `/platform/js/${script}`, "/platform/js/page-init.js"], rel);
+    /* PHASE 4: the account page also loads gov.js (Keplr), for "Forgot current password?" signed in. */
+    const keplr = rel === "me/account/index.html" ? ["/platform/js/gov.js"] : [];
+    eq(order, ["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", ...keplr, "/platform/js/auth.js", "/platform/js/account-menu.js", `/platform/js/${script}`, "/platform/js/page-init.js"], rel);
     assert.ok(html.indexOf("/design-system/css/ludum.css") < html.indexOf("/platform/css/records.css"), rel);
     assert.match(html, /<head>\n<meta http-equiv="Content-Security-Policy"/, rel);
     assert.doesNotMatch(html, /ld-specimen/, `${rel}: no Specimen band on a live page`);

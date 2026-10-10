@@ -22,7 +22,7 @@
  *   LudumSession.signUpUrl(path)      v1.2: /me/sign-up/?return=<path>
  *   LudumSession.playSignInUrl(path)  https://play.netadao.org/?ludum=signin&return=<path>  (Play's, kept as a fallback)
  *   LudumSession.auth(action, body)   v1.2: Promise<json> for one of "start", "sign-in", "authorization", "create",
- *                                     "recover", "confirm", "sign-out". Rejects with an ApiError whose `error` is the
+ *                                     "recover", "confirm", "sign-out", "password" (PHASE 4: Change password). Rejects with an ApiError whose `error` is the
  *                                     account routes' own ("invalid-credential", "rate-limited" with retryAfterMs,
  *                                     "bad-password" with `problem`, "username-taken", ...). Forgets the memoized whoami.
  *   LudumSession.returnPath(search)   the safe ?return= path of a query string, or "/"
@@ -43,7 +43,7 @@
   var API_BASE = PLAY_ORIGIN + '/gs/api/ludum/v1/';
   var ROUTES = ['session', 'games', 'game', 'case', 'account', 'display-name', 'moderation-queue', 'moderation-case', 'moderation-decide'];
   var RETURN_PATH = /^\/[a-z0-9\/_-]{0,128}$/;
-  var AUTH_ACTIONS = ['start', 'sign-in', 'authorization', 'create', 'recover', 'confirm', 'sign-out'];
+  var AUTH_ACTIONS = ['start', 'sign-in', 'authorization', 'create', 'recover', 'confirm', 'sign-out', 'password'];
 
   function ApiError(status, error, detail, extra) {
     this.name = 'LudumApiError';

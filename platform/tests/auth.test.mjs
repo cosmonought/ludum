@@ -165,6 +165,40 @@ test("recover: the RECOVER text, signed by the wallet Keplr is on; a CREATE text
   } finally { Date.now = realNow; }
 });
 
+test("PHASE 4: Change password on Ludum -- the current and the new password in ONE auth/password request; a short new one is refused before anything is sent", async () => {
+  const A = load(["auth.js"]).window.LudumAuth;
+  const S = fakeSession({ password: { ok: true, signedOut: 1 } });
+  await assert.rejects(A.changePassword(S, { currentPassword: "the old passphrase", newPassword: "short" }), (e) => e.error === "bad-password");
+  await assert.rejects(A.changePassword(S, { currentPassword: "", newPassword: "a brand new passphrase" }), (e) => e.error === "invalid-credential");
+  eq(S.calls, []);
+  const r = await A.changePassword(S, { currentPassword: "the old passphrase", newPassword: "a brand new passphrase" });
+  assert.equal(r.signedOut, 1);
+  eq(S.calls, [["password", { currentPassword: "the old passphrase", newPassword: "a brand new passphrase" }]]);
+  assert.equal(A.sentence({ error: "invalid-credential" }, "change"), "That current password doesn’t match this account. Check it and try again.");
+});
+
+test("PHASE 4: Forgot current password? SIGNED IN on Ludum -- no start(), the account's RECOVER text checked then signed by its Authorization Wallet; Keplr on another wallet signs nothing", async () => {
+  const A = load(["auth.js"]).window.LudumAuth;
+  const realNow = Date.now;
+  Date.now = () => BEFORE;
+  try {
+    const S = fakeSession({ authorization: { operation: "fedcba9876543210fedcba9876543210", texts: [{ text: RECOVER_TEXT }] }, recover: { ok: true, signedOut: 3 } });
+    const keplr = fakeKeplr();
+    const r = await A.resetSignedIn(S, keplr, { username: "ann.player", authorizationWallet: WALLET, newPassword: "a brand new passphrase" });
+    assert.equal(r.signedOut, 3);
+    eq(S.calls.map((call) => call[0]), ["authorization", "recover"], "no start(): the signed-in session is the one used");
+    eq(S.calls[0], ["authorization", { purpose: "recover", username: "ann.player", wallet: WALLET }]);
+    eq(S.calls[1], ["recover", { operation: "fedcba9876543210fedcba9876543210", pubKey: "PK", signature: "SIG", newPassword: "a brand new passphrase" }]);
+    eq(keplr.signed, [[WALLET, RECOVER_TEXT]]);
+    const wrong = fakeSession({});
+    const k2 = fakeKeplr(OTHER);
+    await assert.rejects(A.resetSignedIn(wrong, k2, { username: "ann.player", authorizationWallet: WALLET, newPassword: "a brand new passphrase" }), (e) => e.local === true && /Switch Keplr to this account’s Authorization Wallet/.test(e.message));
+    eq(wrong.calls, []);
+    eq(k2.signed, []);
+    await assert.rejects(A.resetSignedIn(fakeSession({}), fakeKeplr(), { username: "ann.player", authorizationWallet: WALLET, newPassword: "short" }), (e) => e.error === "bad-password");
+  } finally { Date.now = realNow; }
+});
+
 test("sign-out ends the shared session and forgets the remembered membership; an already-ended session is fine", async () => {
   const { window, storage } = load(["records.js", "auth.js"]);
   const A = window.LudumAuth;
@@ -245,7 +279,7 @@ test("the tab's chain pins are gov.js's own", () => {
 
 /* ---------------- LudumSession.auth: the request ---------------- */
 
-test("LudumSession.auth posts to auth/<action> with the §2.1 credentialed fetch; only the seven actions; 204 is {}", async () => {
+test("LudumSession.auth posts to auth/<action> with the §2.1 credentialed fetch; only the eight actions (PHASE 4: + password); 204 is {}", async () => {
   const calls = [];
   const window = { location: { pathname: "/me/sign-in/", assign() {} }, fetch: (url, init) => { calls.push({ url, init }); return Promise.resolve({ status: url.endsWith("sign-out") ? 204 : 200, json: () => (url.endsWith("sign-out") ? Promise.reject(new Error("empty")) : Promise.resolve({ ok: true })) }); } };
   vm.runInNewContext(readFileSync(resolve(JS, "session.js"), "utf8"), { window, Promise, JSON, Object, Error, encodeURIComponent, decodeURIComponent, String, isFinite });
@@ -254,9 +288,11 @@ test("LudumSession.auth posts to auth/<action> with the §2.1 credentialed fetch
   assert.equal(calls[0].url, "https://play.netadao.org/gs/api/ludum/v1/auth/sign-in");
   eq(calls[0].init, { method: "POST", mode: "cors", credentials: "include", cache: "no-store", redirect: "error", headers: { "Content-Type": "application/json" }, body: '{"username":"ann","password":"pw"}' });
   eq(await S.auth("sign-out", {}), {});
-  for (const bad of ["password", "me", "../account/login", "session", "authorization-wallet/replace"]) await assert.rejects(S.auth(bad, {}), (e) => e.error === "bad-request");
+  for (const bad of ["me", "../account/login", "session", "authorization-wallet/replace", "sign-out-others"]) await assert.rejects(S.auth(bad, {}), (e) => e.error === "bad-request");
+  await S.auth("password", { currentPassword: "a", newPassword: "b" });
+  assert.equal(calls[2].url, "https://play.netadao.org/gs/api/ludum/v1/auth/password");
   await assert.rejects(S.api("auth/sign-in", {}), (e) => e.error === "bad-request", "api() alone never reaches auth/*");
-  assert.equal(calls.length, 2);
+  assert.equal(calls.length, 3);
 });
 
 /* ---------------- the pages ---------------- */

@@ -105,6 +105,8 @@
       case 'invalid-credential':
         if (context === 'sign-in') return 'That username and password don’t match an account. Check them and try again.';
         if (context === 'confirm') return 'That password doesn’t match this account. Check it and try again.';
+        if (context === 'change') return 'That current password doesn’t match this account. Check it and try again.';
+        if (context === 'reset') return 'That didn’t reset the password. Check that Keplr is on this account’s Authorization Wallet — a wallet you only used for games can’t do it.';
         if (context === 'recover') return 'That didn’t recover an account. Check the username, and that Keplr is on the account’s Authorization Wallet — a wallet you only used for games can’t recover it.';
         return 'That didn’t work. Check it and try again.';
       case 'username-taken': return 'That username is taken. Choose another.';
@@ -188,6 +190,47 @@
     });
   }
 
+  /** PHASE 4: "Change password" (signed in) -- the current password and the new one, in one request to the game server's
+   *  own handler (`auth/password`): this browser keeps its session (a fresh cookie), every other device is signed out --
+   *  on Ludum and on play.netadao.org alike. Nothing is kept. */
+  function changePassword(S, input) {
+    var p = passwordProblem(input.newPassword);
+    if (p) return Promise.reject(p);
+    if (String(input.currentPassword || '') === '') return Promise.reject({ error: 'invalid-credential' });
+    return S.auth('password', { currentPassword: input.currentPassword, newPassword: input.newPassword });
+  }
+
+  /** PHASE 4: "Forgot current password?" while SIGNED IN -- this account's own RECOVER text, signed in Keplr by its
+   *  Authorization Wallet (checked first: this site, this account, that wallet), then the new password. No old password,
+   *  no sign-out first; the game server applies it like a password change (this browser stays signed in, every other
+   *  device is signed out). `input.authorizationWallet`: the account's, when this page knows it -- Keplr on another
+   *  wallet is refused before anything is signed. */
+  function resetSignedIn(S, G, input, step) {
+    var p = usernameProblem(input.username) || passwordProblem(input.newPassword);
+    if (p) return Promise.reject(p);
+    step = step || function () {};
+    var username = String(input.username).trim();
+    step('keplr');
+    return G.connect().then(function (w) {
+      var expected = input.authorizationWallet || w.address;
+      if (w.address !== expected) {
+        var wrong = new Error('Keplr is on ' + w.address + '. Switch Keplr to this account’s Authorization Wallet (' + expected + ') and try again. Nothing was signed.');
+        wrong.local = true;
+        throw wrong;
+      }
+      return S.auth('authorization', { purpose: 'recover', username: username, wallet: w.address }).then(function (minted) {
+        var text = minted && minted.texts && minted.texts[0] && minted.texts[0].text;
+        var refusal = checkAuthorization(text, { purpose: 'RECOVER', site: site(), account: username, signer: w.address, authorizationWallet: expected, now: Date.now() });
+        if (refusal !== null) { var e = new Error(refusal); e.local = true; throw e; }
+        step('sign');
+        return G.signArbitrary(w.address, text).then(function (signed) {
+          step('reset');
+          return S.auth('recover', { operation: minted.operation, pubKey: signed.pubKey, signature: signed.signature, newPassword: input.newPassword });
+        });
+      });
+    });
+  }
+
   function confirm(S, password) { return S.auth('confirm', { password: password }); }
 
   function signOut(S) {
@@ -233,6 +276,7 @@
   var api = {
     parseAuthorization: parseAuthorization, checkAuthorization: checkAuthorization, sentence: sentence, start: start,
     usernameProblem: usernameProblem, passwordProblem: passwordProblem, signIn: signIn, createAccount: createAccount, recover: recover,
+    changePassword: changePassword, resetSignedIn: resetSignedIn,
     confirm: confirm, signOut: signOut, confirmPanel: confirmPanel, PASSWORD_MIN: PASSWORD_MIN, NAME_MAX: NAME_MAX, USERNAME_MAX: USERNAME_MAX
   };
   root.LudumAuth = api;

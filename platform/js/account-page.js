@@ -5,7 +5,9 @@
  * The DisplayName states (the owner's rule): "changeable" — a field with one change left, refusing a name another
  * player has; "changed" — the change is used; "locked-playing" — a game has started; "locked-seated" — a seat is held
  * at a table that has not started. v1.2: sign-in, sign-out and "Confirm it's you" are Ludum's own too (one account and
- * one session with play.netadao.org); changing the password or the Authorization Wallet stays on play.netadao.org. */
+ * one session with play.netadao.org). PHASE 4: the password is managed HERE too -- "Change password" (the current one)
+ * and "Forgot current password?" (the Authorization Wallet signs in Keplr; no sign-out first), through the game server's
+ * own handlers, so a change on either site is the account's. Changing the Authorization Wallet stays on Play. */
 (function () {
   'use strict';
   var R = window.LudumRecords;
@@ -94,10 +96,102 @@
       R.el('dd', null, a.authorizationWallet ? [R.el('span', { class: 'ld-id', title: a.authorizationWallet.address, text: R.shortAddress(a.authorizationWallet.address) }), ' · since ' + R.day(a.authorizationWallet.since) + ' · signs account actions only'] : ['None']),
       R.el('dt', { text: 'Payout wallets' }), R.el('dd', { text: 'Chosen at each table, on play.netadao.org. Each game record names the one it paid.' }),
       R.el('dt', { text: 'Signed in' }), R.el('dd', { text: 'One account and one session for Ludum and play.netadao.org: signing out here signs out there too.' }),
-      R.el('dt', { text: 'Password and Authorization Wallet' }), R.el('dd', null, [R.el('a', { class: 'ld-link ld-link--out', href: who.manageUrl || window.LudumSession.PLAY_ORIGIN + '/' }, ['Change on play.netadao.org', R.icon('arrow-out')])])
+      R.el('dt', { text: 'Password' }), R.el('dd', null, [passwordControls(a, session)]),
+      R.el('dt', { text: 'Change Authorization Wallet' }), R.el('dd', null, [R.el('a', { class: 'ld-link ld-link--out', href: who.manageUrl || window.LudumSession.PLAY_ORIGIN + '/' }, ['On play.netadao.org (both wallets sign)', R.icon('arrow-out')])])
     ]);
     var right = R.el('div', null, [R.el('p', { class: 'ld-label', style: 'margin-bottom:12px', text: 'What players at your tables see' }), factsLedger(acct.tablemates)]);
     body.appendChild(R.section('01', 'd1', 'Account', 'Your player account for every Neta DAO game.', [R.el('div', { class: 'ld-twocol' }, [R.el('div', { class: 'ld-stack' }, [dl]), right])]));
+  }
+
+  /* ---------- PHASE 4: the password, managed on Ludum ---------- */
+
+  /** One labelled password field (records layer). */
+  function passwordField(id, label, autocomplete, hint) {
+    var input = R.el('input', { class: 'ld-input', id: id, type: 'password', autocomplete: autocomplete, maxlength: '1024', spellcheck: 'false', autocapitalize: 'off' });
+    var parts = [R.el('label', { class: 'ld-field__label', for: id, text: label })];
+    if (hint) parts.push(R.el('p', { class: 'ld-field__hint', text: hint }));
+    parts.push(input);
+    return { field: R.el('div', { class: 'ld-field' }, parts), input: input };
+  }
+
+  /** "Change password" and "Forgot current password?" -- two distinct choices, each its own small form in place. */
+  function passwordControls(a, session) {
+    var A = window.LudumAuth;
+    var box = R.el('div', { class: 'ld-stack', 'data-pw': '' });
+    var note = R.el('p', { class: 'ld-field__hint', text: 'Change it if you know your current password. If you don’t, your Authorization Wallet approves a new one in Keplr — you stay signed in. Either way, every other device is signed out (here and on play.netadao.org).' });
+    var changeBtn = R.el('button', { class: 'ld-btn ld-btn--secondary', type: 'button', text: 'Change password', 'data-pw-change': '' });
+    var forgotBtn = R.el('button', { class: 'ld-btn ld-btn--secondary', type: 'button', text: 'Forgot current password?', 'data-pw-forgot': '' });
+    var status = R.el('p', { class: 'ld-field__hint', role: 'status', 'data-pw-status': '' });
+    var slot = R.el('div');
+    function menu() {
+      slot.textContent = '';
+      changeBtn.disabled = false; forgotBtn.disabled = false;
+    }
+    function done(message) {
+      slot.textContent = '';
+      status.textContent = message;
+      changeBtn.disabled = false; forgotBtn.disabled = false;
+    }
+    function devices(n) { return n === 0 ? 'No other devices were signed in.' : 'Signed out ' + n + ' other device' + (n === 1 ? '' : 's') + '.'; }
+    function form(title, fields, submitText, onSubmit, extra) {
+      var error = R.el('p', { class: 'ld-field__error', role: 'alert', hidden: true });
+      var go = R.el('button', { class: 'ld-btn', type: 'submit', text: submitText });
+      var cancel = R.el('button', { class: 'ld-btn ld-btn--secondary', type: 'button', text: 'Cancel' });
+      var f = R.el('form', { class: 'ld-stack', novalidate: 'novalidate', 'aria-label': title }, [R.el('p', { class: 'ld-label', text: title })].concat(extra || []).concat(fields.map(function (x) { return x.field; })).concat([error, R.el('div', { class: 'au-actions' }, [go, cancel])]));
+      cancel.addEventListener('click', menu);
+      f.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        error.hidden = true;
+        go.disabled = true;
+        onSubmit(function (busyText) { go.textContent = busyText; }).then(null, function (e) {
+          go.disabled = false; go.textContent = submitText;
+          error.textContent = e && e.local ? e.message : A.sentence(e, f.getAttribute('data-ctx'));
+          error.hidden = false;
+        });
+      });
+      return f;
+    }
+    changeBtn.addEventListener('click', function () {
+      status.textContent = '';
+      changeBtn.disabled = true; forgotBtn.disabled = false;
+      var current = passwordField('pw-current', 'Current password', 'current-password');
+      var next = passwordField('pw-new', 'New password', 'new-password', 'At least ' + A.PASSWORD_MIN + ' characters.');
+      var f = form('Change password', [current, next], 'Change password', function (busy) {
+        var input = { currentPassword: current.input.value, newPassword: next.input.value };
+        current.input.value = ''; next.input.value = '';
+        busy('Changing…');
+        return A.changePassword(session, input).then(function (r) {
+          done('Password changed. ' + devices(r && typeof r.signedOut === 'number' ? r.signedOut : 0) + ' This device stays signed in.');
+        });
+      });
+      f.setAttribute('data-ctx', 'change');
+      f.setAttribute('data-pw-form', 'change');
+      slot.textContent = ''; slot.appendChild(f); current.input.focus();
+    });
+    forgotBtn.addEventListener('click', function () {
+      status.textContent = '';
+      forgotBtn.disabled = true; changeBtn.disabled = false;
+      var next = passwordField('pw-reset', 'New password', 'new-password', 'At least ' + A.PASSWORD_MIN + ' characters.');
+      var wallet = a.authorizationWallet ? a.authorizationWallet.address : null;
+      var explain = R.el('p', { class: 'ld-field__hint', 'data-pw-explain': '', text: 'You don’t need your current password. Your Authorization Wallet' + (wallet ? ' (' + R.shortAddress(wallet) + ')' : '') + ' approves the new one in Keplr — a message, not a transaction; nothing moves. You stay signed in here; every other device is signed out. Your games, seats and deposits don’t change.' });
+      var f = form('Reset a forgotten password', [next], 'Approve in Keplr and set password', function (busy) {
+        var chosen = next.input.value;
+        next.input.value = '';
+        return A.resetSignedIn(session, window.LudumGov, { username: a.username, authorizationWallet: wallet, newPassword: chosen }, function (step) {
+          busy(step === 'keplr' ? 'Connecting Keplr…' : step === 'sign' ? 'Approve in Keplr…' : 'Setting the new password…');
+        }).then(function (r) {
+          done('New password set. ' + devices(r && typeof r.signedOut === 'number' ? r.signedOut : 0) + ' This device stays signed in.');
+        });
+      }, [explain]);
+      f.setAttribute('data-ctx', 'reset');
+      f.setAttribute('data-pw-form', 'reset');
+      slot.textContent = ''; slot.appendChild(f); next.input.focus();
+    });
+    box.appendChild(R.el('div', { class: 'au-actions' }, [changeBtn, forgotBtn]));
+    box.appendChild(note);
+    box.appendChild(slot);
+    box.appendChild(status);
+    return box;
   }
 
   function mount(root, session) {
