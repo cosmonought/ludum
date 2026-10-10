@@ -1,0 +1,424 @@
+/* Ludum · records.css — the records layer (sections 40–50), exactly as the Ludum Design System exports it.
+   The live design-system/css/ludum.css export leaves this layer out (handoff §8.4), so the platform pages load it after
+   ludum.css. Source: the Ludum Records Prototype's ludum.css, from its RECORDS banner to the end. Do not restyle here:
+   changes belong in the Design System, then a fresh copy of this section. */
+
+/* ==========================================================================
+   RECORDS — the signed-in layer: a player's record, the money ledger, case files,
+   the Ludum DAO's proposals and the restricted conduct review. Built from the house
+   vocabulary (stock, frame, rules, mono apparatus, Anton names); nothing here restyles
+   an existing component. Sections 40–49.
+   ========================================================================== */
+
+/* ---------- 40. Account slot in SiteNav: SIGN IN, or the player's name and a short menu ---------- */
+.ld-nav__acct { position: relative; display: flex; align-items: stretch; }
+.ld-nav__signin, .ld-nav__who {
+  position: relative; display: flex; align-items: center; gap: 10px; padding: 2px 22px 0; margin: 0;
+  font: 600 13px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap;
+  color: var(--on-frame); background: none; border: 0; border-left: 1px solid var(--rule); text-decoration: none; cursor: pointer;
+}
+.ld-nav__signin::after, .ld-nav__who::after {
+  content: ''; position: absolute; left: 22px; right: 22px; bottom: 0; height: 6px; background: var(--red);
+  transform: scaleX(0); transform-origin: 0 50%; transition: transform var(--ld-wipe);
+}
+.ld-nav__signin:hover::after, .ld-nav__who:hover::after, .ld-nav__who.is-hover::after { transform: scaleX(1); }
+.ld-nav__who[aria-expanded="true"]::after, .ld-nav__acct.is-current .ld-nav__who::after { transform: scaleX(1); background: var(--yellow); }
+.ld-nav__signin:focus-visible, .ld-nav__who:focus-visible { outline-offset: -6px; }
+.ld-nav__who-mark { width: 10px; height: 10px; background: var(--yellow); flex: none; }   /* signed in: a yellow square, the board's mark */
+.ld-nav__who .ld-icon { width: 16px; height: 16px; transition: transform var(--ld-wipe); }
+.ld-nav__who[aria-expanded="true"] .ld-icon { transform: rotate(180deg); }
+.ld-acct {
+  position: absolute; top: 100%; right: 0; z-index: 45; width: 300px; padding: 8px 0 12px;
+  background: var(--frame); color: var(--on-frame); border-top: 4px solid; border-image: linear-gradient(90deg, var(--neta-pink), var(--neta-cyan)) 1;
+}
+.ld-acct[hidden] { display: none; }
+.ld-acct__who { margin: 0; padding: 12px 20px 14px; border-bottom: 1px solid var(--rule); }
+.ld-acct__name { display: block; font: 400 28px/1 var(--font-display); text-transform: uppercase; }
+.ld-acct__user { display: block; margin-top: 6px; font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+.ld-acct__group { margin: 0; padding: 14px 20px 4px; font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+.ld-acct__list { margin: 0; padding: 0; list-style: none; }
+.ld-acct__list a {
+  position: relative; isolation: isolate; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 20px;
+  font: 600 13px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--on-frame); text-decoration: none;
+}
+.ld-acct__list a::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--yellow); transform: scaleY(0); transform-origin: 50% 0; transition: transform var(--ld-wipe); }
+.ld-acct__list a:hover, .ld-acct__list a.is-hover { color: var(--on-yellow); }
+.ld-acct__list a:hover::before, .ld-acct__list a.is-hover::before { transform: scaleY(1); }   /* the board's flap */
+.ld-acct__list a[aria-current] { box-shadow: inset 6px 0 0 var(--yellow); }
+.ld-acct__list a:focus-visible { outline-offset: -3px; }
+.ld-acct__list .ld-acct__tag { font-weight: 500; color: var(--ink-3); }
+.ld-acct__list a:hover .ld-acct__tag { color: var(--on-yellow); }
+.ld-acct__out { margin: 10px 20px 0; padding-top: 10px; border-top: 1px solid var(--rule); }
+.ld-acct__out button { padding: 6px 0; font: 600 12px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); background: none; border: 0; cursor: pointer; }
+.ld-acct__out button:hover { color: var(--yellow); }
+.ld-nav__sheet-acct { display: none; }
+.ld-nav__menu .ld-nav__who-mark { width: 8px; height: 8px; margin-right: 2px; }
+@media (max-width: 1023px) { .ld-nav__signin, .ld-nav__who { padding: 2px 16px 0; } .ld-nav__signin::after, .ld-nav__who::after { left: 16px; right: 16px; } }
+/* Phone: the slot leaves the bar; its entries join the menu sheet as one group above PLAY. */
+@media (max-width: 599px) {
+  .ld-nav__acct { display: none; }
+  .ld-nav__sheet-acct { display: block; margin-top: 28px; }
+  .ld-nav__sheet-acct .ld-acct__who { padding: 0 0 12px; }
+  .ld-nav__sheet-acct .ld-acct__group { padding: 14px 0 4px; }
+  .ld-nav__sheet-acct .ld-acct__list a { padding: 12px 0; font-size: 15px; border-bottom: 1px solid var(--rule); }
+  .ld-nav__sheet-acct .ld-acct__list a::before { left: -16px; right: -16px; }
+  .ld-nav__sheet-acct .ld-acct__out { margin: 8px 0 0; border-top: 0; }
+  .ld-nav__sheet-acct .ld-nav__signin { padding: 16px 0 12px; border: 0; border-bottom: 2px solid var(--rule); font-size: 15px; justify-content: space-between; }
+}
+
+/* ---------- 41. Specimen band: marks every preview built on mock data. Never on a live page. ---------- */
+.ld-specimen {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 10px var(--ld-margin);
+  background: var(--paper-2); border-bottom: 2px solid var(--rule-strong);
+  font: 500 12px/16px var(--font-mono); letter-spacing: .06em; color: var(--ink-2);
+}
+.ld-specimen b { padding: 3px 8px 2px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink); border: 2px dashed var(--ink); }
+
+/* ---------- 42. Record stamps: the states of games, money, cases, proposals and conduct reviews ----------
+   Ink only, so they never read as a project's status (the pigment plates). Three weights:
+   open (outline) — something is under way; held (hatched) — money held or a decision pending;
+   closed (solid ink) — final. A failed transaction is the one red. The word is the state. */
+.ld-stamp--rec { --s-bg: transparent; --s-fg: var(--ink); border-color: var(--ink); box-shadow: none; }
+.ld-stamp--rec.ld-stamp--s { box-shadow: none; }
+.ld-stamp--held { background-image: repeating-linear-gradient(135deg, var(--rule) 0 2px, transparent 2px 7px); }
+.ld-stamp--closed { --s-bg: var(--ink); --s-fg: var(--paper); border-color: var(--ink); }
+.ld-stamp--failed { --s-fg: var(--red-ink); border-color: var(--red); border-style: solid; }
+/* a record stamp that opens what it describes: a case's status opens its case file */
+a.ld-stamp--link { text-decoration: none; cursor: pointer; transition: color var(--ld-wipe), border-color var(--ld-wipe); }
+a.ld-stamp--link:hover { --s-fg: var(--red-ink); border-color: var(--red-ink); }
+a.ld-stamp--closed.ld-stamp--link:hover { --s-bg: var(--red-ink); --s-fg: var(--paper); border-color: var(--red-ink); }
+a.ld-stamp--link:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.ld-pj .ld-stamp--rec { --s-fg: var(--pj-ink); border-color: var(--pj-ink); }
+.ld-pj .ld-stamp--closed { --s-bg: var(--pj-ink); --s-fg: var(--pj-ground); }
+/* Due: the one mark that asks the reader to act (a vote open to you, a deadline near). Yellow square, ink words. */
+.ld-due { display: inline-flex; align-items: center; gap: 8px; font: 600 11px/14px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink); }
+.ld-due::before { content: ''; width: 10px; height: 10px; flex: none; background: var(--yellow); box-shadow: 0 0 0 1px var(--ink); }
+
+/* ---------- 43. Money in a ledger: signed amounts, units, totals ---------- */
+.ld-amt { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ld-amt--in { font-weight: 600; }
+.ld-amt--zero, .ld-amt--held { color: var(--ink-3); }
+.ld-amt--gain { color: var(--green-ink); font-weight: 600; }   /* a result above the ante: the sign carries it too */
+.ld-amt--loss { color: var(--red-ink); }
+.ld-record abbr { text-decoration: none; }
+.ld-wallet-bar { padding-top: 8px; }   /* Appeals & Disputes: the connected wallet, straight under the tabs' rule */
+.ld-wallet-bar .ld-meta { border-top: 0; }
+.ld-rectabs + .ld-restricted { margin-top: var(--space-5, 24px); }   /* Moderation: the band under the profile tabs */
+.ld-ledger__unit { margin-left: 6px; font: 500 10px/14px var(--font-mono); letter-spacing: .12em; color: var(--ink-3); }
+.ld-ledger thead th.is-num { text-align: right; }
+.ld-ledger thead .ld-ledger__unit { color: #958D7F; }
+.ld-pj--p18 .ld-ledger thead .ld-ledger__unit { color: var(--on-yellow); opacity: .72; }
+.ld-pj--cosmos .ld-ledger thead .ld-ledger__unit { color: var(--p20c-night); opacity: .72; }
+.ld-ledger tfoot td { padding: 12px 14px; border-top: 2px solid var(--rule-strong); border-bottom: 0; font: 600 14px/22px var(--font-mono); }
+.ld-ledger tfoot .ld-ledger__total { font: 400 22px/1 var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
+.ld-ledger tr.is-you td { background: var(--paper-2); }
+.ld-ledger tr.is-you td:first-child { box-shadow: inset 6px 0 0 var(--yellow); }
+.ld-ledger td a:not([class]) { text-decoration: none; border-bottom: 2px solid var(--red); }
+.ld-ledger td a:not([class]):hover { color: var(--red-ink); }
+.ld-ledger__sub { display: block; font: 400 12px/18px var(--font-mono); color: var(--ink-3); }
+.ld-ledger__go { width: 40px; text-align: right; }
+.ld-ledger__go a { border: 0; }
+.ld-ledger__go .ld-icon { width: 20px; height: 20px; transition: transform var(--ld-shift); }
+.ld-ledger tbody tr:hover .ld-ledger__go .ld-icon { transform: translateX(4px); }
+.ld-ledger--rows tbody tr { cursor: pointer; }
+.ld-pj--p18 .ld-ledger tr.is-you td { background: var(--p18-panel); }
+.ld-pj--p18 .ld-ledger tr.is-you td:first-child { box-shadow: inset 6px 0 0 var(--p18-gold); }
+.ld-pj--p18 .ld-ledger__unit, .ld-pj--p18 .ld-ledger__sub { color: var(--p18-text-muted); }
+.ld-pj--p18 .ld-ledger tfoot td { color: var(--p18-paper); border-top-color: var(--p18-gold-deep); border-bottom-color: var(--p18-gold-deep); }
+@media (max-width: 599px) {
+  .ld-ledger--stack tfoot, .ld-ledger--stack tfoot tr, .ld-ledger--stack tfoot td { display: block; width: 100%; }
+  .ld-ledger--stack tfoot td { display: flex; justify-content: space-between; border: 0; padding: 4px 0; }
+  .ld-ledger--stack tfoot tr { border-top: 2px solid var(--rule-strong); padding: 8px 0; }
+  .ld-ledger--stack tfoot td:empty { display: none; }
+  .ld-ledger--stack td.is-key { justify-content: flex-start; font: 400 22px/1.1 var(--font-display); text-transform: uppercase; }
+  .ld-ledger--stack td.is-key::before { display: none; }
+  .ld-ledger--stack .ld-ledger__go { display: none; }
+  .ld-ledger--stack tr.is-you { box-shadow: inset 6px 0 0 var(--yellow); padding-left: 12px; }
+  .ld-ledger--stack tr.is-you td, .ld-ledger--stack tr.is-you td:first-child { background: none; box-shadow: none; }
+}
+
+/* ---------- 44. Records pages: the page head with a who-is-looking line, account tabs, money summary ---------- */
+.ld-rechead { padding-block: var(--space-8, 64px) var(--space-6, 32px); }
+.ld-rechead__kicker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0 0 20px; }
+.ld-rechead__row { display: grid; grid-template-columns: 7fr 5fr; gap: var(--ld-gutter); align-items: end; }
+.ld-rechead__title { margin: 0; font: 400 var(--ld-d1)/.9 var(--font-display); text-transform: uppercase; letter-spacing: -.005em; overflow-wrap: anywhere; }
+.ld-rechead__title em { font-style: normal; color: var(--red); }
+.ld-rechead__dek { margin: 0 0 20px; max-width: 44ch; font: 400 20px/30px var(--font-sans); color: var(--ink-2); }
+.ld-rechead__no { display: block; margin-bottom: 22px; font: 500 14px/18px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+.ld-rectabs { margin-top: var(--space-6, 32px); }
+.ld-rectabs .ld-tabs { border-bottom: 2px solid var(--rule-strong); }
+/* the tabs' rule is the first section's rule: its head sits straight under it, without a gap or a second rule */
+:is(.ld-rectabs, .ld-restricted) + .ld-section--rec { padding-top: 0; }
+:is(.ld-rectabs, .ld-restricted) + .ld-section--rec > .ld-wrap > .ld-sechead:first-child { border-top: 0; padding-top: var(--space-5, 24px); }
+.ld-restricted + .ld-section--rec > .ld-wrap > .ld-sechead:first-child { padding-top: var(--space-6, 32px); }
+@media (max-width: 599px) {   /* the profile's tabs on a phone: two across, no sideways scroll */
+  .ld-rectabs .ld-tabs { display: grid; grid-template-columns: 1fr 1fr; overflow: visible; }
+  .ld-rectabs .ld-tabs > a { min-height: 48px; padding: 8px 12px 8px 0; font-size: 12px; line-height: 16px; white-space: normal; border-bottom: 1px solid var(--rule); }
+  .ld-rectabs .ld-tabs > a:nth-last-child(-n+2):nth-child(odd), .ld-rectabs .ld-tabs > a:last-child { border-bottom: 0; }
+  .ld-rectabs .ld-tabs > a::after { left: 0; right: 12px; }
+}
+.ld-sum { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); margin: 0; border-top: 4px solid var(--rule-strong); border-bottom: 2px solid var(--rule-strong); }
+.ld-sum > div { padding: 14px 16px 16px 0; margin-right: 16px; border-right: 1px solid var(--rule); min-width: 0; }
+.ld-sum > div:last-child { border-right: 0; margin-right: 0; }
+.ld-sum dt { margin: 0 0 10px; font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+.ld-sum dd { margin: 0; font: 400 var(--ld-d4)/1 var(--font-display); letter-spacing: .01em; white-space: nowrap; }
+.ld-sum dd small { display: block; margin-top: 8px; font: 500 11px/14px var(--font-mono); letter-spacing: .1em; color: var(--ink-3); text-transform: uppercase; }
+.ld-sum .is-net dd { color: var(--ink); }
+.ld-sum .is-net { background: var(--paper-2); padding-left: 16px; }
+.ld-twocol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-7, 48px); align-items: start; }
+.ld-twocol--wide { grid-template-columns: 7fr 5fr; }
+.ld-stack { display: grid; gap: var(--space-6, 32px); align-content: start; min-width: 0; }
+.ld-field-panel { padding: var(--space-6, 32px); }   /* a game's field set into the stock */
+.ld-field-panel .ld-sechead { margin-bottom: 28px; }
+.ld-facts { margin: 0; padding: 0; }   /* hairlines between the facts; no rule above the first or under the last */
+.ld-facts dt { padding: 14px 0 4px; font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+.ld-facts dd { margin: 0; padding: 2px 0 12px; border-bottom: 1px solid var(--rule); font: 400 16px/26px var(--font-sans); }
+.ld-facts dd:last-of-type { border-bottom: 0; padding-bottom: 0; }
+.ld-facts dt:first-of-type { padding-top: 0; }
+.ld-facts__note { margin: 12px 0 0; font: 400 13px/20px var(--font-mono); color: var(--ink-3); }
+.ld-code { margin: 0; padding: 16px 18px; overflow-x: auto; background: var(--sheet); border: 2px solid var(--rule-strong); font: 400 13px/20px var(--font-mono); white-space: pre; color: var(--ink); }
+.ld-hash { font: 400 13px/20px var(--font-mono); overflow-wrap: anywhere; }
+@media (max-width: 1279px) { .ld-sum { grid-template-columns: repeat(3, minmax(0, 1fr)); } .ld-sum > div:nth-child(3) { border-right: 0; margin-right: 0; } .ld-sum > div:nth-child(n+4) { border-top: 1px solid var(--rule); } }
+@media (max-width: 1023px) { .ld-rechead__row, .ld-twocol, .ld-twocol--wide { grid-template-columns: 1fr; gap: 28px; } }
+@media (max-width: 599px) {
+  .ld-rechead { padding-block: 40px 24px; }
+  .ld-rechead__dek { font-size: 17px; line-height: 27px; }
+  .ld-sum { grid-template-columns: 1fr 1fr; }
+  .ld-sum > div { margin-right: 0; padding: 12px 12px 14px 0; border-right: 0; border-top: 1px solid var(--rule); }
+  .ld-sum > div:nth-child(odd) { border-right: 1px solid var(--rule); margin-right: 12px; }
+  .ld-sum > div:nth-child(-n+2) { border-top: 0; }
+  .ld-sum .is-net { padding-left: 12px; }
+  .ld-field-panel { padding: 24px 16px; margin-inline: calc(-1 * var(--ld-margin)); }
+}
+
+/* ---------- 45. Notice: a sentence that changes what the reader can do here ---------- */
+.ld-notice { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; padding: 4px 20px 4px 0; }   /* the bar is the notice: no rules above or below */
+.ld-notice::before { content: ''; grid-row: 1 / span 3; width: 6px; background: var(--ink); }
+.ld-notice__label { margin: 0; font: 600 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+.ld-notice__text { margin: 0; font: 400 15px/24px var(--font-sans); color: var(--ink-2); max-width: 70ch; }
+.ld-notice__act { margin-top: 8px; }
+.ld-notice--due::before { background: var(--yellow); box-shadow: 0 0 0 1px var(--ink); }
+.ld-notice--stop::before { background: var(--red); }
+.ld-notice--stop .ld-notice__label { color: var(--red-ink); }
+.ld-notice--wait::before { background: repeating-linear-gradient(180deg, var(--ink) 0 4px, transparent 4px 8px); }
+.ld-pj .ld-notice { border-top-color: var(--pj-rule); border-bottom-color: var(--pj-rule); }
+.ld-pj .ld-notice::before { background: var(--pj-ink); }
+.ld-pj .ld-notice__text { color: var(--pj-ink-2); }
+
+/* Restricted: the head of every conduct-review page. A stripe band (rule-band) and the words; stock below. */
+.ld-restricted { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding: 0 var(--ld-margin) 0 0; background: var(--paper-2); }
+.ld-restricted__band { align-self: stretch; width: 48px; min-height: 44px; background: repeating-linear-gradient(135deg, var(--yellow) 0 8px, var(--ink) 8px 16px); }
+.ld-restricted p { margin: 0; padding: 12px 0; font: 600 12px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.ld-restricted span { font-weight: 500; color: var(--ink-3); text-transform: none; letter-spacing: .02em; }
+
+/* ---------- 46. Field: the form controls (proposals, votes, review decisions) ---------- */
+.ld-form { display: grid; gap: var(--space-6, 32px); }
+.ld-field { display: grid; gap: 8px; min-width: 0; }
+.ld-field__label { font: 600 12px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink); }
+.ld-field__hint { margin: 0; font: 400 14px/22px var(--font-sans); color: var(--ink-3); }
+.ld-input, .ld-textarea, .ld-select {
+  width: 100%; min-height: 48px; padding: 12px 14px; margin: 0;
+  font: 400 15px/22px var(--font-mono); color: var(--ink); background: var(--sheet);
+  border: 2px solid var(--rule-strong); border-radius: 0; -webkit-appearance: none; appearance: none;
+}
+.ld-textarea { min-height: 160px; font-family: var(--font-sans); font-size: 16px; line-height: 26px; resize: vertical; }
+.ld-input:focus-visible, .ld-textarea:focus-visible, .ld-select:focus-visible, .ld-input.is-focus { outline: 3px solid var(--focus); outline-offset: 3px; }
+.ld-input[readonly] { background: var(--paper-2); color: var(--ink-2); }
+.ld-field__foot { display: flex; justify-content: space-between; gap: 16px; font: 500 11px/14px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.ld-field.is-error .ld-input, .ld-field.is-error .ld-textarea { border-color: var(--red); }
+.ld-field__error { margin: 0; font: 600 12px/16px var(--font-mono); letter-spacing: .06em; color: var(--red-ink); }
+/* Choices: radio rows set as plates — the name in Anton, one line of consequence. */
+.ld-choices { display: grid; gap: 0; margin: 0; padding: 0; border: 0; min-width: 0; }
+.ld-choices:not(.ld-choices--row) > .ld-choice:first-of-type { border-top: 2px solid var(--rule-strong); }
+.ld-choices legend { padding: 0 0 12px; font: 600 12px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.ld-choices--row { grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: 16px; border-top: 0; }
+.ld-choice { position: relative; display: grid; grid-template-columns: 28px 1fr; gap: 4px 14px; padding: 18px 18px 18px 0; border-bottom: 1px solid var(--rule); cursor: pointer; }
+.ld-choices:not(.ld-choices--row) > .ld-choice:last-of-type { border-bottom: 0; }
+.ld-choices--row .ld-choice { padding: 18px; border: 2px solid var(--rule-strong); }
+.ld-choice input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.ld-choice__box { grid-row: 1 / span 2; width: 24px; height: 24px; margin-top: 2px; border: 2px solid var(--ink); background: var(--sheet); }
+.ld-choice__name { font: 400 26px/1 var(--font-display); text-transform: uppercase; letter-spacing: .01em; }
+.ld-choice__line { grid-column: 2; margin: 0; font: 400 14px/22px var(--font-sans); color: var(--ink-2); }
+.ld-choice:hover { background: var(--paper-2); }
+.ld-choice:has(input:checked) .ld-choice__box, .ld-choice.is-checked .ld-choice__box { background: var(--ink); box-shadow: inset 0 0 0 4px var(--sheet); }
+.ld-choices--row .ld-choice:has(input:checked), .ld-choices--row .ld-choice.is-checked { border-color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); background: var(--paper-2); }
+.ld-choice:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 3px; }
+.ld-choice.is-disabled { cursor: not-allowed; color: var(--ink-3); background-image: repeating-linear-gradient(135deg, var(--rule) 0 2px, transparent 2px 9px); }
+.ld-choice.is-disabled .ld-choice__box { border-color: var(--ink-3); background: transparent; }
+.ld-choice.is-disabled .ld-choice__line { color: var(--ink-3); }
+.ld-check { display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: start; font: 400 15px/24px var(--font-sans); cursor: pointer; }
+.ld-check input { width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--ink); }
+.ld-switch { display: inline-flex; align-items: center; gap: 0; border: 2px solid var(--rule-strong); }
+.ld-switch span { padding: 6px 12px 5px; font: 600 11px/14px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.ld-switch .is-on { background: var(--ink); color: var(--paper); }
+.ld-steps { margin: 0; padding: 0; list-style: none; counter-reset: ld-step; display: grid; gap: var(--space-7, 48px); }
+.ld-steps > li { display: grid; grid-template-columns: minmax(64px, 1fr) 11fr; column-gap: var(--ld-gutter); padding-top: 14px; border-top: 2px solid var(--rule-strong); }
+.ld-steps__no { font: 500 12px/16px var(--font-mono); letter-spacing: .1em; padding-top: 6px; }
+.ld-steps__title { margin: 0 0 20px; font: 400 var(--ld-d4)/1 var(--font-display); text-transform: uppercase; }
+@media (max-width: 1023px) { .ld-choices--row { grid-template-columns: 1fr; } }
+@media (max-width: 599px) { .ld-steps > li { grid-template-columns: 1fr; row-gap: 8px; } }
+
+/* ---------- 47. Docket: a case's or a game's history, with the deadlines still ahead ---------- */
+.ld-docket { margin: 0; padding: 0; list-style: none; }   /* always under a section head, whose rule is the only one above it */
+.ld-docket__item { position: relative; display: grid; grid-template-columns: 200px 40px minmax(0, 1fr) auto; column-gap: 8px; padding: 16px 0 18px; }
+.ld-docket__item::before { content: ''; position: absolute; left: 219px; top: 0; bottom: 0; width: 2px; background: var(--ink); }
+.ld-docket__item:first-child::before { top: 22px; }
+.ld-docket__item:last-child::before { bottom: calc(100% - 22px); }
+.ld-docket__item.is-due::before, .ld-docket__item.is-due + .ld-docket__item::before { background: repeating-linear-gradient(180deg, var(--ink) 0 4px, transparent 4px 9px); }
+.ld-docket__when { padding-top: 2px; font: 500 12px/18px var(--font-mono); letter-spacing: .06em; color: var(--ink-3); text-transform: uppercase; }
+.ld-docket__when b { display: block; font-weight: 600; color: var(--ink); }
+.ld-docket__mark { position: relative; z-index: 1; justify-self: center; width: 14px; height: 14px; margin-top: 5px; background: var(--ink); box-shadow: 0 0 0 4px var(--paper); }
+.ld-docket__item.is-due .ld-docket__mark { background: var(--paper); border: 2px solid var(--ink); }
+.ld-docket__item.is-now .ld-docket__mark { background: var(--yellow); border: 2px solid var(--ink); width: 18px; height: 18px; margin-top: 3px; }
+.ld-docket__what { margin: 0; font: 400 22px/1.05 var(--font-display); text-transform: uppercase; letter-spacing: .01em; }
+.ld-docket__line { margin: 6px 0 0; font: 400 15px/24px var(--font-sans); color: var(--ink-2); max-width: 64ch; }
+.ld-docket__by { display: block; margin-top: 6px; font: 500 11px/14px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.ld-docket__aside { padding-top: 2px; text-align: right; }
+.ld-docket__item.is-due .ld-docket__what { color: var(--ink-2); }
+.ld-docket__item.is-now { background: linear-gradient(90deg, transparent 0 200px, var(--paper-2) 200px); }
+@media (max-width: 599px) {
+  .ld-docket__item { grid-template-columns: 28px minmax(0, 1fr); row-gap: 4px; }
+  .ld-docket__item::before { left: 6px; }
+  .ld-docket__when { grid-column: 2; grid-row: 1; }
+  .ld-docket__mark { grid-column: 1; grid-row: 1; justify-self: start; }
+  .ld-docket__item.is-now .ld-docket__mark { margin-left: -2px; }
+  .ld-docket__main { grid-column: 2; }
+  .ld-docket__aside { grid-column: 2; text-align: left; padding-top: 6px; }
+  .ld-docket__item.is-now { background: none; }
+}
+
+/* ---------- 48. Vote tally: a proposal's count against its quorum and threshold ---------- */
+.ld-tally { display: grid; gap: 22px; margin: 0; }
+.ld-tally__row { display: grid; grid-template-columns: 140px minmax(0, 1fr) 150px; align-items: center; column-gap: 20px; }
+.ld-tally__name { font: 400 28px/1 var(--font-display); text-transform: uppercase; }
+.ld-tally__bar { position: relative; height: 28px; background: var(--paper-2); box-shadow: inset 0 0 0 1px var(--rule); }
+.ld-tally__fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ink); }
+.ld-tally__fill--no { background: repeating-linear-gradient(135deg, var(--ink) 0 3px, transparent 3px 7px); box-shadow: inset 0 0 0 2px var(--ink); }
+.ld-tally__fill--abstain { background: var(--rule); }
+.ld-tally__mark { position: absolute; top: -10px; bottom: -10px; width: 0; border-left: 2px dashed var(--red); }
+.ld-tally__mark span { position: absolute; top: -18px; left: 6px; white-space: nowrap; font: 600 10px/12px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--red-ink); }
+.ld-tally__fig { text-align: right; font: 600 14px/18px var(--font-mono); font-variant-numeric: tabular-nums; }
+.ld-tally__fig small { display: block; font: 500 11px/14px var(--font-mono); letter-spacing: .08em; color: var(--ink-3); }
+.ld-tally__turnout { padding-top: 22px; border-top: 1px solid var(--rule); }
+.ld-tally__turnout .ld-tally__name { font: 600 12px/16px var(--font-mono); letter-spacing: .1em; }
+.ld-tally__turnout .ld-tally__fill { background: var(--ink-3); }
+.ld-tally__src { margin: 18px 0 0; font: 400 13px/20px var(--font-mono); color: var(--ink-3); }
+@media (max-width: 599px) {
+  .ld-tally__row { grid-template-columns: 1fr auto; row-gap: 10px; }
+  .ld-tally__bar { grid-column: 1 / -1; grid-row: 2; }
+  .ld-tally__name { font-size: 24px; }
+}
+
+/* ---------- 49. Receipt: one transaction as the chain recorded it ---------- */
+.ld-receipt { position: relative; margin: 0; padding: 0 0 4px; background: var(--sheet); border: 2px solid var(--rule-strong); max-width: 560px; }
+.ld-receipt__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px 12px; border-bottom: 2px dashed var(--rule-strong); }
+.ld-receipt__title { margin: 0; font: 400 24px/1 var(--font-display); text-transform: uppercase; }
+.ld-receipt dl { display: grid; grid-template-columns: 132px minmax(0, 1fr); margin: 0; padding: 6px 18px 0; }
+.ld-receipt dt { padding: 8px 0; border-bottom: 1px solid var(--rule); font: 500 11px/18px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+.ld-receipt dd { margin: 0; padding: 8px 0; border-bottom: 1px solid var(--rule); font: 400 13px/18px var(--font-mono); color: var(--ink); overflow-wrap: anywhere; }
+.ld-receipt dl > :nth-last-child(-n+2) { border-bottom: 0; }
+.ld-receipt__foot { display: flex; justify-content: space-between; gap: 12px; padding: 12px 18px 10px; border-top: 1px solid var(--rule); }
+.ld-receipt--failed { border-color: var(--red); }
+.ld-receipt--failed .ld-receipt__head { border-bottom-color: var(--red); }
+.ld-receipt__log { margin: 0 18px 12px; padding: 10px 12px; background: var(--paper-2); font: 400 12px/18px var(--font-mono); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 599px) { .ld-receipt dl { grid-template-columns: 1fr; } .ld-receipt dt { border-bottom: 0; padding-bottom: 0; } }
+
+/* A key-to-the-states list (the record stamps with one sentence each), like the projects index's status key. */
+.ld-keylist { margin: 0; padding: 0; list-style: none; border-top: 2px solid var(--rule-strong); }
+.ld-keylist li:last-child { border-bottom: 0; }
+.ld-keylist li { display: grid; grid-template-columns: 220px 1fr; gap: var(--ld-gutter); align-items: center; padding: 12px 0; border-bottom: 1px solid var(--rule); font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
+@media (max-width: 599px) { .ld-keylist li { grid-template-columns: 1fr; gap: 6px; } }
+
+/* ---------- 44b. Records in a game's field; the steps of an appeal; outcomes side by side ---------- */
+.ld-pj .ld-sum { border-top-color: var(--pj-rule); border-bottom-color: var(--pj-rule); }
+.ld-pj .ld-sum > div { border-right-color: rgba(127, 110, 80, .35); }
+.ld-pj .ld-sum dt { color: var(--pj-ink-3); }
+.ld-pj .ld-sum dd { color: var(--pj-ink); }
+.ld-pj .ld-sum dd small { color: var(--pj-ink-3); }
+.ld-sum--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ld-sum--3 > div:nth-child(3n) { border-right: 0; margin-right: 0; }
+.ld-sum--3 > div:nth-child(n+4) { border-top: 1px solid var(--rule); }
+.ld-pj .ld-sum--3 > div:nth-child(n+4) { border-top-color: rgba(127, 110, 80, .35); }
+.ld-sum--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ld-sum--5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.ld-field-panel__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; margin-bottom: 24px; }   /* the panel's ground is its edge */
+.ld-field-panel__name { margin: 0; font: 400 var(--ld-d3)/.9 var(--font-display); text-transform: uppercase; color: var(--pj-accent, var(--pj-ink)); }
+.ld-field-panel__no { font: 500 12px/16px var(--font-mono); letter-spacing: .1em; color: var(--pj-ink-3); }
+.ld-field-panel p { color: var(--pj-ink-2); }
+.ld-pj .ld-facts { border-top-color: var(--pj-rule); }
+.ld-pj .ld-facts dt { color: var(--pj-ink-3); }
+.ld-pj .ld-facts dd { color: var(--pj-ink); border-bottom-color: rgba(127, 110, 80, .35); }
+.ld-achv { margin: 0; padding: 0; list-style: none; border-top: 2px solid var(--pj-rule, var(--rule-strong)); }
+.ld-achv li { display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; padding: 12px 0; border-bottom: 1px solid rgba(127, 110, 80, .35); }
+.ld-achv li:last-child { border-bottom: 0; }
+.ld-achv b { font: 400 22px/1 var(--font-display); text-transform: uppercase; font-weight: 400; color: var(--pj-ink, var(--ink)); }
+.ld-achv span { grid-column: 1; font: 400 14px/22px var(--font-sans); color: var(--pj-ink-2, var(--ink-2)); }
+.ld-achv i { grid-column: 2; grid-row: 1 / span 2; align-self: center; font: 500 11px/14px var(--font-mono); font-style: normal; letter-spacing: .1em; text-transform: uppercase; color: var(--pj-ink-3, var(--ink-3)); }
+.ld-outcomes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.ld-outcome { padding: 18px 18px 16px; border: 2px solid var(--rule-strong); background: var(--sheet); min-width: 0; }
+.ld-outcome--alt { border-style: dashed; background: transparent; }
+.ld-outcome h3 { margin: 0 0 6px; font: 400 28px/1 var(--font-display); text-transform: uppercase; font-weight: 400; }
+.ld-outcome p { margin: 0 0 14px; font: 400 14px/22px var(--font-sans); color: var(--ink-2); }
+.ld-outcome dl { display: grid; grid-template-columns: 1fr auto; margin: 0; border-top: 1px solid var(--rule-strong); font: 400 13px/20px var(--font-mono); }
+.ld-outcome dt, .ld-outcome dd { margin: 0; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.ld-outcome dl > :nth-last-child(-n+2) { border-bottom: 0; }
+.ld-outcome dd { text-align: right; font-variant-numeric: tabular-nums; }
+.ld-outcome dt.is-you, .ld-outcome dt.is-you + dd { font-weight: 600; }
+.ld-wallet { display: grid; gap: 20px; }
+@media (max-width: 1279px) { .ld-outcomes { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ld-sum--5 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 1023px) { .ld-sum--4 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 599px) {
+  .ld-outcomes { grid-template-columns: 1fr; }
+  .ld-sum--3, .ld-sum--5 { grid-template-columns: 1fr 1fr; }
+  .ld-sum--3 > div:nth-child(3n) { border-right: 0; }
+  .ld-sum--3 > div:nth-child(odd), .ld-sum--5 > div:nth-child(odd) { border-right: 1px solid var(--rule); margin-right: 12px; }
+  .ld-sum--3 > div:nth-child(even) { border-right: 0; margin-right: 0; }
+}
+.ld-link--back:hover .ld-icon, .ld-link--back.is-hover .ld-icon { transform: translateX(-4px); }
+/* SectionHead, small: records pages are working pages; their sections open at d4 so the ledgers carry the page. */
+.ld-sechead--s { margin-bottom: var(--space-6, 32px); }
+.ld-sechead--s .ld-sechead__title { font-size: var(--ld-d4); line-height: 1; }
+.ld-sechead--s .ld-sechead__dek { margin-top: 8px; }
+.ld-section--rec { padding-block: var(--space-8, 64px); }
+.ld-section--rec + .ld-section--rec { padding-top: 0; }
+@media (max-width: 599px) { .ld-section--rec { padding-block: 40px; } }
+.ld-twocol > *, .ld-form { min-width: 0; }
+@media (max-width: 599px) { .ld-form .ld-btn, .ld-stack .ld-btn { white-space: normal; text-align: left; max-width: 100%; } }
+
+.ld-rechead__title--m { font-size: var(--ld-d2); line-height: .92; }
+.ld-id { font: inherit; text-transform: none; letter-spacing: .04em; }
+.ld-nowrap { white-space: nowrap; }
+
+/* Ledger cells keep their lines together when a row stacks on a phone. */
+.ld-ledger__val { display: inline; }
+@media (max-width: 599px) {
+  .ld-ledger--stack .ld-ledger__val { display: block; min-width: 0; }
+  .ld-ledger--stack .ld-ledger__val .ld-ledger__sub { display: block; }
+  .ld-tally { gap: 34px; }
+  .ld-tally__mark span { top: auto; bottom: -20px; }
+}
+@media (max-width: 599px) {
+  .ld-ledger--stack td:first-child { justify-content: flex-start; text-align: left; }
+  .ld-ledger--stack td:first-child .ld-ledger__sub { font: 400 12px/18px var(--font-mono); text-transform: none; }
+  .ld-ledger--stack tfoot td:first-child { font: inherit; }
+}
+
+/* ---------- 50. Disclosure and VerticalFlow: what a reader may want once, one click away ---------- */
+.ld-disclose { border-top: 2px solid var(--rule-strong); }
+.ld-disclose > summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; list-style: none; cursor: pointer;
+  font: 600 13px/18px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink); transition: color var(--ld-shift); }
+.ld-disclose > summary::-webkit-details-marker { display: none; }
+.ld-disclose > summary:hover { color: var(--red-ink); }
+.ld-disclose > summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.ld-disclose > summary .ld-icon { flex: none; width: 20px; height: 20px; }
+.ld-disclose__minus, .ld-disclose[open] .ld-disclose__plus { display: none; }
+.ld-disclose[open] .ld-disclose__minus { display: block; }
+.ld-disclose__body { padding: 8px 0 28px; }
+.ld-vflow { max-width: 680px; margin: 0; padding: 0; list-style: none; }
+.ld-vflow > li { position: relative; display: grid; gap: 6px; padding: 0 0 40px 40px; }
+.ld-vflow > li:last-child { padding-bottom: 0; }
+.ld-vflow > li::before { content: ''; position: absolute; left: 0; top: 4px; width: 14px; height: 14px; background: var(--ink); }   /* the step */
+.ld-vflow > li:not(:last-child)::after { content: ''; position: absolute; left: 6px; top: 22px; bottom: 22px; width: 2px; background: var(--ink); }   /* down to the next */
+.ld-vflow__arrow { position: absolute; left: -5px; bottom: 4px; width: 24px; height: 24px; }
+.ld-vflow__name { font: 400 24px/1 var(--font-display); text-transform: uppercase; }
+.ld-vflow__text { max-width: 60ch; font: 400 15px/24px var(--font-sans); color: var(--ink-2); }

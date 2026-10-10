@@ -10,6 +10,9 @@
  *   - an escrow-state difference alone is a read-time difference (both are reads of a moving chain): shown as such;
  *   - every fact keeps the provenance the server gave it; "unavailable" keeps its reason; nothing is filled in.
  *
+ * v1.1 (1830Juno §5.1, additive): a seat may carry `displayName` (the table name, or null) and the record may carry
+ * `transactions` (what the server relayed for the game). Both are optional, and checked exactly when present.
+ *
  * Pure: no DOM and no globals (the caller passes the pins it expects), so node --test can load it. */
 (function (root) {
   'use strict';
@@ -17,6 +20,8 @@
   var PROVENANCES = ['chain-confirmed', 'chain-observed', 'server-recorded', 'pending', 'unavailable'];
   var ESCROW_STATES = ['funding', 'funded', 'in_progress', 'settleable', 'disputed', 'settled', 'cancelled', 'annulled'];
   var RECORD_KEYS = ['chainGameId', 'chainId', 'chainSettlement', 'contract', 'dispute', 'escrow', 'evidenceMatches', 'seats', 'serverTerminal'];
+  var TX_OPS = ['start', 'checkpoint', 'settle', 'finalize', 'consent', 'annul', 'remedy'];
+  var TX_HASH = /^[0-9A-F]{64}$/;
   var EVIDENCE = ['server-log', 'server-board', 'neither'];
   var HEX64 = /^[0-9a-f]{64}$/i;
   var DIGITS = /^(0|[1-9]\d*)$/;
@@ -26,6 +31,8 @@
 
   function isObj(v) { return typeof v === 'object' && v !== null && !Array.isArray(v); }
   function keysExactly(o, keys) { var k = Object.keys(o).sort(), w = keys.slice().sort(); return k.length === w.length && k.every(function (x, i) { return x === w[i]; }); }
+  /** Exactly `keys`, plus any of `optional` that are present. */
+  function keysWithin(o, keys, optional) { return keysExactly(o, keys.concat(optional.filter(function (k) { return Object.prototype.hasOwnProperty.call(o, k); }))); }
 
   /* ---- One §4 Fact: value null iff unavailable; unavailable carries a reason; chain facts carry their read time. ---- */
   function checkFact(f, where, problems, valueCheck, allowed) {
@@ -48,7 +55,7 @@
   function validateRecord(rec, expect) {
     var p = [];
     if (!isObj(rec)) return { ok: false, problems: ['the answer is not a case record'] };
-    if (!keysExactly(rec, RECORD_KEYS)) p.push('the record does not have exactly the §5 fields');
+    if (!keysWithin(rec, RECORD_KEYS, ['transactions'])) p.push('the record does not have exactly the §5 fields');
     if (rec.chainGameId !== expect.chainGameId) p.push('the record is for game ' + String(rec.chainGameId) + ', not #' + expect.chainGameId);
     if (rec.contract !== expect.contract) p.push('the record names a different escrow contract');
     if (rec.chainId !== expect.chainId) p.push('the record names a different chain');
@@ -56,7 +63,8 @@
     var challenger = isObj(rec.dispute) && isObj(rec.dispute.value) ? rec.dispute.value.challenger : null;
     if (!Array.isArray(rec.seats) || rec.seats.length > 7) p.push('seats is not a seat list');
     else rec.seats.forEach(function (s, i) {
-      if (!isObj(s) || !keysExactly(s, ['chainSeatIndex', 'isChallenger', 'wallet']) || s.chainSeatIndex !== i || !ADDR.test(String(s.wallet)) || typeof s.isChallenger !== 'boolean') p.push('seat ' + i + ' is malformed');
+      if (!isObj(s) || !keysWithin(s, ['chainSeatIndex', 'isChallenger', 'wallet'], ['displayName']) || s.chainSeatIndex !== i || !ADDR.test(String(s.wallet)) || typeof s.isChallenger !== 'boolean') p.push('seat ' + i + ' is malformed');
+      else if (s.displayName !== undefined && s.displayName !== null && !(typeof s.displayName === 'string' && s.displayName.length > 0 && s.displayName.length <= 64)) p.push('seat ' + i + ' has a malformed display name');
       else if (s.isChallenger !== (challenger !== null && s.wallet === challenger)) p.push('seat ' + i + ' is marked inconsistently with the challenger');
     });
     checkFact(rec.dispute, 'dispute', p, function (v, q) {
@@ -72,7 +80,23 @@
       else if (Array.isArray(rec.seats) && v.totalsBySeat.length !== rec.seats.length) q.push('serverTerminal does not cover every seat');
     }, ['server-recorded', 'unavailable']);
     checkFact(rec.evidenceMatches, 'evidenceMatches', p, function (v, q) { if (EVIDENCE.indexOf(v) === -1) q.push('evidenceMatches is not a known verdict'); });
+    if (rec.transactions !== undefined) checkTransactions(rec.transactions, p);
     return { ok: p.length === 0, problems: p };
+  }
+
+  /* v1.1: the transactions the server relayed. Each is included (a chain observation, with its height) or broadcast
+     (pending); nothing else is a transaction worth naming. */
+  function checkTransactions(t, p) {
+    checkFact(t, 'transactions', p, function (v, q) {
+      if (!isObj(v) || !keysExactly(v, ['relayed', 'walletSigned']) || v.walletSigned !== 'not-server-recorded' || !Array.isArray(v.relayed) || v.relayed.length > 256) { q.push('transactions is malformed'); return; }
+      v.relayed.forEach(function (x, i) {
+        var ok = isObj(x) && keysExactly(x, ['at', 'op', 'status', 'txHash']) && TX_OPS.indexOf(x.op) !== -1 && TX_HASH.test(String(x.txHash)) && ISO.test(String(x.at)) && isObj(x.status);
+        if (!ok) { q.push('transaction ' + i + ' is malformed'); return; }
+        var st = x.status;
+        if (!((st.value === 'included' && st.provenance === 'chain-observed') || (st.value === 'broadcast' && st.provenance === 'pending'))) q.push('transaction ' + i + ' has an impossible status');
+        if (st.height !== undefined && !(typeof st.height === 'string' && DIGITS.test(st.height))) q.push('transaction ' + i + ' has a malformed height');
+      });
+    }, ['server-recorded', 'unavailable']);
   }
 
   /* The record against this browser's own chain read (`game` from the escrow `game` query, `seats` from `seats`).

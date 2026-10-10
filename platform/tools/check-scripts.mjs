@@ -8,7 +8,7 @@
 //   - a <script src> must be that exact radio URL, or a root-relative path to a file in this repository
 //     (no scheme, no `//host`, no `..`, no query or fragment);
 //   - the same for <link rel="modulepreload"> and <link rel="preload" as="script">.
-// And in the API pages -- me/, disputes/, governance/ and everything under them -- also:
+// And in the API pages -- me/, disputes/, governance/, moderation/ and everything under them -- also:
 //   - no inline <script> at all (the CSP there has no 'unsafe-inline'), no on*= handler attribute, no javascript: URL;
 //   - the §2.4 meta CSP is the FIRST element in <head>, exactly as written (whitespace aside). me/ may omit the two
 //     chain read endpoints from connect-src (§2.4: "Lane C's /me/ may omit them"); nothing else may differ.
@@ -18,7 +18,10 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const RADIO_URL = "https://netadao.org/radio/radio.js";
-export const API_DIRS = Object.freeze(["me", "disputes", "governance"]);
+export const API_DIRS = Object.freeze(["me", "disputes", "governance", "moderation"]);
+/** The API pages that read no chain endpoint, and so may omit them from connect-src (§2.4 allowed this for /me/; v1.1
+ *  adds /moderation/, which reads only Play). */
+export const NO_CHAIN_DIRS = Object.freeze(["me", "moderation"]);
 
 const CHAIN_READS = "https://juno.api.t.stavr.tech https://d3d68n2c5eingb.cloudfront.net";
 /** §2.4, verbatim (one directive per line there). */
@@ -117,7 +120,7 @@ export function checkPage(rel, html, root) {
       if (!isCsp) problems.push("the §2.4 meta CSP is not the first element in <head>");
       else {
         const policy = normalise(attrs.get("content") ?? "");
-        const allowed = rel === "me" || rel.startsWith("me/") ? [CSP_POLICY, CSP_POLICY_ME] : [CSP_POLICY];
+        const allowed = NO_CHAIN_DIRS.some((dir) => rel === dir || rel.startsWith(`${dir}/`)) ? [CSP_POLICY, CSP_POLICY_ME] : [CSP_POLICY];
         if (!allowed.some((expected) => normalise(expected) === policy)) problems.push("the meta CSP differs from §2.4");
       }
     }

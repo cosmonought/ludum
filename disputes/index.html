@@ -11,6 +11,7 @@
 <meta name="theme-color" content="#0B0B0B">
 <link rel="preload" href="/design-system/fonts/Anton-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/design-system/css/ludum.css">
+<link rel="stylesheet" href="/platform/css/records.css">
 <style>.pg-head { padding-block: var(--space-8, 64px) var(--space-6, 32px); }
 .pg-head__kicker { margin: 0 0 24px; }
 .pg-head__title { margin: 0; font: 400 var(--ld-d1)/.84 var(--font-display); text-transform: uppercase; letter-spacing: -.005em; overflow-wrap: anywhere; }
@@ -46,7 +47,7 @@
 <a class="ld-skip" href="#main">Skip to content</a><header class="ld-nav" data-theme="press">
   <div class="ld-nav__bar">
     <a class="ld-nav__home" href="/" aria-label="Ludum, home"><span class="ld-nav__name">Ludum</span><span class="ld-nav__by">Games by<br>Neta DAO</span></a>
-    <nav class="ld-nav__links" id="ld-menu" aria-label="Main"><a href="/projects/"><span>Projects</span><span class="ld-nav__no" aria-hidden="true">01</span></a><a href="/about/"><span>About</span><span class="ld-nav__no" aria-hidden="true">02</span></a>
+    <nav class="ld-nav__links" id="ld-menu" aria-label="Main"><div class="ld-nav__drop"><button class="ld-nav__drop-btn" type="button" aria-expanded="false" aria-controls="ld-projects"><span>Projects</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v17M6 14l6 6 6-6"/></svg></button><a class="ld-nav__drop-link" href="/projects/"><span>Projects</span><span class="ld-nav__no" aria-hidden="true">01</span></a><div class="ld-nav__sub" id="ld-projects"><ul><li><a href="/projects/project-18xx/"><span class="ld-nav__sub-kick">LUD—01 · 18xx</span><span class="ld-nav__sub-name">Project 18XX</span></a></li><li><a href="/projects/20-cosmos/"><span class="ld-nav__sub-kick">LUD—02 · 18xx</span><span class="ld-nav__sub-name">20 Cosmos</span></a></li></ul><a class="ld-nav__sub-all" href="/projects/">All projects<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a></div></div><a href="/about/"><span>About</span><span class="ld-nav__no" aria-hidden="true">02</span></a>
       <div class="ld-nav__panel-foot"><a class="ld-play ld-play--l" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a><p>Ludum publishes. The games run on play.netadao.org.</p></div>
     </nav>
     <a class="ld-play" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a>
@@ -61,12 +62,24 @@
 </main><footer class="ld-footer" data-theme="press">
   <span class="ld-footer__band" aria-hidden="true"></span>
   <div class="ld-wrap ld-footer__inner">
+    <a class="ld-footer__name" href="/">Ludum</a>
+    <nav class="ld-footer__nav" aria-label="Neta DAO">
+      <ul class="ld-footer__sites"><li><a href="https://academy.netadao.org">Academy</a></li><li><a href="https://fork.netadao.org">Fork</a></li><li><a href="https://ludum.netadao.org" aria-current="true">Ludum</a></li></ul>
+      <ul class="ld-footer__marks">
+        <li><a class="ld-footer__icon" href="https://x.com/Neta_DAO" aria-label="Neta DAO on X"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117Z"/></svg></a></li>
+        <li><a class="ld-footer__icon" href="https://discord.com/invite/gvjC86WXC2" aria-label="Neta DAO on Discord"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515c-.074.127-.158.298-.217.432a18.27 18.27 0 0 0-5.487 0 4.64 4.64 0 0 0-.218-.432A19.736 19.736 0 0 0 4.625 4.37 20.02 20.02 0 0 0 1 18.855a19.9 19.9 0 0 0 5.993 3.03 14.62 14.62 0 0 0 1.226-1.994 12.7 12.7 0 0 1-1.93-.934c.162-.12.32-.246.474-.373a14.18 14.18 0 0 0 12.281 0c.155.127.313.252.475.373-.616.366-1.265.68-1.93.934a14.49 14.49 0 0 0 1.225 1.994 19.87 19.87 0 0 0 5.994-3.03A20.03 20.03 0 0 0 20.317 4.37ZM8.02 15.332c-1.17 0-2.128-1.065-2.128-2.366S6.85 10.6 8.02 10.6c1.18 0 2.147 1.075 2.128 2.366 0 1.301-.947 2.366-2.128 2.366Zm7.974 0c-1.17 0-2.128-1.065-2.128-2.366s.958-2.366 2.128-2.366c1.18 0 2.147 1.075 2.128 2.366 0 1.301-.947 2.366-2.128 2.366Z"/></svg></a></li>
+        <li><a class="ld-footer__neta" href="https://netadao.org" aria-label="Neta DAO"><img src="/assets/logos/neta-mark-loop.webp" alt="" width="160" height="106" loading="lazy"></a></li>
+      </ul>
+    </nav>
     <p class="ld-footer__print">© 2026 Neta DAO</p>
-    <a class="ld-footer__neta" href="https://netadao.org"><span>A Neta DAO project</span><img src="/assets/logos/neta-mark-night.png" alt="Neta DAO" width="251" height="192"></a>
   </div>
 </footer>
 <script src="/design-system/js/ludum.js"></script>
+<script src="/platform/js/session.js"></script>
+<script src="/platform/js/records.js"></script>
+<script src="/platform/js/account-menu.js"></script>
 <script src="/platform/js/gov.js"></script>
+<script src="/platform/js/gov-case.js"></script>
 <script src="/platform/js/gov-page.js"></script>
 </body>
 </html>

@@ -16,6 +16,13 @@
  *                                     something unreadable. On 401 with {redirectOnSignedOut: true}, goes to sign in.
  *   LudumSession.signInUrl(path)      https://play.netadao.org/?ludum=signin&return=<path>  (path: this page's, by default;
  *                                     one that is not ^/[a-z0-9/_-]{0,128}$ returns to "/")
+ *   LudumSession.signOutUrl(path)     v1.1: https://play.netadao.org/?ludum=signout&return=<path> -- Play asks once, ends
+ *                                     this browser's session, and returns (Ludum never ends Play's session itself)
+ *   LudumSession.confirmUrl(path)     v1.1: https://play.netadao.org/?ludum=confirm&return=<path> -- "Confirm it's you" on
+ *                                     Play (the password is only typed there), then back
+ *
+ * v1.1 routes (1830Juno §5.1): "account", "display-name", "moderation-queue", "moderation-case", "moderation-decide".
+ * Their extra error codes: "conflict" (409, with `detail`) and "reauth-required" (403, with `confirmUrl`).
  *
  * Every call is exactly the §2.1 fetch: POST, mode "cors", credentials "include", cache "no-store", redirect "error",
  * Content-Type application/json, a JSON body.
@@ -25,24 +32,29 @@
 
   var PLAY_ORIGIN = 'https://play.netadao.org';
   var API_BASE = PLAY_ORIGIN + '/gs/api/ludum/v1/';
-  var ROUTES = ['session', 'games', 'game', 'case'];
+  var ROUTES = ['session', 'games', 'game', 'case', 'account', 'display-name', 'moderation-queue', 'moderation-case', 'moderation-decide'];
   var RETURN_PATH = /^\/[a-z0-9\/_-]{0,128}$/;
 
-  function ApiError(status, error, detail) {
+  function ApiError(status, error, detail, extra) {
     this.name = 'LudumApiError';
     this.status = status;
     this.error = error;
     this.detail = detail === undefined ? null : detail;
+    this.confirmUrl = extra && typeof extra.confirmUrl === 'string' && extra.confirmUrl.indexOf(PLAY_ORIGIN + '/?ludum=confirm&return=') === 0 ? extra.confirmUrl : null;
+    this.reason = extra && typeof extra.reason === 'string' ? extra.reason : null;
     this.message = 'Ludum API: ' + error + (status ? ' (' + status + ')' : '');
   }
   ApiError.prototype = Object.create(Error.prototype);
   ApiError.prototype.constructor = ApiError;
 
-  function signInUrl(returnPath) {
+  function playUrl(mode, returnPath) {
     var path = returnPath === undefined ? (window.location && window.location.pathname) || '/' : String(returnPath);
     if (!RETURN_PATH.test(path)) path = '/';
-    return PLAY_ORIGIN + '/?ludum=signin&return=' + encodeURIComponent(path);
+    return PLAY_ORIGIN + '/?ludum=' + mode + '&return=' + encodeURIComponent(path);
   }
+  function signInUrl(returnPath) { return playUrl('signin', returnPath); }
+  function signOutUrl(returnPath) { return playUrl('signout', returnPath); }
+  function confirmUrl(returnPath) { return playUrl('confirm', returnPath); }
 
   function api(route, body, options) {
     options = options || {};
@@ -78,12 +90,15 @@
       var error = json && typeof json.error === 'string' ? json.error : 'unavailable';
       var detail = json && typeof json.detail === 'string' ? json.detail : undefined;
       if (status === 401 && options.redirectOnSignedOut === true) window.location.assign(signInUrl());
-      throw new ApiError(status, error, detail);
+      throw new ApiError(status, error, detail, json);
     });
   }
 
+  /* One answer per page load: the account menu and the page share it (a failure is not remembered). */
+  var who = null;
   function whoami() {
-    return api('session', {});
+    if (who === null) who = api('session', {}).catch(function (e) { who = null; throw e; });
+    return who;
   }
 
   window.LudumSession = Object.freeze({
@@ -91,6 +106,8 @@
     whoami: whoami,
     api: api,
     signInUrl: signInUrl,
+    signOutUrl: signOutUrl,
+    confirmUrl: confirmUrl,
     ApiError: ApiError
   });
 })();

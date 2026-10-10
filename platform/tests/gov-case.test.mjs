@@ -303,6 +303,25 @@ test("page: without LudumSession the page stays chain-only and says so", async (
 test("disputes/case/index.html loads session.js, gov.js and gov-case.js before gov-page.js, once each", () => {
   const html = src("disputes/case/index.html");
   const order = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(order, ["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/gov.js", "/platform/js/gov-case.js", "/platform/js/gov-page.js"]);
+  assert.deepEqual(order, ["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", "/platform/js/account-menu.js", "/platform/js/gov.js", "/platform/js/gov-case.js", "/platform/js/gov-page.js"]);
   assert.match(html, /id="gv-server"/);
+});
+
+/* v1.1 (1830Juno §5.1): a seat's table name and the server's relayed transactions are optional, and exact when present. */
+test("v1.1: seat display names and relayed transactions are accepted when well formed, refused otherwise", () => {
+  const H = "AB".repeat(32);
+  const named = (names) => record({ seats: record().seats.map((s, i) => ({ ...s, displayName: names[i] })) });
+  const tx = (relayed) => record({ transactions: { value: { relayed, walletSigned: "not-server-recorded" }, provenance: "server-recorded", observedAt: READ } });
+  const ok = (rec) => LudumCase.validateRecord(rec, EXPECT).ok;
+  assert.equal(ok(named(["Marlowe", null])), true);
+  assert.equal(ok(tx([{ op: "start", txHash: H, status: { value: "included", provenance: "chain-observed", observedAt: READ, height: "100" }, at: READ }, { op: "settle", txHash: H, status: { value: "broadcast", provenance: "pending" }, at: READ }])), true);
+  assert.equal(ok(record({ transactions: none("this server relays no transactions") })), true);
+  assert.equal(ok(named(["", "Quill"])), false, "an empty name");
+  assert.equal(ok(named(["x".repeat(65), "Quill"])), false, "an overlong name");
+  assert.equal(ok(named([7, "Quill"])), false, "a non-string name");
+  assert.equal(ok(tx([{ op: "transfer", txHash: H, status: { value: "included", provenance: "chain-observed" }, at: READ }])), false, "an unknown step");
+  assert.equal(ok(tx([{ op: "start", txHash: "ab".repeat(32), status: { value: "included", provenance: "chain-observed" }, at: READ }])), false, "a lower-case hash");
+  assert.equal(ok(tx([{ op: "start", txHash: H, status: { value: "included", provenance: "pending" }, at: READ }])), false, "an impossible status");
+  assert.equal(ok(record({ transactions: { value: { relayed: [], walletSigned: "x" }, provenance: "server-recorded" } })), false);
+  assert.equal(ok(record({ extra: 1 })), false, "any other new field is still refused");
 });

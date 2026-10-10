@@ -120,7 +120,10 @@
   function onConnect() {
     G.connect().then(function (w) {
       state.wallet = w; state.governor = null; renderWallet();
-      return G.readGovernor(reader, w.address).then(function (g) { state.governor = g; }, function (e) { state.governor = { error: why(e) }; });
+      return G.readGovernor(reader, w.address).then(function (g) {
+        state.governor = g;
+        if (window.LudumRecords) window.LudumRecords.rememberMember(window.localStorage, g && g.member ? w.address : null, Date.now());
+      }, function (e) { state.governor = { error: why(e) }; });
     }, function (e) { flash($('gv-wallet'), why(e)); }).then(function () { renderWallet(); rerender(); });
   }
   function flash(el, text) { if (el) el.appendChild(h('p', { class: 'gv-status gv-status--bad', role: 'alert', text: text })); }
@@ -168,6 +171,23 @@
     }));
   }
 
+  /* v1.1: the seats' table names for a register row, from the server's public case record -- shown only when that
+     record validates and its seat wallets are exactly the chain's, in order. Otherwise "—" (never a guess). */
+  function seatNames(game) {
+    var cell = h('span', { class: 'gv-names', text: '…' });
+    var expect = { chainGameId: String(game.chain_game_id), contract: P.escrow, chainId: P.chainId };
+    if (!window.LudumCase || !window.LudumSession) { cell.textContent = '—'; return cell; }
+    LudumCase.fetchCase(window.LudumSession, expect.chainGameId, expect).then(function (outcome) {
+      var seats = (game.seats || []).map(function (x) { return x.wallet; });
+      var rec = outcome && outcome.kind === 'ok' ? outcome.record : null;
+      var same = rec && rec.seats.length === seats.length && rec.seats.every(function (x, i) { return x.wallet === seats[i]; });
+      var names = same ? rec.seats.map(function (x) { return x.displayName || '—'; }) : null;
+      cell.textContent = names && names.some(function (n) { return n !== '—'; }) ? names.join(' · ') : '—';
+      if (names) cell.title = rec.seats.map(function (x, i) { return 'Seat ' + i + ': ' + (x.displayName || 'unknown') + ' (' + x.wallet + ')'; }).join('\n');
+    }, function () { cell.textContent = '—'; });
+    return cell;
+  }
+
   /* ================= Register: /disputes/ ================= */
   function register() {
     var host = $('gv-register'), resolvedHost = $('gv-resolved');
@@ -185,16 +205,16 @@
         clear(host);
         host.appendChild(h('p', { class: 'gv-status' }, [games.length + ' escrow game' + (games.length === 1 ? '' : 's') + ' scanned, ' + open.length + ' disputed. ', readTime(r[0].observedAt)]));
         if (!open.length) host.appendChild(h('div', { class: 'ld-empty' }, [h('p', null, [h('strong', { text: 'No open disputes' }), 'No escrow game on ' + P.chainId + ' is disputed right now.'])]));
-        else host.appendChild(ledger('Open disputes', 'escrow ' + P.escrowVersion, [{ t: 'Game' }, { t: 'State' }, { t: 'Resolver timeout' }, { t: 'Countdown' }, { t: 'Linked proposal' }, { t: 'Read' }],
+        else host.appendChild(ledger('Open disputes', 'escrow ' + P.escrowVersion, [{ t: 'Game' }, { t: 'Seats' }, { t: 'State' }, { t: 'Resolver timeout' }, { t: 'Countdown' }, { t: 'Linked proposal' }, { t: 'Read' }],
           open.map(function (x) {
             var t = tsFacts(x.deadlines && x.deadlines.resolver_timeout_at);
-            return [h('a', { class: 'ld-link', href: '/disputes/case/?id=' + x.game.chain_game_id, text: '#' + x.game.chain_game_id }), stateWord(x.game.state), mono(t.iso), countdown(t.secs), proposalLinks(links[String(x.game.chain_game_id)]), readTime(x.observedAt)];
+            return [h('a', { class: 'ld-link', href: '/disputes/case/?id=' + x.game.chain_game_id, text: '#' + x.game.chain_game_id }), seatNames(x.game), stateWord(x.game.state), mono(t.iso), countdown(t.secs), proposalLinks(links[String(x.game.chain_game_id)]), readTime(x.observedAt)];
           })));
         clear(resolvedHost);
         if (!resolved.length) resolvedHost.appendChild(h('div', { class: 'ld-empty' }, [h('p', null, [h('strong', { text: 'None resolved yet' }), 'No escrow dispute on ' + P.chainId + ' has been resolved.'])]));
-        else resolvedHost.appendChild(ledger('Resolved disputes', null, [{ t: 'Game' }, { t: 'State' }, { t: 'Resolution' }, { t: 'Resolved at' }, { t: 'Linked proposal' }, { t: 'Read' }],
+        else resolvedHost.appendChild(ledger('Resolved disputes', null, [{ t: 'Game' }, { t: 'Seats' }, { t: 'State' }, { t: 'Resolution' }, { t: 'Resolved at' }, { t: 'Linked proposal' }, { t: 'Read' }],
           resolved.map(function (x) {
-            return [h('a', { class: 'ld-link', href: '/disputes/case/?id=' + x.game.chain_game_id, text: '#' + x.game.chain_game_id }), stateWord(x.game.state), stateWord(x.game.dispute.resolution), mono(tsFacts(x.game.dispute.resolved_at).iso), proposalLinks(links[String(x.game.chain_game_id)]), readTime(x.observedAt)];
+            return [h('a', { class: 'ld-link', href: '/disputes/case/?id=' + x.game.chain_game_id, text: '#' + x.game.chain_game_id }), seatNames(x.game), stateWord(x.game.state), stateWord(x.game.dispute.resolution), mono(tsFacts(x.game.dispute.resolved_at).iso), proposalLinks(links[String(x.game.chain_game_id)]), readTime(x.observedAt)];
           })));
       });
     }).catch(function (e) { unavailable(host, why(e)); unavailable(resolvedHost, why(e)); });
@@ -219,7 +239,8 @@
       var seats = (r[1].data && r[1].data.seats) || [];
       var links = linkIndex(r[2].proposals)[id] || [];
       var rt = tsFacts(gr.deadlines && gr.deadlines.resolver_timeout_at);
-      facts = { game: game, deadlines: gr.deadlines, resolverTimeoutSecs: rt.secs, observedAt: at };
+      facts = { game: game, deadlines: gr.deadlines, resolverTimeoutSecs: rt.secs, observedAt: at,
+        floorSeq: gr.latest_checkpoint && gr.latest_checkpoint.payload ? String(gr.latest_checkpoint.payload.seq) : null };
       chainRead = { game: game, seats: seats, observedAt: at };
       clear(host);
       host.appendChild(h('p', { class: 'gv-status' }, ['Chain facts from escrow ' + P.escrow + ' on ' + P.chainId + '. ', readTime(at)]));
@@ -280,6 +301,8 @@
       if (k !== 'ok') return serverNote(el, 'Unavailable. ', 'The server record could not be read.', true);
       var rec = outcome.record, cross = LudumCase.crossCheck(rec, chainRead);
       if (cross.agree === false) return serverNote(el, 'Disagrees with the chain. ', 'The server’s record for game #' + id + ' does not match this browser’s chain read, so none of it is shown: ' + cross.problems.join('; ') + '.', true);
+      serverTerminal = cross.agree === true && rec.serverTerminal.value ? rec.serverTerminal.value : null;
+      renderPropose();
       clear(el);
       el.appendChild(h('p', { class: 'gv-status', 'data-server-state': cross.agree === null ? 'unchecked' : 'agrees' }, [cross.agree === null ? 'Not cross-checked: this browser could not read the chain, so the server’s record is shown as the server’s alone.' : 'Seats, challenger, bond and evidence hash agree with the chain facts above.'].concat(cross.notes.map(function (n) { return ' Note: ' + n + '.'; }))));
       var verdict = { 'server-log': 'the challenger’s evidence hash equals the server’s log hash', 'server-board': 'the challenger’s evidence hash equals the server’s terminal board hash', 'neither': 'the challenger’s evidence hash matches neither of the server’s hashes' };
@@ -289,8 +312,19 @@
       if (!t.value) el.appendChild(h('p', { class: 'gv-hint' }, [factText(t)]));
       else {
         el.appendChild(meta([['Ended by', mono(t.value.reason)], ['Log length', mono(t.value.logLen)], ['Log hash', mono(t.value.logHash)], ['Board hash', mono(t.value.appraisalStateHash)], ['Source', factText(t)]]));
-        el.appendChild(ledger('Final net worth by seat', 'in-game dollars · not JUNOX', [{ t: 'Seat' }, { t: 'Wallet' }, { t: 'In-game $', num: true }],
-          t.value.totalsBySeat.map(function (x) { return [String(x.chainSeatIndex), mono(rec.seats[x.chainSeatIndex].wallet), mono('$' + x.dollars)]; })));
+        el.appendChild(ledger('Final net worth by seat', 'in-game dollars · not JUNOX', [{ t: 'Seat' }, { t: 'Player' }, { t: 'Wallet' }, { t: 'In-game $', num: true }],
+          t.value.totalsBySeat.map(function (x) { return [String(x.chainSeatIndex), rec.seats[x.chainSeatIndex].displayName || '—', mono(rec.seats[x.chainSeatIndex].wallet), mono('$' + x.dollars)]; })));
+      }
+      /* v1.1: the transactions the server relayed for this game (wallet-signed ones are on chain only). */
+      var tx = rec.transactions;
+      if (tx) {
+        el.appendChild(h('h3', { class: 'gv-h3', text: 'Transactions relayed by play.netadao.org' }));
+        if (!tx.value) el.appendChild(h('p', { class: 'gv-hint' }, [factText(tx)]));
+        else if (!tx.value.relayed.length) el.appendChild(h('p', { class: 'gv-hint', text: 'None recorded. Joins and the challenge are signed by the seats’ own wallets and are on chain only.' }));
+        else el.appendChild(ledger('Relayed transactions', 'server record', [{ t: 'Step' }, { t: 'Transaction' }, { t: 'Status' }, { t: 'Height' }],
+          tx.value.relayed.map(function (x) {
+            return [x.op, h('a', { class: 'ld-link', href: P.rest + '/cosmos/tx/v1beta1/txs/' + x.txHash, rel: 'noopener', text: x.txHash.slice(0, 4) + '…' + x.txHash.slice(-4) }), x.status.value === 'included' ? 'included' : 'broadcast, not yet seen in a block', x.status.height || '—'];
+          }), 'Joins and the challenge are signed by the seats’ own wallets: they are on chain, not in this list.'));
       }
       el.appendChild(h('p', { class: 'gv-hint' }, [h('button', { class: 'gv-linkbtn', type: 'button', onclick: rereadServer, text: 'Read the server record again' })]));
     }
@@ -299,7 +333,22 @@
       return meta(extra.concat([['Seq', mono(p.seq)], ['Log hash', mono(p.log_hash)], ['Appraisal state hash', mono(p.appraisal_state_hash)], ['Weights', mono((p.settlement_weights || []).join(' · '))]]));
     }
 
-    var choice = { outcome: null, voteYes: false };
+    var choice = { outcome: null, voteYes: false, weights: null };
+    var serverTerminal = null;
+    /* Replace: the corrected payload, from this browser's chain read (domain, seats, checkpoint floor, the stored
+       settlement's source) and the server's terminal record (log, hashes, totals) -- the latter only once it agreed
+       with the chain. The weights start as the server's final net worth by seat and may be edited. */
+    function replaceInput() {
+      if (!facts || !serverTerminal) return null;
+      var weights = choice.weights || serverTerminal.totalsBySeat.map(function (x) { return String(Math.max(0, x.dollars)); });
+      return {
+        domain: facts.game.domain, logLen: serverTerminal.logLen, logHash: serverTerminal.logHash, appraisalStateHash: serverTerminal.appraisalStateHash,
+        weights: weights, seatCount: (facts.game.seats || []).length, floorSeq: facts.floorSeq,
+        settlementSource: facts.game.settlement ? facts.game.settlement.source : null,
+        signerKeyId: facts.game.settlement && facts.game.settlement.payload ? facts.game.settlement.payload.signer_key_id : 0,
+        issuedAtSecs: Math.floor(Date.now() / 1000)
+      };
+    }
     function renderPropose() {
       clear(actHost);
       var g = state.governor;
@@ -320,26 +369,45 @@
       var ok = reasons.length === 0;
       actHost.appendChild(h('p', { class: 'gv-hint', text: ok ? 'Choose the resolution the DAO will vote on. The proposal goes to the pre-propose module with no funds; the escrow acts only if the vote passes and a member executes it.' : 'Not available: ' + reasons.join('; ') + '.' }));
       var pick = h('div', { class: 'gv-choices', role: 'group', 'aria-label': 'Resolution' });
-      ['uphold', 'annul'].forEach(function (o) {
-        var b = btn(G.OUTCOMES[o], function () { choice.outcome = o; renderPropose(); }, { secondary: true, disabled: !ok });
+      var strike3 = facts && facts.game.settlement && facts.game.settlement.source === 'remedy_strike3';
+      var replaceWhy = strike3 ? 'a third-strike foreclosure cannot be replaced' : !serverTerminal ? 'the server’s terminal record is needed, and must agree with the chain' : null;
+      ['uphold', 'replace', 'annul'].forEach(function (o) {
+        var off = !ok || (o === 'replace' && replaceWhy !== null);
+        var b = btn(G.OUTCOMES[o], function () { choice.outcome = o; renderPropose(); }, { secondary: true, disabled: off, title: o === 'replace' && replaceWhy ? 'Not available: ' + replaceWhy : null });
         b.setAttribute('aria-pressed', choice.outcome === o ? 'true' : 'false');
         pick.appendChild(b);
       });
-      pick.appendChild(btn('Replace', function () {}, { secondary: true, disabled: true, title: 'Needs a SettlementPayloadV1 builder and owner sign-off' }));
       actHost.appendChild(pick);
-      actHost.appendChild(h('p', { class: 'gv-hint', text: 'Replace is not offered: it needs a reviewed SettlementPayloadV1 builder and owner sign-off.' }));
+      if (replaceWhy !== null) actHost.appendChild(h('p', { class: 'gv-hint', text: 'Replace is not available here: ' + replaceWhy + '.' }));
+      var payload = null, payloadProblem = null;
+      if (choice.outcome === 'replace' && replaceWhy === null) {
+        var input = replaceInput();
+        try { payload = G.replacePayload(input); } catch (e) { payloadProblem = why(e); }
+        actHost.appendChild(h('p', { class: 'gv-hint', text: 'Replace pays the pool by these weights (a seat’s share is its weight ÷ the total). They start as the server’s final net worth by seat; change them only to correct the result. The DAO’s own transaction authorises the payload: nothing is signed by the server.' }));
+        var grid = h('div', { class: 'gv-weights', role: 'group', 'aria-label': 'Corrected weights by seat' });
+        input.weights.forEach(function (w, n) {
+          var inp = h('input', { class: 'ld-input', type: 'text', inputmode: 'numeric', id: 'gv-w' + n, value: w, 'aria-label': 'Weight for seat ' + n });
+          inp.addEventListener('change', function () { var next = input.weights.slice(); next[n] = inp.value.trim(); choice.weights = next; renderPropose(); });
+          grid.appendChild(h('label', { class: 'gv-check', for: 'gv-w' + n }, ['Seat ' + n + ' ', inp]));
+        });
+        actHost.appendChild(grid);
+        if (payloadProblem) actHost.appendChild(h('p', { class: 'gv-status gv-status--bad', role: 'alert', text: 'This payload would be refused: ' + payloadProblem + '.' }));
+        else actHost.appendChild(h('pre', { class: 'gv-json', text: 'payload: ' + JSON.stringify(payload, null, 2) }));
+      }
       var cb = h('input', { type: 'checkbox', id: 'gv-voteyes', onchange: function () { choice.voteYes = cb.checked; } });
       cb.checked = choice.voteYes; cb.disabled = !ok;
       actHost.appendChild(h('label', { class: 'gv-check', for: 'gv-voteyes' }, [cb, ' Also vote yes in the same transaction (with today’s single member, the proposal then passes at once)']));
       var txHost = h('div');
       actHost.appendChild(btn('Prepare proposal', function () {
-        if (!choice.outcome) { flash(txHost, 'Choose Uphold or Annul first.'); return; }
+        if (!choice.outcome) { flash(txHost, 'Choose Uphold, Replace or Annul first.'); return; }
+        if (choice.outcome === 'replace' && !payload) { flash(txHost, 'Correct the payload first.'); return; }
         var d = facts.game.dispute;
-        var spec = G.buildPropose({ chainGameId: id, outcome: choice.outcome, voteYes: choice.voteYes, description: G.proposalDescription({
+        var spec = G.buildPropose({ chainGameId: id, outcome: choice.outcome, voteYes: choice.voteYes, payload: choice.outcome === 'replace' ? payload : undefined, description: G.proposalDescription({
           chainGameId: id, outcome: choice.outcome, challenger: d && d.challenger, bond: d && d.bond, evidenceHash: d && d.evidence_hash,
-          disputedAt: d && tsFacts(d.disputed_at).iso, resolverTimeoutAt: G.isoFromSecs(facts.resolverTimeoutSecs) }) });
+          disputedAt: d && tsFacts(d.disputed_at).iso, resolverTimeoutAt: G.isoFromSecs(facts.resolverTimeoutSecs),
+          payload: choice.outcome === 'replace' ? payload : null, basis: choice.outcome === 'replace' ? (choice.weights ? 'weights corrected by the proposer from the server’s terminal record' : 'the server’s terminal record (final net worth by seat)') : null }) });
         txPanel(txHost, spec, 'Create appeal proposal', function () { setTimeout(function () { location.reload(); }, 4000); });
-      }, { disabled: !ok || !choice.outcome }));
+      }, { disabled: !ok || !choice.outcome || (choice.outcome === 'replace' && !payload) }));
       actHost.appendChild(txHost);
     }
     rerender = renderPropose;

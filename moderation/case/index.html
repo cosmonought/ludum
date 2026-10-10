@@ -1,49 +1,20 @@
 <!doctype html>
 <html lang="en" data-theme="stock">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://netadao.org/radio/radio.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://netadao.org; font-src 'self'; media-src https://s3.radio.co; connect-src 'self' https://play.netadao.org https://juno.api.t.stavr.tech https://d3d68n2c5eingb.cloudfront.net; frame-src https://netadao.org https://www.netadao.org https://academy.netadao.org https://fork.netadao.org https://ludum.netadao.org https://play.netadao.org; object-src 'none'; base-uri 'none'; form-action 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://netadao.org/radio/radio.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://netadao.org; font-src 'self'; media-src https://s3.radio.co; connect-src 'self' https://play.netadao.org; frame-src https://netadao.org https://www.netadao.org https://academy.netadao.org https://fork.netadao.org https://ludum.netadao.org https://play.netadao.org; object-src 'none'; base-uri 'none'; form-action 'self'; upgrade-insecure-requests">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Governance — Ludum</title>
-<meta name="description" content="Ludum DAO proposals on uni-7: status, tally, decoded messages and the linked escrow game.">
-<link rel="canonical" href="https://ludum.netadao.org/governance/">
+<title>Conduct case — Ludum</title>
+<meta name="description" content="A conduct case, for Play’s listed reviewers only.">
 <meta name="robots" content="noindex">
+<link rel="canonical" href="https://ludum.netadao.org/moderation/case/">
 <meta name="theme-color" content="#0B0B0B">
 <link rel="preload" href="/design-system/fonts/Anton-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/design-system/css/ludum.css">
 <link rel="stylesheet" href="/platform/css/records.css">
-<style>.pg-head { padding-block: var(--space-8, 64px) var(--space-6, 32px); }
-.pg-head__kicker { margin: 0 0 24px; }
-.pg-head__title { margin: 0; font: 400 var(--ld-d1)/.84 var(--font-display); text-transform: uppercase; letter-spacing: -.005em; overflow-wrap: anywhere; }
-.pg-head__row { display: grid; grid-template-columns: 7fr 5fr; gap: var(--ld-gutter); align-items: end; }
-.pg-head__dek { margin: 0; max-width: 40ch; font: 400 22px/32px var(--font-sans); }
-.gv-panel { display: grid; gap: 16px; padding-block: 0 var(--space-6, 32px); }
-.gv-status { margin: 0; font: 400 14px/22px var(--font-mono); color: var(--ink-2); overflow-wrap: anywhere; }
-.gv-status strong { color: var(--ink); font-weight: 500; }
-.gv-status--bad { color: var(--red); padding: 12px 16px; border: 2px solid var(--red); }
-.gv-read { font: 400 12px/16px var(--font-mono); color: var(--ink-3); white-space: nowrap; }
-.gv-hint { margin: 0; max-width: 64ch; font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
-.gv-mono { font-family: var(--font-mono); overflow-wrap: anywhere; }
-.gv-meta { margin-bottom: 24px; }
-.gv-meta dd, main .ld-empty p { overflow-wrap: anywhere; }
-.gv-h3 { margin: 32px 0 12px; font: 400 var(--ld-d4)/1 var(--font-display); text-transform: uppercase; overflow-wrap: anywhere; }
-.gv-wallet-row { display: grid; gap: 12px; justify-items: start; }
-.gv-choices, .gv-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
-.gv-check { display: flex; gap: 10px; align-items: flex-start; margin: 8px 0 20px; font: 400 15px/24px var(--font-sans); }
-.gv-check input { margin-top: 5px; width: 18px; height: 18px; }
-.gv-tx { display: grid; gap: 12px; margin-top: 20px; padding: 20px; border: 2px solid var(--rule-strong); }
-.gv-json { margin: 0; padding: 14px; overflow-x: auto; background: var(--paper-2); font: 400 13px/20px var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
-.gv-card { padding-block: 24px; border-top: 2px solid var(--rule-strong); }
-.gv-card__head .gv-h3 { margin-top: 8px; }
-.gv-details summary { cursor: pointer; font: 500 12px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; padding: 8px 0; }
-.gv-details .gv-json + .gv-json { margin-top: 8px; }
-.gv-count { font: 500 13px/20px var(--font-mono); color: var(--red); white-space: nowrap; }
-.gv-linkbtn { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; }
-@media (max-width: 1023px) { .pg-head__row { grid-template-columns: 1fr; gap: 28px; } }
-@media (max-width: 599px) { .pg-head__dek { font-size: 19px; line-height: 28px; } .gv-choices .ld-btn, .gv-actions .ld-btn { width: 100%; } }</style>
 <script src="https://netadao.org/radio/radio.js" defer></script>
 </head>
-<body class="ld-page" data-gov-page="governance">
+<body class="ld-page">
 <a class="ld-skip" href="#main">Skip to content</a><header class="ld-nav" data-theme="press">
   <div class="ld-nav__bar">
     <a class="ld-nav__home" href="/" aria-label="Ludum, home"><span class="ld-nav__name">Ludum</span><span class="ld-nav__by">Games by<br>Neta DAO</span></a>
@@ -53,10 +24,10 @@
     <a class="ld-play" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a>
     <button class="ld-nav__menu" type="button" aria-expanded="false" aria-controls="ld-menu"><span class="ld-nav__menu-word">Menu</span><span class="ld-nav__burger" aria-hidden="true"></span></button>
   </div>
-</header><main id="main">
-<header class="ld-wrap pg-head"><p class="ld-label pg-head__kicker">Ludum DAO · uni-7</p><div class="pg-head__row"><h1 class="pg-head__title" id="gv-title">Governance</h1><div><p class="pg-head__dek">The Ludum DAO’s proposals on uni-7, read live: status, tally, decoded messages and the escrow game each one would resolve.</p></div></div></header>
-<div class="ld-wrap gv-panel"><div id="gv-pins" aria-live="polite"><p class="gv-status">Checking the Ludum DAO pins on uni-7…</p></div><div id="gv-wallet"></div></div>
-<section class="ld-section" aria-labelledby="g1"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">01</span><h2 class="ld-sechead__title" id="g1">Proposals</h2><p class="ld-sechead__dek">Newest first. Vote, execute and close are for members, signed in Keplr.</p></header><div id="gv-proposals" aria-live="polite"><p class="gv-status">Reading uni-7…</p></div></div></section>
+</header><main id="main" data-ludum-moderation="case">
+<div data-rec-frame><header class="ld-wrap ld-rechead"><div class="ld-rechead__kicker"><span class="ld-label">Profile</span></div><div class="ld-rechead__row"><h1 class="ld-rechead__title">Conduct case</h1><div><p class="ld-rechead__dek" aria-live="polite">Checking your session on Play…</p></div></div></header></div>
+<div data-rec-body aria-live="polite"></div>
+<noscript><div class="ld-wrap"><p class="ld-lede">Moderation needs JavaScript.</p></div></noscript>
 </main><footer class="ld-footer" data-theme="press">
   <span class="ld-footer__band" aria-hidden="true"></span>
   <div class="ld-wrap ld-footer__inner">
@@ -76,7 +47,7 @@
 <script src="/platform/js/session.js"></script>
 <script src="/platform/js/records.js"></script>
 <script src="/platform/js/account-menu.js"></script>
-<script src="/platform/js/gov.js"></script>
-<script src="/platform/js/gov-page.js"></script>
+<script src="/platform/js/moderation-page.js"></script>
+<script src="/platform/js/page-init.js"></script>
 </body>
 </html>

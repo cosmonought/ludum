@@ -37,11 +37,88 @@
   var DAY_SECS = 86400;
   var EXEC_TYPE_URL = '/cosmwasm.wasm.v1.MsgExecuteContract';
   var VENDOR_SRC = '/platform/vendor/cosmjs-0.32.4.min.js';
-  var OUTCOMES = Object.freeze({ uphold: 'Uphold', annul: 'Annul' });   // Replace needs a SettlementPayloadV1 builder + owner sign-off
+  var OUTCOMES = Object.freeze({ uphold: 'Uphold', replace: 'Replace', annul: 'Annul' });
   var OUTCOME_GLOSS = Object.freeze({
     uphold: 'the stored settlement stands and the challenger’s bond joins the pool',
+    replace: 'a corrected settlement (reason ResolverCorrection) pays the pool by its weights and the bond goes back to the challenger',
     annul: 'every seat’s net ante is refunded and the bond goes back to the challenger'
   });
+
+  /* ---- Replace: a corrected SettlementPayloadV1 (escrow 2.1.0 msg.rs; payload.rs check_shape; helpers.rs
+     check_payload_for_game; execute/dispute.rs Resolve::Replace). It is authorised by the resolver's own transaction --
+     the DAO executing the passed proposal -- never by a signature, so nothing here signs it. The contract requires:
+       version 1; domain = the game's 32-byte settlement domain; kind 1 (Terminal); reason 5 (ResolverCorrection);
+       seq = 2·log_len + 1; appraisal_log_len == log_len; seat_count == weights.length == the game's seats; Σ weights > 0;
+       seq > the game's trusted checkpoint floor; and never for a third-strike (RemedyStrike3) settlement.
+     signer_key_id and issued_at are carried but not checked for a Replace. state_schema_version is the server's
+     SETTLEMENT_STATE_SCHEMA_VERSION (1). ---- */
+  var REASON_RESOLVER_CORRECTION = 5;
+  var KIND_TERMINAL = 1;
+  var STATE_SCHEMA_VERSION = 1;
+  var HEX32 = /^[0-9a-f]{64}$/;
+  var UINT = /^(0|[1-9]\d*)$/;
+  var U128_MAX = BigInt('340282366920938463463374607431768211455');
+  var U64_MAX = BigInt('18446744073709551615');
+
+  /** The corrected payload, checked against every rule the contract applies. `input`: { domain (hex), logLen,
+   *  logHash, appraisalStateHash, weights: [decimal strings], seatCount, floorSeq (the trusted checkpoint seq, or null),
+   *  settlementSource (the stored settlement's source, or null), signerKeyId, issuedAtSecs }. Throws with the rule broken. */
+  function replacePayload(input) {
+    var i = input || {};
+    var domain = String(i.domain || '').toLowerCase();
+    if (!HEX32.test(domain)) throw new Error('the game’s settlement domain must be 32 bytes of hex');
+    if (i.settlementSource === 'remedy_strike3') throw new Error('a third-strike foreclosure cannot be replaced: uphold or annul it');
+    if (!Number.isSafeInteger(i.logLen) || i.logLen < 1) throw new Error('log_len must be a whole number above zero');
+    var logLen = BigInt(i.logLen);
+    var seq = logLen * BigInt(2) + BigInt(KIND_TERMINAL);
+    if (seq > U64_MAX) throw new Error('seq does not fit a u64');
+    var logHash = String(i.logHash || '').toLowerCase(), boardHash = String(i.appraisalStateHash || '').toLowerCase();
+    if (!HEX32.test(logHash)) throw new Error('log_hash must be 32 bytes of hex');
+    if (!HEX32.test(boardHash)) throw new Error('appraisal_state_hash must be 32 bytes of hex');
+    var weights = Array.isArray(i.weights) ? i.weights.map(String) : [];
+    if (!Number.isSafeInteger(i.seatCount) || i.seatCount < 1 || i.seatCount > 255 || weights.length !== i.seatCount) throw new Error('there must be exactly one weight per seat');
+    var sum = BigInt(0);
+    weights.forEach(function (w, n) {
+      if (!UINT.test(w) || BigInt(w) > U128_MAX) throw new Error('weight ' + n + ' must be a whole number (u128)');
+      sum += BigInt(w);
+    });
+    if (sum === BigInt(0)) throw new Error('the weights must not all be zero');
+    if (i.floorSeq != null) {
+      if (!UINT.test(String(i.floorSeq))) throw new Error('the checkpoint floor is not a sequence number');
+      if (seq <= BigInt(String(i.floorSeq))) throw new Error('seq ' + seq + ' is not beyond the trusted checkpoint ' + i.floorSeq + ': the log must reach past it');
+    }
+    var signer = i.signerKeyId == null ? 0 : i.signerKeyId;
+    if (!Number.isSafeInteger(signer) || signer < 0 || signer > 65535) throw new Error('signer_key_id must be a u16');
+    if (!Number.isSafeInteger(i.issuedAtSecs) || i.issuedAtSecs < 0) throw new Error('issued_at must be whole seconds');
+    return {
+      version: 1,
+      domain: domain,
+      seq: seq.toString(),
+      kind: KIND_TERMINAL,
+      reason: REASON_RESOLVER_CORRECTION,
+      log_len: logLen.toString(),
+      log_hash: logHash,
+      appraisal_log_len: logLen.toString(),
+      appraisal_state_hash: boardHash,
+      state_schema_version: STATE_SCHEMA_VERSION,
+      seat_count: i.seatCount,
+      settlement_weights: weights,
+      signer_key_id: signer,
+      issued_at: String(i.issuedAtSecs)
+    };
+  }
+
+  /** The exact keys and rules of a payload a Replace proposal carries (for decoding someone else's proposal). */
+  function replacePayloadProblem(p) {
+    var keys = ['appraisal_log_len', 'appraisal_state_hash', 'domain', 'issued_at', 'kind', 'log_hash', 'log_len', 'reason', 'seat_count', 'seq', 'settlement_weights', 'signer_key_id', 'state_schema_version', 'version'];
+    if (!p || typeof p !== 'object' || Array.isArray(p) || Object.keys(p).sort().join() !== keys.join()) return 'not a SettlementPayloadV1';
+    if (p.version !== 1 || p.kind !== KIND_TERMINAL || p.reason !== REASON_RESOLVER_CORRECTION) return 'not a terminal ResolverCorrection payload';
+    if (!UINT.test(String(p.log_len)) || String(p.seq) !== (BigInt(String(p.log_len)) * BigInt(2) + BigInt(1)).toString()) return 'seq is not 2·log_len + 1';
+    if (String(p.appraisal_log_len) !== String(p.log_len)) return 'appraisal_log_len differs from log_len';
+    if (!Array.isArray(p.settlement_weights) || p.settlement_weights.length !== p.seat_count) return 'seat_count differs from the weights';
+    if (!p.settlement_weights.every(function (w) { return UINT.test(String(w)); }) || p.settlement_weights.every(function (w) { return BigInt(String(w)) === BigInt(0); })) return 'the weights are not usable';
+    return null;
+  }
 
   /* ---- Encoding: UTF-8 JSON ⇄ base64, with only what browsers and Node both have. ---- */
   function utf8ToB64(text) {
@@ -64,12 +141,20 @@
   }
 
   /* ---- Builders (§6, byte for byte). Each returns { contract, msg, funds: [] } for one MsgExecuteContract. ---- */
-  function resolveMsg(chainGameId, outcome) {
-    if (!Object.prototype.hasOwnProperty.call(OUTCOMES, outcome)) throw new Error('outcome must be uphold or annul');
-    var body = {}; body[outcome] = {};
+  function resolveMsg(chainGameId, outcome, payload) {
+    if (!Object.prototype.hasOwnProperty.call(OUTCOMES, outcome)) throw new Error('outcome must be uphold, replace or annul');
+    var body = {};
+    if (outcome === 'replace') {
+      var problem = replacePayloadProblem(payload);
+      if (problem !== null) throw new Error('replace needs a corrected payload: ' + problem);
+      body.replace = { payload: payload };
+    } else {
+      if (payload !== undefined) throw new Error(outcome + ' takes no payload');
+      body[outcome] = {};
+    }
     return { resolve: { chain_game_id: u64Number(chainGameId, 'chain_game_id'), outcome: body } };
   }
-  function resolveB64(chainGameId, outcome) { return jsonB64(resolveMsg(chainGameId, outcome)); }
+  function resolveB64(chainGameId, outcome, payload) { return jsonB64(resolveMsg(chainGameId, outcome, payload)); }
 
   function proposalTitle(chainGameId, outcome) {
     return 'Appeal: escrow game #' + u64Number(chainGameId) + ' — ' + OUTCOMES[outcome];
@@ -86,6 +171,11 @@
     if (facts.disputedAt) lines.push('Disputed at: ' + facts.disputedAt + '.');
     if (facts.resolverTimeoutAt) lines.push('Resolver timeout: ' + facts.resolverTimeoutAt + '.');
     lines.push('Proposed resolution: ' + OUTCOMES[facts.outcome] + ' — ' + OUTCOME_GLOSS[facts.outcome] + '.');
+    if (facts.outcome === 'replace' && facts.payload) {
+      lines.push('Corrected settlement: log_len ' + facts.payload.log_len + ', seq ' + facts.payload.seq + ', log hash ' + facts.payload.log_hash + ', board hash ' + facts.payload.appraisal_state_hash + '.');
+      lines.push('Weights by seat: ' + facts.payload.settlement_weights.join(' · ') + '.');
+      if (facts.basis) lines.push('Basis: ' + facts.basis + '.');
+    }
     lines.push('Case: ' + caseUrl(id));
     return lines.join('\n');
   }
@@ -93,7 +183,7 @@
   function buildPropose(opts) {
     if (typeof opts.description !== 'string' || !opts.description) throw new Error('description is required');
     var outcome = opts.outcome;
-    var b64 = resolveB64(opts.chainGameId, outcome);
+    var b64 = resolveB64(opts.chainGameId, outcome, outcome === 'replace' ? opts.payload : undefined);
     var msg = { propose: { msg: { propose: {
       title: proposalTitle(opts.chainGameId, outcome),
       description: opts.description,
@@ -131,6 +221,12 @@
     if (!r || typeof r !== 'object' || !Number.isSafeInteger(r.chain_game_id) || r.chain_game_id < 0) return null;
     var o = r.outcome, kind = o && typeof o === 'object' ? Object.keys(o) : [];
     if (kind.length !== 1 || (kind[0] !== 'uphold' && kind[0] !== 'annul' && kind[0] !== 'replace')) return null;
+    if (kind[0] === 'replace') {
+      var rp = o.replace;
+      if (!rp || typeof rp !== 'object' || Object.keys(rp).length !== 1 || replacePayloadProblem(rp.payload) !== null) return null;
+      return { chainGameId: String(r.chain_game_id), outcome: 'replace', payload: rp.payload };
+    }
+    if (Object.keys(o[kind[0]] || {}).length !== 0) return null;
     return { chainGameId: String(r.chain_game_id), outcome: kind[0] };
   }
   function linksToGame(proposal, chainGameId) {
@@ -426,6 +522,7 @@
   var LudumGov = {
     PINS: PINS, FAMILY_ORIGINS: FAMILY_ORIGINS, OUTCOMES: OUTCOMES,
     resolveMsg: resolveMsg, resolveB64: resolveB64, proposalTitle: proposalTitle, proposalDescription: proposalDescription, caseUrl: caseUrl,
+    replacePayload: replacePayload, replacePayloadProblem: replacePayloadProblem,
     buildPropose: buildPropose, buildVote: buildVote, buildExecute: buildExecute, buildClose: buildClose,
     decodeResolve: decodeResolve, linksToGame: linksToGame, checkPins: checkPins,
     deadlineGuard: deadlineGuard, framingAllowed: framingAllowed,

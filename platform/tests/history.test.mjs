@@ -134,8 +134,9 @@ for (const page of ['me/index.html', 'platform/tests/history-harness.html']) {
     const head = html.slice(html.indexOf('<head>') + '<head>'.length).trimStart();
     const first = head.match(/^<meta http-equiv="Content-Security-Policy" content="([^"]*)">/);
     assert.ok(first, 'the first element of <head> is the CSP meta');
-    assert.deepEqual(first[1].split(';').map((d) => d.trim()).filter(Boolean), CSP);
-    assert.equal(first[1], CSP.join('; '));
+    /* §2.4 lets /me/ omit the two chain read endpoints (v1.1's records pages read only Play). */
+    const allowed = [CSP, CSP.map((d) => (d.startsWith('connect-src') ? "connect-src 'self' https://play.netadao.org" : d))];
+    assert.ok(allowed.some((policy) => first[1] === policy.join('; ')), 'the CSP is §2.4, or its /me/ variant');
   });
 
   test(`${page}: no inline script; every script source is the repo's own or the radio`, () => {
@@ -152,9 +153,11 @@ for (const page of ['me/index.html', 'platform/tests/history-harness.html']) {
   });
 }
 
-test('me/index.html loads the session, then history, then page-init; never the mock', () => {
+/* v1.1: /me/ is the designed Your record (platform/js/me-record.js); history.js keeps its tested pure helpers and its
+   development harness only. */
+test('me/index.html loads the session, the records layer, the account menu, then Your record and page-init; never the mock', () => {
   const html = read('me/index.html');
   const order = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(order, ['https://netadao.org/radio/radio.js', '/design-system/js/ludum.js', '/platform/js/session.js', '/platform/js/history.js', '/platform/js/page-init.js']);
+  assert.deepEqual(order, ['https://netadao.org/radio/radio.js', '/design-system/js/ludum.js', '/platform/js/session.js', '/platform/js/records.js', '/platform/js/account-menu.js', '/platform/js/me-record.js', '/platform/js/page-init.js']);
   assert.ok(!html.includes('mock'));
 });

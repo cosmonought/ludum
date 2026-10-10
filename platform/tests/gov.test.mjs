@@ -43,8 +43,9 @@ test("Resolve: exact JSON and base64 for Uphold and Annul; chain_game_id is a JS
   assert.equal(G.resolveB64("7", "uphold"), UPHOLD_7);
   assert.equal(G.resolveB64("7", "annul"), ANNUL_7);
   assert.equal(G.resolveB64(7, "uphold"), UPHOLD_7);
-  assert.throws(() => G.resolveMsg("7", "replace"), /uphold or annul/);
-  assert.throws(() => G.resolveMsg("7", "toString"), /uphold or annul/);
+  assert.throws(() => G.resolveMsg("7", "replace"), /corrected payload/);
+  assert.throws(() => G.resolveMsg("7", "uphold", {}), /takes no payload/);
+  assert.throws(() => G.resolveMsg("7", "toString"), /uphold, replace or annul/);
   for (const bad of ["-1", "07", "1.5", "", "abc", "9007199254740993", "1e3"]) assert.throws(() => G.resolveMsg(bad, "uphold"), /whole number/, bad);
 });
 
@@ -67,7 +68,7 @@ test("propose: §6 byte for byte, sent to the pre-propose with funds []; vote nu
   // Only `true` opts in: the checkbox is unchecked by default.
   assert.equal(G.buildPropose({ chainGameId: "7", outcome: "annul", description: "d", voteYes: "yes" }).msg.propose.msg.propose.vote, null);
   assert.throws(() => G.buildPropose({ chainGameId: "7", outcome: "uphold", description: "" }), /description/);
-  assert.throws(() => G.buildPropose({ chainGameId: "7", outcome: "replace", description: "d" }), /uphold or annul/);
+  assert.throws(() => G.buildPropose({ chainGameId: "7", outcome: "replace", description: "d" }), /corrected payload/);
 });
 
 test("propose description: chain facts and the case URL", () => {
@@ -248,4 +249,60 @@ test("JUNOX formatting and timestamps", () => {
   assert.equal(G.nanosToSecs(null), null);
   assert.equal(G.isoFromSecs(1700000000), "2023-11-14T22:13:20Z");
   assert.equal(G.b64ToUtf8(G.utf8ToB64("Appeal — é")), "Appeal — é");
+});
+
+/* ---- Replace (escrow 2.1.0 Resolve { Replace { payload } }): a corrected SettlementPayloadV1, authorised by the
+   resolver's transaction. Golden JSON computed here by hand from msg.rs / payload.rs, not by gov.js. ---- */
+const DOMAIN = "d0".repeat(32);
+const LOG = "aa".repeat(32);
+const BOARD = "bb".repeat(32);
+const REPLACE_INPUT = { domain: DOMAIN.toUpperCase(), logLen: 120, logHash: LOG, appraisalStateHash: BOARD, weights: ["6000", "4000"], seatCount: 2, floorSeq: "200", settlementSource: "server", signerKeyId: 2, issuedAtSecs: 1790000000 };
+const REPLACE_JSON = '{"version":1,"domain":"' + DOMAIN + '","seq":"241","kind":1,"reason":5,"log_len":"120","log_hash":"' + LOG + '","appraisal_log_len":"120","appraisal_state_hash":"' + BOARD +
+  '","state_schema_version":1,"seat_count":2,"settlement_weights":["6000","4000"],"signer_key_id":2,"issued_at":"1790000000"}';
+
+test("Replace payload: version 1, the game's domain, Terminal + ResolverCorrection, seq = 2·log_len + 1, appraisal = log_len, u128 weights as strings", () => {
+  const payload = G.replacePayload(REPLACE_INPUT);
+  assert.equal(JSON.stringify(payload), REPLACE_JSON);
+  assert.equal(G.replacePayloadProblem(payload), null);
+  const msg = G.resolveMsg("7", "replace", payload);
+  const exact = '{"resolve":{"chain_game_id":7,"outcome":{"replace":{"payload":' + REPLACE_JSON + '}}}}';
+  assert.equal(JSON.stringify(msg), exact);
+  assert.equal(G.resolveB64("7", "replace", payload), b64(exact));
+  /* Decoding finds it, and its payload, for exactly this game. */
+  const spec = G.buildPropose({ chainGameId: "7", outcome: "replace", payload, description: "d" });
+  assert.equal(spec.msg.propose.msg.propose.title, "Appeal: escrow game #7 — Replace");
+  const decoded = G.decodeResolve({ msgs: spec.msg.propose.msg.propose.msgs });
+  assert.deepEqual(decoded, { chainGameId: "7", outcome: "replace", payload });
+});
+
+test("Replace payload: every contract rule refuses before Keplr is asked", () => {
+  const bad = (over, re) => assert.throws(() => G.replacePayload({ ...REPLACE_INPUT, ...over }), re, JSON.stringify(over));
+  bad({ domain: "d0".repeat(31) }, /domain/);
+  bad({ settlementSource: "remedy_strike3" }, /third-strike/);
+  bad({ logLen: 0 }, /log_len/);
+  bad({ logLen: 1.5 }, /log_len/);
+  bad({ logHash: "zz".repeat(32) }, /log_hash/);
+  bad({ appraisalStateHash: "" }, /appraisal_state_hash/);
+  bad({ weights: ["1"] }, /one weight per seat/);
+  bad({ weights: ["0", "0"] }, /all be zero/);
+  bad({ weights: ["-1", "5"] }, /u128/);
+  bad({ weights: ["1.5", "5"] }, /u128/);
+  bad({ weights: ["340282366920938463463374607431768211456", "1"] }, /u128/);
+  bad({ floorSeq: "241" }, /not beyond the trusted checkpoint/);
+  bad({ signerKeyId: 70000 }, /u16/);
+  bad({ issuedAtSecs: -1 }, /issued_at/);
+  /* The floor may be absent (no trusted checkpoint): the contract's floor is then 0. */
+  assert.equal(G.replacePayload({ ...REPLACE_INPUT, floorSeq: null }).seq, "241");
+});
+
+test("Replace decoding: a proposal whose payload breaks a rule is not linked as a Replace", () => {
+  const payload = G.replacePayload(REPLACE_INPUT);
+  const wrap = (p) => ({ msgs: [{ wasm: { execute: { contract_addr: ESCROW, msg: b64(JSON.stringify({ resolve: { chain_game_id: 7, outcome: { replace: { payload: p } } } })), funds: [] } } }] });
+  assert.equal(G.decodeResolve(wrap({ ...payload, reason: 1 })), null);
+  assert.equal(G.decodeResolve(wrap({ ...payload, seq: "240" })), null);
+  assert.equal(G.decodeResolve(wrap({ ...payload, appraisal_log_len: "119" })), null);
+  assert.equal(G.decodeResolve(wrap({ ...payload, extra: 1 })), null);
+  assert.equal(G.decodeResolve(wrap({ ...payload, settlement_weights: ["0", "0"] })), null);
+  /* An Uphold with a body is not an Uphold. */
+  assert.equal(G.decodeResolve({ msgs: [{ wasm: { execute: { contract_addr: ESCROW, msg: b64('{"resolve":{"chain_game_id":7,"outcome":{"uphold":{"x":1}}}}'), funds: [] } } }] }), null);
 });
