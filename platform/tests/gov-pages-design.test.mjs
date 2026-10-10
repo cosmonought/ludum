@@ -348,5 +348,5 @@ test("every governance page: the §2.4 CSP first, the records layer, no inline s
     assert.ok(html.indexOf("/platform/css/records.css") > html.indexOf("/design-system/css/ludum.css"), rel);
     assert.doesNotMatch(html, /<script>|\son[a-z]+=|javascript:|ld-specimen/i, rel);
   }
-  assert.match(src("404.html"), /<script src="\/platform\/js\/route-map\.js"><\/script>\n<script src="\/design-system\/js\/ludum\.js">/);
+  assert.match(src("404.html"), /<script src="\/platform\/js\/route-map\.js"><\/script>\r?\n<script src="\/design-system\/js\/ludum\.js">/);
 });
