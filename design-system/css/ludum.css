@@ -883,8 +883,14 @@ html:not(.ld-js) .ld-nav__drop:focus-within > .ld-nav__sub { display: block; }  
 .ld-epigraph--panel .ld-epigraph__who { font: 600 13px/16px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
 .ld-epigraph--panel .ld-epigraph__who::after { content: none; }
 .ld-epigraph--panel .ld-epigraph__work { font: 400 15px/22px var(--font-sans); color: var(--ink-2); }
+/* its section: as much space as the line needs, no more (48px above and below; 32px on phones) */
+.ld-section--close { padding-block: var(--space-7, 48px); }
+.ld-section:has(+ .ld-section--close) { padding-bottom: var(--space-7, 48px); }
 @media (max-width: 1023px) { .ld-epigraph--panel p { font-size: 34px; line-height: 44px; } }
-@media (max-width: 599px) { .ld-epigraph--panel p { font-size: 26px; line-height: 34px; } .ld-epigraph--panel figcaption { margin-top: 20px; } }
+@media (max-width: 599px) {
+  .ld-epigraph--panel p { font-size: 26px; line-height: 34px; } .ld-epigraph--panel figcaption { margin-top: 20px; }
+  .ld-section--close { padding-block: 32px; } .ld-section:has(+ .ld-section--close) { padding-bottom: 32px; }
+}
 .ld-tag--p18 { --ld-tag: var(--p18-gold-deep); }
 .ld-tag--cosmos { --ld-tag: var(--blue); }
 .ld-tag--ludum { --ld-tag: var(--yellow); }

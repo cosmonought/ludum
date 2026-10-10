@@ -41,7 +41,7 @@
 .pg-flow__box--play li { border-top-color: #3A3631; }
 .pg-neta { display: flex; gap: 24px; align-items: center; }
 .pg-neta img { width: 96px; height: auto; }
-.pg-close { padding-block: var(--space-6, 32px); }   /* the closing Epigraph panel: no rule above it */
+.pg-close { padding: 0; }   /* the closing Epigraph panel: no rule above it; its section sets the space */
 .pg-next { isolation: isolate; padding-block: var(--space-8, 64px); }
 @media (max-width: 1023px) {
   .pg-head__row, .pg-two { grid-template-columns: 1fr; gap: 28px; }
@@ -106,7 +106,7 @@
 </article>
 </section>
 
-<section class="ld-section" aria-label="On play">
+<section class="ld-section ld-section--close" aria-label="On play">
   <div class="ld-wrap pg-close"><figure class="ld-epigraph ld-epigraph--panel"><blockquote><p>“… he is only wholly Man when he is playing.”</p></blockquote><figcaption><span class="ld-epigraph__who">Friedrich Schiller</span><span class="ld-epigraph__work"><cite>On the Aesthetic Education of Man</cite> (1795, Letter XV)</span></figcaption></figure></div>
 </section></main><footer class="ld-footer" data-theme="press">
   <span class="ld-footer__band" aria-hidden="true"></span>

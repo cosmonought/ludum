@@ -4,7 +4,7 @@ A reader on play, quoted: the line in Plex Sans italic, the reader and the work 
 
 **Markup.** `<figure class="ld-epigraph [ld-epigraph--panel]"><blockquote><p>“…”</p></blockquote><figcaption><span class="ld-epigraph__who">Name</span><span class="ld-epigraph__work"><cite>Work</cite> (year)</span></figcaption></figure>`.
 
-- **Panel** (`ld-epigraph--panel`): how a page closes. Centred on stock, alone, with no rule above it. The line at 44px (34px on tablets, 26px on phones) in `ink`, balanced over at most 26 characters a line; under it, 28px down, the reader's name in mono capitals and the work and year in Plex Sans, both centred. One per page, the last thing before the footer.
+- **Panel** (`ld-epigraph--panel`): how a page closes. Centred on stock, alone, with no rule above it. The line at 44px (34px on tablets, 26px on phones) in `ink`, balanced over at most 26 characters a line; under it, 28px down, the reader's name in mono capitals and the work and year in Plex Sans, both centred. One per page, the last thing before the footer, in a `ld-section--close`: 48px above and below (32px on phones), and the section before it ends 48px short too, so the line fills the panel rather than the space around it.
 - **Side** (the default): beside prose in a side column, at 16px in `ink-2`, the source under it in one mono line.
 
 | Reader | Line | Where |
