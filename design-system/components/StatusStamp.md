@@ -9,7 +9,7 @@ A rubber-stamp plate that says where a project stands. Every project shows exact
 | PLAYABLE | `--playable` | `red` / `on-red` | Runs on play.netadao.org now |
 | IN DEVELOPMENT | `--dev` | `yellow` / `on-yellow` | Being built, in public; follow its notes |
 | EXPERIMENTAL | `--experimental` | `blue` / `on-blue` | A playable prototype; rules may change |
-| RESEARCH | `--research` | `green` / `on-green` | Study and writing, not a game |
+| RESEARCH | `--research` | `green` / `on-green` | Study and writing, for a game or about games in general |
 | ARCHIVE | `--archive` | `grey` / `on-grey` | Finished or retired, kept on record |
 
 - The word carries the meaning; the colour repeats it. Never a coloured dot alone.
