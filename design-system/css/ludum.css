@@ -619,6 +619,7 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 
 /* ---------- 22. Mechanics stack: a project's verbs ---------- */
 .ld-mech { margin: 0; padding: 0; list-style: none; border-top: 2px solid var(--pj-rule, var(--rule-strong)); counter-reset: ld-mech; }
+.ld-sechead + .ld-mech { border-top: 0; }   /* straight under a section head, whose rule is the only one above it */
 .ld-mech > li {
   display: grid; grid-template-columns: 48px minmax(0, 5fr) minmax(0, 6fr); align-items: center; column-gap: var(--ld-gutter);
   padding: 14px 0 12px; border-bottom: 1px solid var(--rule);

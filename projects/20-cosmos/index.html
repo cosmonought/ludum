@@ -24,7 +24,7 @@
 .pg-split__side { grid-column: 1 / 4; }
 .pg-split__main { grid-column: 4 / 13; min-width: 0; }
 .pg-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7, 48px); align-items: start; }
-.pg-keys { margin: 0; padding: 0; list-style: none; border-top: 2px solid var(--rule-strong); }
+.pg-keys { margin: 0; padding: 0; list-style: none; }   /* under a section head, whose rule is the only one above it */
 .pg-keys li { display: grid; grid-template-columns: 260px 1fr; gap: var(--ld-gutter); align-items: center; padding: 16px 0; border-bottom: 1px solid var(--rule); font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
 .pg-flow { display: grid; grid-template-columns: 1fr 120px 1fr; align-items: stretch; }
 .pg-flow__box { padding: 28px 28px 30px; border: 2px solid var(--rule-strong); }
@@ -43,7 +43,6 @@
 .pg-close { padding-top: var(--space-6, 32px); border-top: 2px solid var(--rule-strong); }
 .pg-close .ld-epigraph { max-width: 40ch; }
 .pg-close .ld-epigraph p { font-size: 20px; line-height: 30px; }
-.pg-keys--open { border-top: 0; }
 .pg-next { isolation: isolate; padding-block: var(--space-8, 64px); }
 @media (max-width: 1023px) {
   .pg-head__row, .pg-two { grid-template-columns: 1fr; gap: 28px; }
@@ -89,7 +88,7 @@
   <div class="pg-split__side"><p class="ld-label" id="cov-h">01 · Overview</p></div>
   <div class="pg-split__main"><div class="pg-two">
     <div class="ld-prose" style="color:var(--pj-ink)"><p>20 Cosmos is the 18xx system rebuilt for the internet age, loosely based on the Cosmos ecosystem. Blockchains take the place of the railroad companies, validators the place of trains, and IBC channels, relayers and bridges the place of track.</p>
-    <p>Its rules are not published yet. This page shows the game’s world and how it looks while it is in development.</p></div>
+    <p>Its rules are not published yet. This page shows the game’s world and how it looks while it is still being researched.</p></div>
     <figure class="ld-quote ld-quote--frame" style="background:transparent;padding:22px 0 0"><blockquote><p>Railways built empires. Blockchains connect them.</p></blockquote><figcaption style="color:var(--p20c-mist)">20 Cosmos</figcaption></figure>
   </div></div>
 </div></section>
@@ -110,7 +109,7 @@
 </figure><div><ul class="ld-legend"><li><span class="ld-legend__sw" style="background:#2A6FB7;border-color:#EDE6D6"></span>Core zone</li><li><span class="ld-legend__sw" style="background:#F4C430;border-color:#EDE6D6"></span>Alliance zone</li><li><span class="ld-legend__sw" style="background:repeating-linear-gradient(135deg,#EDE6D6 0 2px,#0B0F17 2px 6px);border-color:#EDE6D6"></span>Emerging zone</li><li><span class="ld-legend__sw" style="background:repeating-linear-gradient(45deg,#A9B3C2 0 1px,#0B0F17 1px 5px),repeating-linear-gradient(-45deg,#A9B3C2 0 1px,transparent 1px 5px);border-color:#EDE6D6"></span>Frontier zone</li><li><span class="ld-legend__sw" style="background:#2A3140;border-color:#EDE6D6"></span>Neutral</li></ul></div></div></div>
 </div></section>
 <section class="ld-section" id="c-development" aria-labelledby="cdev-h"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">03</span><h2 class="ld-sechead__title" id="cdev-h">Development</h2></header>
-  <div class="pg-two"><div style="display:grid;gap:24px;justify-items:start"><p class="ld-lede">In development. The world comes first, then the rules.</p><p class="ld-play ld-play--soon ld-play--l"><span class="ld-play__word">Play</span><span class="ld-play__what">Research · not yet on play.netadao.org</span></p></div><dl class="ld-meta"><div><dt>Status</dt><dd><span class="ld-stamp ld-stamp--research ld-stamp--s">Research</span></dd></div><div><dt>Rules</dt><dd>Not yet published</dd></div></dl></div>
+  <div class="pg-two"><div style="display:grid;gap:24px;justify-items:start"><p class="ld-lede">Research. The world comes first, then the rules.</p><p class="ld-play ld-play--soon ld-play--l"><span class="ld-play__word">Play</span><span class="ld-play__what">Research · not yet on play.netadao.org</span></p></div><dl class="ld-meta"><div><dt>Status</dt><dd><span class="ld-stamp ld-stamp--research ld-stamp--s">Research</span></dd></div><div><dt>Rules</dt><dd>Not yet published</dd></div></dl></div>
 </div></section>
 
 </div><section class="pg-next" aria-label="Next project"><div class="ld-wrap"><nav class="ld-next" aria-label="Next project"><div><span class="ld-next__label">Next project · LUD—01</span><p class="ld-next__title"><a href="/projects/project-18xx/">Project 18XX</a></p></div><svg class="ld-icon ld-icon--48" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></nav></div></section></main><footer class="ld-footer" data-theme="press">
