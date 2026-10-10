@@ -350,3 +350,11 @@ test("every governance page: the §2.4 CSP first, the records layer, no inline s
   }
   assert.match(src("404.html"), /<script src="\/platform\/js\/route-map\.js"><\/script>\r?\n<script src="\/design-system\/js\/ludum\.js">/);
 });
+
+test("a missing proposal or game is recognised from the chain's whole error text (uni-7's real message is long)", async () => {
+  const LONG = "type: dao_proposal_single::proposal::SingleChoiceProposal; key: [00, 0C, 70, 72, 6F, 70, 6F, 73, 61, 6C, 73, 5F, 76, 32, 00, 00, 00, 00, 00, 00, 00, 01] not found: query wasm contract failed";
+  const p = await load("proposal", "?id=1", { world: F.world({ proposal: () => ({ status: 500, message: LONG }) }) });
+  assert.match(p.text(), /No such proposal/);
+  const g = await load("case", "?id=1", { world: F.world({ game: () => ({ status: 500, message: "codespace wasm code 9: query wasm contract failed: " + "x".repeat(200) + " game not found" }) }), sessionApi: () => Promise.reject({ status: 404 }) });
+  assert.match(g.text(), /No such game/);
+});

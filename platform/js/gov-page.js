@@ -30,6 +30,9 @@
   function $(id) { return document.getElementById(id); }
   function clear(node) { while (node && node.firstChild) node.removeChild(node.firstChild); return node; }
   function why(e) { return (e && e.message ? e.message : String(e)).replace(/\s+/g, ' ').slice(0, 160); }
+  /** The chain's whole error text (never truncated) -- what "does this exist?" is decided on. */
+  function missingGame(e) { return missing(e); }
+  function missing(e) { return /not found|NoSuchProposal/i.test(e && e.message ? e.message : String(e)); }
   function isoOf(ns) { var s = G.nanosToSecs(ns == null ? null : String(ns)); return s == null ? null : G.isoFromSecs(s); }
   function secsOf(ns) { return G.nanosToSecs(ns == null ? null : String(ns)); }
   function when(iso) { return iso ? R.day(iso) + ' · ' + R.clock(iso) : '—'; }
@@ -300,7 +303,7 @@
     Promise.all([chain.then(function (r) { return { ok: r }; }, function (e) { return { error: e }; }), server]).then(function (both) {
       var c = both[0], outcome = both[1];
       if (c.error) {
-        var missing = /not found/i.test(why(c.error));
+        var missing = missingGame(c.error);
         frame({ back: { href: '/disputes/', text: 'Appeals & Disputes' }, no: 'Case', title: id, dek: missing ? 'Escrow ' + R.shortAddress(P.escrow) + ' has no game ' + id + '.' : 'The escrow could not be read.' });
         body.appendChild(el('div', { class: 'ld-wrap', 'data-chain-state': missing ? 'missing' : 'unavailable' }, [missing ? R.notice('No such game', 'Escrow ' + R.shortAddress(P.escrow) + ' has no game #' + id + '.', 'stop') : R.notice('Unavailable', 'The chain could not be read from this browser just now (' + why(c.error) + '). Nothing is shown rather than an old value.', 'stop')]));
         body.appendChild(serverNotice(outcome, null, id, false));
@@ -684,8 +687,8 @@
       return Promise.all(waits).then(function () { drawProposal(body, pid, p, votes, at, d, extra); });
     }).catch(function (e) {
       frame({ back: { href: '/disputes/', text: 'Appeals & Disputes' }, title: 'Proposal ' + pid });
-      var missing = /not found|NoSuchProposal/i.test(why(e));
-      body.appendChild(el('div', { class: 'ld-wrap' }, [missing ? R.notice('No such proposal', 'The proposal module has no proposal ' + pid + '.', 'stop') : R.notice('Unavailable', 'The proposal could not be read from the chain (' + why(e) + ').', 'stop')]));
+      var gone = missing(e);
+      body.appendChild(el('div', { class: 'ld-wrap' }, [gone ? R.notice('No such proposal', 'The proposal module has no proposal ' + pid + '.', 'stop') : R.notice('Unavailable', 'The proposal could not be read from the chain (' + why(e) + ').', 'stop')]));
     });
   }
 
