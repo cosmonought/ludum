@@ -9,9 +9,10 @@ A reader on play, quoted: the line in Plex Sans italic, the reader and the work 
 
 | Reader | Line | Where |
 |---|---|---|
-| Friedrich Schiller, *On the Aesthetic Education of Man* (1795, Letter XV) | "… he is only wholly Man when he is playing." | **Home**, the closing panel |
-| Walter Benjamin, *Toys and Play* (1928) | "For play and nothing else is the mother of every habit." | **About**, the closing panel |
-| Sigmund Freud, *Creative Writers and Day-Dreaming* (1908) | "The opposite of play is not what is serious but what is real." | **About**, beside "What Ludum is" |
+| Johan Huizinga, *Homo Ludens* (1938) | "Play is older than culture." | **Home**, the closing panel |
+| Friedrich Schiller, *On the Aesthetic Education of Man* (1795, Letter XV) | "… he is only wholly Man when he is playing." | **About**, the closing panel |
+| Walter Benjamin, *Toys and Play* (1928) | "For play and nothing else is the mother of every habit." | **Project 18XX**, the closing panel, above Next project |
+| Sigmund Freud, *Creative Writers and Day-Dreaming* (1908) | "The opposite of play is not what is serious but what is real." | **20Cosmos**, the closing panel, above Next project |
 | Alain Badiou, *The Concept of Model* (1969) | "the model is that which allows us to think through participation" | **About**, beside the statement "Games are models you can enter." (22px, on the frame) |
 
 - Never a pull quote, never in the footer. A pull quote is Ludum's own words; an epigraph is someone else's.
