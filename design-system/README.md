@@ -6,7 +6,7 @@ Ludum is Neta DAO's game publisher, and this is its house style: radical game pu
 - **play.netadao.org** is where the games run.
 - Every PLAY on Ludum leaves for play.netadao.org and says so. Ludum never stands between a player and a game, and nobody has to come through Ludum to play. PLAY wears Neta DAO's cyan (`neta-cyan`), because Play is Neta DAO's.
 - Homepage priority is fixed: **the games first, then what can be played, then the writing.**
-- Today **Project 18XX** is **Experimental**, a playable prototype, so its feature and masthead carry a linked PLAY to play.netadao.org; **20 Cosmos** is **Research** and shows the struck-through PLAY plate (`ld-play--soon`). The nav keeps the global PLAY. Change a game's stamp and its PLAY in the same change, the day its state changes.
+- Today both games are **In development**, and each carries a second status beside it: **Project 18XX** is **Experimental**, a playable prototype, so its feature and masthead carry a linked PLAY to play.netadao.org; **20 Cosmos** is **Research** and shows the struck-through PLAY plate (`ld-play--soon`). The nav keeps the global PLAY. Change a game's stamp and its PLAY in the same change, the day its state changes.
 
 ## Content fundamentals
 
@@ -36,7 +36,7 @@ Ludum is Neta DAO's game publisher, and this is its house style: radical game pu
 
 **Page rhythm.** A page is cream stock, framed by the black nav and footer; dark fields (a game's identity, a frame-black statement) are set into the stock. Every page comes back to stock before the footer, so the footer never meets a dark field: the homepage closes on stock, the projects index ends on its status key, and each game page ends with a **Next project** band on stock. The one place two dark fields meet is the homepage, where the two games follow each other. Check every change against the whole page, top to bottom, at desktop and phone.
 
-**Rules, corners, shadows.** Structure is drawn with rules: `rule-hair` 1px between rows, `rule-2` for modules and controls, `rule-4` over metadata, `rule-bar` 8px, `rule-band` 16px stripe bands on field edges. `radius-0` everywhere; `radius-token` only for drawn pieces, stations, the hub and the red sun. No shadows: sheets are set apart by `rule-strong`.
+**Rules, corners, shadows.** Structure is drawn with rules: `rule-hair` 1px between rows, `rule-2` for modules and controls, `rule-4` over metadata, `rule-bar` 8px, `rule-band` 16px stripe bands on field edges. One rule per boundary: a rule opens a section or separates two rows. Nothing closes with a rule (a table, list or strip ends with its last row), and nothing set straight under a section head draws a rule of its own. `radius-0` everywhere; `radius-token` only for drawn pieces, stations, the hub and the red sun. No shadows: sheets are set apart by `rule-strong`.
 
 **Texture.** Print, not decoration: `ld-grain` on fields and mastheads, `ld-halftone`/`ld-hatch` for fills, one `ld-torn` edge per page at most. Never under running text; never animated.
 

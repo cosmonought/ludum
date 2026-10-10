@@ -14,5 +14,6 @@ A rubber-stamp plate that says where a project stands. Every project shows exact
 
 - The word carries the meaning; the colour repeats it. Never a coloured dot alone.
 - The plate is a pigment border, a 2px hairline of the ground (`paper`) inside it, and the word in Anton (19px) or Plex Mono (`--s`).
-- Today both games are IN DEVELOPMENT.
+- Today both games are IN DEVELOPMENT, and each carries a second stamp beside it: Project 18XX EXPERIMENTAL, 20 Cosmos RESEARCH.
+- A game can hold more than one status. Set them side by side in `.ld-stamps` (8px apart, wrapping), IN DEVELOPMENT first; a catalogue row's `data-ld-status` lists them all (`dev experimental`), so each filter finds it.
 - Don't invent statuses ("Coming soon", "Beta", "New").

@@ -26,6 +26,7 @@
 .pg-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7, 48px); align-items: start; }
 .pg-keys { margin: 0; padding: 0; list-style: none; }   /* under a section head, whose rule is the only one above it */
 .pg-keys li { display: grid; grid-template-columns: 260px 1fr; gap: var(--ld-gutter); align-items: center; padding: 16px 0; border-bottom: 1px solid var(--rule); font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
+.pg-keys li:last-child { border-bottom: 0; }
 .pg-flow { display: grid; grid-template-columns: 1fr 120px 1fr; align-items: stretch; }
 .pg-flow__box { padding: 28px 28px 30px; border: 2px solid var(--rule-strong); }
 .pg-flow__box h3 { margin: 0 0 14px; font: 400 var(--ld-d3)/.9 var(--font-display); text-transform: uppercase; font-weight: 400; }
@@ -63,7 +64,7 @@
 <a class="ld-skip" href="#main">Skip to content</a><header class="ld-nav" data-theme="press">
   <div class="ld-nav__bar">
     <a class="ld-nav__home" href="/" aria-label="Ludum, home"><span class="ld-nav__name">Ludum</span><span class="ld-nav__by">Games by<br>Neta DAO</span></a>
-    <nav class="ld-nav__links" id="ld-menu" aria-label="Main"><a href="/projects/"><span>Projects</span><span class="ld-nav__no" aria-hidden="true">01</span></a><a href="/about/"><span>About</span><span class="ld-nav__no" aria-hidden="true">02</span></a>
+    <nav class="ld-nav__links" id="ld-menu" aria-label="Main"><div class="ld-nav__drop"><button class="ld-nav__drop-btn" type="button" aria-expanded="false" aria-controls="ld-projects"><span>Projects</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v17M6 14l6 6 6-6"/></svg></button><a class="ld-nav__drop-link" href="/projects/"><span>Projects</span><span class="ld-nav__no" aria-hidden="true">01</span></a><div class="ld-nav__sub" id="ld-projects"><ul><li><a href="/projects/project-18xx/"><span class="ld-nav__sub-kick">LUD—01 · 18xx</span><span class="ld-nav__sub-name">Project 18XX</span></a></li><li><a href="/projects/20-cosmos/"><span class="ld-nav__sub-kick">LUD—02 · 18xx</span><span class="ld-nav__sub-name">20 Cosmos</span></a></li></ul><a class="ld-nav__sub-all" href="/projects/">All projects<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a></div></div><a href="/about/"><span>About</span><span class="ld-nav__no" aria-hidden="true">02</span></a>
       <div class="ld-nav__panel-foot"><a class="ld-play ld-play--l" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a><p>Ludum publishes. The games run on play.netadao.org.</p></div>
     </nav>
     <a class="ld-play" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a>

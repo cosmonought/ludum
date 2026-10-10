@@ -26,6 +26,7 @@
 .pg-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7, 48px); align-items: start; }
 .pg-keys { margin: 0; padding: 0; list-style: none; }   /* under a section head, whose rule is the only one above it */
 .pg-keys li { display: grid; grid-template-columns: 260px 1fr; gap: var(--ld-gutter); align-items: center; padding: 16px 0; border-bottom: 1px solid var(--rule); font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
+.pg-keys li:last-child { border-bottom: 0; }
 .pg-flow { display: grid; grid-template-columns: 1fr 120px 1fr; align-items: stretch; }
 .pg-flow__box { padding: 28px 28px 30px; border: 2px solid var(--rule-strong); }
 .pg-flow__box h3 { margin: 0 0 14px; font: 400 var(--ld-d3)/.9 var(--font-display); text-transform: uppercase; font-weight: 400; }
@@ -63,7 +64,7 @@
 <a class="ld-skip" href="#main">Skip to content</a><header class="ld-nav" data-theme="press">
   <div class="ld-nav__bar">
     <a class="ld-nav__home" href="/" aria-label="Ludum, home"><span class="ld-nav__name">Ludum</span><span class="ld-nav__by">Games by<br>Neta DAO</span></a>
-    <nav class="ld-nav__links" id="ld-menu" aria-label="Main"><a href="/projects/"><span>Projects</span><span class="ld-nav__no" aria-hidden="true">01</span></a><a href="/about/"><span>About</span><span class="ld-nav__no" aria-hidden="true">02</span></a>
+    <nav class="ld-nav__links" id="ld-menu" aria-label="Main"><div class="ld-nav__drop"><button class="ld-nav__drop-btn" type="button" aria-expanded="false" aria-controls="ld-projects"><span>Projects</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v17M6 14l6 6 6-6"/></svg></button><a class="ld-nav__drop-link" href="/projects/"><span>Projects</span><span class="ld-nav__no" aria-hidden="true">01</span></a><div class="ld-nav__sub" id="ld-projects"><ul><li><a href="/projects/project-18xx/"><span class="ld-nav__sub-kick">LUD—01 · 18xx</span><span class="ld-nav__sub-name">Project 18XX</span></a></li><li><a href="/projects/20-cosmos/"><span class="ld-nav__sub-kick">LUD—02 · 18xx</span><span class="ld-nav__sub-name">20 Cosmos</span></a></li></ul><a class="ld-nav__sub-all" href="/projects/">All projects<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a></div></div><a href="/about/"><span>About</span><span class="ld-nav__no" aria-hidden="true">02</span></a>
       <div class="ld-nav__panel-foot"><a class="ld-play ld-play--l" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a><p>Ludum publishes. The games run on play.netadao.org.</p></div>
     </nav>
     <a class="ld-play" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a>
@@ -79,7 +80,7 @@
     <div class="ld-hero__side"><span class="ld-hero__sun ld-sun" aria-hidden="true"></span><section class="ld-board ld-board--compact" data-theme="press" aria-labelledby="board-h">
   <header class="ld-board__head"><h2 id="board-h">Departures</h2><span class="ld-board__clock">Ludum · Games by Neta DAO</span></header>
   <div class="ld-board__cols" aria-hidden="true"><span>No.</span><span>Game</span><span style="text-align:right">Status</span></div>
-  <ol class="ld-board__rows"><li class="ld-board__row"><span class="ld-board__no">01</span><span><a class="ld-board__title" href="/projects/project-18xx/">Project 18XX</a><span class="ld-board__kind">18xx · The gilded boardroom</span></span><span class="ld-board__status">Experimental</span></li><li class="ld-board__row"><span class="ld-board__no">02</span><span><a class="ld-board__title" href="/projects/20-cosmos/">20 Cosmos</a><span class="ld-board__kind">18xx · Interchain infrastructure</span></span><span class="ld-board__status">Research</span></li></ol>
+  <ol class="ld-board__rows"><li class="ld-board__row"><span class="ld-board__no">01</span><span><a class="ld-board__title" href="/projects/project-18xx/">Project 18XX</a><span class="ld-board__kind">18xx · The gilded boardroom</span></span><span class="ld-board__status"><span>In development</span><span>Experimental</span></span></li><li class="ld-board__row"><span class="ld-board__no">02</span><span><a class="ld-board__title" href="/projects/20-cosmos/">20 Cosmos</a><span class="ld-board__kind">18xx · Interchain infrastructure</span></span><span class="ld-board__status"><span>In development</span><span>Research</span></span></li></ol>
   <footer class="ld-board__foot"><span>Platform: play.netadao.org</span><a class="ld-link" href="/projects/">All projects<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a></footer>
 </section></div>
   </div>
@@ -87,7 +88,7 @@
 <section id="games" aria-label="The games">
   <article class="ld-feature ld-feature--p18 ld-pj ld-pj--p18 ld-grain" data-theme="press">
   <div class="ld-wrap ld-feature__grid">
-    <header class="ld-feature__head"><span class="ld-label">LUD—01 · 18xx · The gilded boardroom</span><span class="ld-stamp ld-stamp--experimental">Experimental</span></header>
+    <header class="ld-feature__head"><span class="ld-label">LUD—01 · 18xx · The gilded boardroom</span><span class="ld-stamps"><span class="ld-stamp ld-stamp--dev">In development</span><span class="ld-stamp ld-stamp--experimental">Experimental</span></span></header>
     <h3 class="ld-feature__title"><a href="/projects/project-18xx/"><span class="ld-feature__name">Project</span><span class="ld-feature__num ld-gilt">18XX</span><span class="ld-sr"> — view the project</span></a></h3>
     <p class="ld-feature__dek">Railroads, a stock market and the people who run both: an 18xx game being built for play on Juno, at three tables. Based on the classic <i>1830: Railways and Robber Barons</i> by Francis Tresham.</p>
     <div class="ld-feature__meta"><dl class="ld-meta ld-meta--compact"><div><dt>Family</dt><dd>18xx · economic strategy</dd></div><div><dt>Network</dt><dd>Juno</dd></div><div><dt>Tables</dt><dd>18XX · 18XX+ · A Level Playing Field</dd></div></dl></div>
@@ -97,7 +98,7 @@
 </article>
   <article class="ld-feature ld-feature--cosmos ld-pj ld-pj--cosmos ld-grain" data-theme="press">
   <div class="ld-wrap ld-feature__grid">
-    <header class="ld-feature__head"><span class="ld-label">LUD—02 · 18xx · Interchain infrastructure</span><span class="ld-stamp ld-stamp--research">Research</span></header>
+    <header class="ld-feature__head"><span class="ld-label">LUD—02 · 18xx · Interchain infrastructure</span><span class="ld-stamps"><span class="ld-stamp ld-stamp--dev">In development</span><span class="ld-stamp ld-stamp--research">Research</span></span></header>
     <h3 class="ld-feature__title"><a href="/projects/20-cosmos/"><span class="ld-feature__num">20</span><span class="ld-feature__name ld-feature__name--big">Cosmos</span><span class="ld-sr"> — view the project</span></a></h3>
     <p class="ld-feature__dek">Robber barons in the internet age: an 18xx game of blockchains, validators and the channels between them, loosely based on the Cosmos ecosystem.</p>
     <div class="ld-feature__meta"><dl class="ld-meta ld-meta--compact"><div><dt>Family</dt><dd>18xx</dd></div><div><dt>Setting</dt><dd>The Cosmos ecosystem, loosely</dd></div><div><dt>Plays on</dt><dd>play.netadao.org, when ready</dd></div></dl></div>

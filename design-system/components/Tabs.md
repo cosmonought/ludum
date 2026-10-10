@@ -8,3 +8,4 @@ A row of mono labels over a 2px rule: project tabs that move between a page's pa
 - Counts sit in the label (`.ld-tabs__count`), never as badges.
 - On project pages wrap the row in `<div class="ld-tabs-bar"><div class="ld-wrap">…</div></div>`: it sticks to the top while the page scrolls, on the project's ground.
 - Phone: the row scrolls sideways with snap; it never wraps into two lines.
+- The profile's tabs (`.ld-rectabs`) are the first section's rule: its head sits straight under them, with no gap and no second rule.

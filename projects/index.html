@@ -26,6 +26,7 @@
 .pg-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7, 48px); align-items: start; }
 .pg-keys { margin: 0; padding: 0; list-style: none; }   /* under a section head, whose rule is the only one above it */
 .pg-keys li { display: grid; grid-template-columns: 260px 1fr; gap: var(--ld-gutter); align-items: center; padding: 16px 0; border-bottom: 1px solid var(--rule); font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
+.pg-keys li:last-child { border-bottom: 0; }
 .pg-flow { display: grid; grid-template-columns: 1fr 120px 1fr; align-items: stretch; }
 .pg-flow__box { padding: 28px 28px 30px; border: 2px solid var(--rule-strong); }
 .pg-flow__box h3 { margin: 0 0 14px; font: 400 var(--ld-d3)/.9 var(--font-display); text-transform: uppercase; font-weight: 400; }
@@ -63,7 +64,7 @@
 <a class="ld-skip" href="#main">Skip to content</a><header class="ld-nav" data-theme="press">
   <div class="ld-nav__bar">
     <a class="ld-nav__home" href="/" aria-label="Ludum, home"><span class="ld-nav__name">Ludum</span><span class="ld-nav__by">Games by<br>Neta DAO</span></a>
-    <nav class="ld-nav__links" id="ld-menu" aria-label="Main"><a href="/projects/" aria-current="page"><span>Projects</span><span class="ld-nav__no" aria-hidden="true">01</span></a><a href="/about/"><span>About</span><span class="ld-nav__no" aria-hidden="true">02</span></a>
+    <nav class="ld-nav__links" id="ld-menu" aria-label="Main"><div class="ld-nav__drop is-current"><button class="ld-nav__drop-btn" type="button" aria-expanded="false" aria-controls="ld-projects"><span>Projects</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v17M6 14l6 6 6-6"/></svg></button><a class="ld-nav__drop-link" href="/projects/" aria-current="page"><span>Projects</span><span class="ld-nav__no" aria-hidden="true">01</span></a><div class="ld-nav__sub" id="ld-projects"><ul><li><a href="/projects/project-18xx/"><span class="ld-nav__sub-kick">LUD—01 · 18xx</span><span class="ld-nav__sub-name">Project 18XX</span></a></li><li><a href="/projects/20-cosmos/"><span class="ld-nav__sub-kick">LUD—02 · 18xx</span><span class="ld-nav__sub-name">20 Cosmos</span></a></li></ul><a class="ld-nav__sub-all" href="/projects/">All projects<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a></div></div><a href="/about/"><span>About</span><span class="ld-nav__no" aria-hidden="true">02</span></a>
       <div class="ld-nav__panel-foot"><a class="ld-play ld-play--l" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a><p>Ludum publishes. The games run on play.netadao.org.</p></div>
     </nav>
     <a class="ld-play" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a>
@@ -71,19 +72,19 @@
   </div>
 </header><main id="main">
 <header class="ld-wrap pg-head"><p class="ld-label pg-head__kicker">Projects · 2 · Catalogue order</p><div class="pg-head__row"><h1 class="pg-head__title">Projects</h1><div><p class="pg-head__dek">Every game Ludum publishes, numbered in the order it began. Statuses mean what they say.</p></div></div></header>
-<section class="ld-wrap" aria-label="Catalogue"><div class="ld-filters"><div class="ld-tabs" data-ld-filter="catalogue" role="group" aria-label="Filter projects by status"><button type="button" data-value="all" aria-pressed="true">All <span class="ld-tabs__count">2</span></button><button type="button" data-value="playable" aria-pressed="false">Playable <span class="ld-tabs__count">0</span></button><button type="button" data-value="dev" aria-pressed="false">In development <span class="ld-tabs__count">0</span></button><button type="button" data-value="experimental" aria-pressed="false">Experimental <span class="ld-tabs__count">1</span></button><button type="button" data-value="research" aria-pressed="false">Research <span class="ld-tabs__count">1</span></button><button type="button" data-value="archive" aria-pressed="false">Archive <span class="ld-tabs__count">0</span></button></div><span class="ld-filters__count" data-ld-filter-count="catalogue" aria-live="polite">2 projects</span></div><ol class="ld-catalogue" id="catalogue"><li class="ld-entry" data-ld-status="experimental">
+<section class="ld-wrap" aria-label="Catalogue"><div class="ld-filters"><div class="ld-tabs" data-ld-filter="catalogue" role="group" aria-label="Filter projects by status"><button type="button" data-value="all" aria-pressed="true">All <span class="ld-tabs__count">2</span></button><button type="button" data-value="playable" aria-pressed="false">Playable <span class="ld-tabs__count">0</span></button><button type="button" data-value="dev" aria-pressed="false">In development <span class="ld-tabs__count">2</span></button><button type="button" data-value="experimental" aria-pressed="false">Experimental <span class="ld-tabs__count">1</span></button><button type="button" data-value="research" aria-pressed="false">Research <span class="ld-tabs__count">1</span></button><button type="button" data-value="archive" aria-pressed="false">Archive <span class="ld-tabs__count">0</span></button></div><span class="ld-filters__count" data-ld-filter-count="catalogue" aria-live="polite">2 projects</span></div><ol class="ld-catalogue" id="catalogue"><li class="ld-entry" data-ld-status="dev experimental">
   <span class="ld-entry__no">LUD—01</span>
   <div class="ld-entry__main"><h3 class="ld-entry__title"><a href="/projects/project-18xx/">Project 18XX</a></h3><p class="ld-entry__dek">Railroads and a stock market, at three tables, being built for Juno.</p></div>
   <span class="ld-entry__kind"><small>Family</small>18xx · economic</span>
-  <span class="ld-entry__status"><span class="ld-stamp ld-stamp--experimental ld-stamp--s">Experimental</span></span>
+  <span class="ld-entry__status"><span class="ld-stamps ld-stamps--s"><span class="ld-stamp ld-stamp--dev ld-stamp--s">In development</span><span class="ld-stamp ld-stamp--experimental ld-stamp--s">Experimental</span></span></span>
   <span class="ld-entry__year">2026</span>
   <span class="ld-entry__go" aria-hidden="true"><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></span>
-  <span class="ld-entry__thumb" aria-hidden="true"><img src="/assets/project-18xx/p18-table-18xx.webp" alt=""></span>
-</li><li class="ld-entry" data-ld-status="research">
+  <span class="ld-entry__thumb" aria-hidden="true"><img src="/assets/project-18xx/p18-board-meeting.webp" alt=""></span>
+</li><li class="ld-entry" data-ld-status="dev research">
   <span class="ld-entry__no">LUD—02</span>
   <div class="ld-entry__main"><h3 class="ld-entry__title"><a href="/projects/20-cosmos/">20 Cosmos</a></h3><p class="ld-entry__dek">Robber barons in the internet age: blockchains, validators and the channels between them.</p></div>
   <span class="ld-entry__kind"><small>Family</small>18xx · network</span>
-  <span class="ld-entry__status"><span class="ld-stamp ld-stamp--research ld-stamp--s">Research</span></span>
+  <span class="ld-entry__status"><span class="ld-stamps ld-stamps--s"><span class="ld-stamp ld-stamp--dev ld-stamp--s">In development</span><span class="ld-stamp ld-stamp--research ld-stamp--s">Research</span></span></span>
   <span class="ld-entry__year">2026</span>
   <span class="ld-entry__go" aria-hidden="true"><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></span>
   <span class="ld-entry__thumb" aria-hidden="true"><img src="/assets/20-cosmos/c20-machine-hall.webp" alt=""></span>

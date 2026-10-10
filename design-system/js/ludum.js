@@ -139,6 +139,19 @@
     });
   }
 
+  /* Projects in the nav: the button opens the games; Escape, a click outside, leaving it by Tab or a second press closes it. */
+  function drops(root) {
+    each(root, '.ld-nav__drop-btn', function (btn) {
+      var panel = document.getElementById(btn.getAttribute('aria-controls')), box = btn.parentNode;
+      if (!panel || !once(btn, 'drop')) return;
+      function set(open) { btn.setAttribute('aria-expanded', open ? 'true' : 'false'); }   /* the CSS shows the list from the button's state */
+      btn.addEventListener('click', function (e) { e.stopPropagation(); set(btn.getAttribute('aria-expanded') !== 'true'); });
+      document.addEventListener('click', function (e) { if (btn.getAttribute('aria-expanded') === 'true' && !box.contains(e.target)) set(false); });
+      box.addEventListener('keydown', function (e) { if (e.key === 'Escape' && btn.getAttribute('aria-expanded') === 'true') { set(false); btn.focus(); } });
+      box.addEventListener('focusout', function (e) { if (e.relatedTarget && !box.contains(e.relatedTarget)) set(false); });
+    });
+  }
+
   /* Trace: on a route map, pointing at (or focusing) a station lights its routes and the stations they reach. */
   function traces(root) {
     each(root, '[data-ld-trace]', function (map) {
@@ -170,7 +183,7 @@
     var html = document.documentElement;
     html.classList.add('ld-js');
     html.classList.toggle('ld-motion', !reduce.matches);
-    menus(root); tabs(root); filters(root); traces(root); draws(root); reveals(root);
+    menus(root); drops(root); tabs(root); filters(root); traces(root); draws(root); reveals(root);
     return Ludum;
   };
 

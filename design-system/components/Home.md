@@ -11,7 +11,7 @@ ludum.netadao.org: games first, then what can be played, then the writing.
 
 - No eyebrow over the hero line, and no button that only scrolls the page: the games begin directly below. Why games lives on About, not on the homepage.
 
-- Order is priority. A game that runs on play.netadao.org (Project 18XX, Experimental) carries a linked PLAY in its feature; one that doesn't (20 Cosmos, Research) shows the struck-through plate.
+- Order is priority. A game that runs on play.netadao.org (Project 18XX: In development, Experimental) carries a linked PLAY in its feature; one that doesn't (20 Cosmos: In development, Research) shows the struck-through plate.
 - Page rhythm: the hero is stock, the two game fields follow each other directly, and the page comes back to stock before the footer.
 - Note titles and dates are sample copy.
 - Phone: see **HomePhone** — the board sits between the line and the actions, features recompose, the nav becomes a sheet.
