@@ -4,7 +4,8 @@
  *
  * The DisplayName states (the owner's rule): "changeable" — a field with one change left, refusing a name another
  * player has; "changed" — the change is used; "locked-playing" — a game has started; "locked-seated" — a seat is held
- * at a table that has not started. The password, the Authorization Wallet and sign-out are Play's. */
+ * at a table that has not started. v1.2: sign-in, sign-out and "Confirm it's you" are Ludum's own too (one account and
+ * one session with play.netadao.org); changing the password or the Authorization Wallet stays on play.netadao.org. */
 (function () {
   'use strict';
   var R = window.LudumRecords;
@@ -25,7 +26,7 @@
     if (d === 'locked-playing') return 'A game has started, so the name is locked.';
     if (d === 'locked-seated') return 'You hold a seat at a table that has not started. Leave it to change your name.';
     if (d === 'bad-name') return 'A name is 1 to 24 characters, and the same once cleaned (no control characters, no leading or trailing spaces).';
-    if (e && e.error === 'signed-out') return 'You are signed out. Sign in on Play and try again.';
+    if (e && e.error === 'signed-out') return 'You are signed out. Sign in and try again.';
     if (e && e.error === 'rate-limited') return 'Too many requests. Try again in a minute.';
     return 'The change could not be saved. Nothing changed.';
   }
@@ -92,7 +93,8 @@
       R.el('dt', { text: 'Authorization Wallet' }),
       R.el('dd', null, a.authorizationWallet ? [R.el('span', { class: 'ld-id', title: a.authorizationWallet.address, text: R.shortAddress(a.authorizationWallet.address) }), ' · since ' + R.day(a.authorizationWallet.since) + ' · signs account actions only'] : ['None']),
       R.el('dt', { text: 'Payout wallets' }), R.el('dd', { text: 'Chosen at each table, on play.netadao.org. Each game record names the one it paid.' }),
-      R.el('dt', { text: 'Password and sign-out' }), R.el('dd', null, [R.el('a', { class: 'ld-link ld-link--out', href: who.manageUrl || window.LudumSession.PLAY_ORIGIN + '/' }, ['Manage on play.netadao.org', R.icon('arrow-out')])])
+      R.el('dt', { text: 'Signed in' }), R.el('dd', { text: 'One account and one session for Ludum and play.netadao.org: signing out here signs out there too.' }),
+      R.el('dt', { text: 'Password and Authorization Wallet' }), R.el('dd', null, [R.el('a', { class: 'ld-link ld-link--out', href: who.manageUrl || window.LudumSession.PLAY_ORIGIN + '/' }, ['Change on play.netadao.org', R.icon('arrow-out')])])
     ]);
     var right = R.el('div', null, [R.el('p', { class: 'ld-label', style: 'margin-bottom:12px', text: 'What players at your tables see' }), factsLedger(acct.tablemates)]);
     body.appendChild(R.section('01', 'd1', 'Account', 'Your player account for every Neta DAO game.', [R.el('div', { class: 'ld-twocol' }, [R.el('div', { class: 'ld-stack' }, [dl]), right])]));
@@ -105,7 +107,7 @@
       if (!who || who.signedIn !== true) {
         frame.textContent = '';
         frame.appendChild(R.rechead({ kicker: 'Profile', title: 'Your account' }));
-        frame.appendChild(R.el('div', { class: 'ld-wrap' }, [R.notice('Signed out', 'Sign in on Play to see your account. Ludum never asks for your password.', 'wait', R.el('a', { class: 'ld-btn', href: window.LudumSession.signInUrl('/me/account/'), text: 'Sign in on Play' }))]));
+        frame.appendChild(R.el('div', { class: 'ld-wrap' }, [R.notice('Signed out', 'Sign in to see your account. One account for Ludum and play.netadao.org.', 'wait', R.el('a', { class: 'ld-btn', href: window.LudumSession.signInUrl('/me/account/'), text: 'Sign in' }))]));
         return;
       }
       return session.api('account', {}).then(function (acct) { render(frame, body, who, acct, session); });

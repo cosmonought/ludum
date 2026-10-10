@@ -158,6 +158,6 @@ for (const page of ['me/index.html', 'platform/tests/history-harness.html']) {
 test('me/index.html loads the session, the records layer, the account menu, then Your record and page-init; never the mock', () => {
   const html = read('me/index.html');
   const order = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(order, ['https://netadao.org/radio/radio.js', '/design-system/js/ludum.js', '/platform/js/session.js', '/platform/js/records.js', '/platform/js/account-menu.js', '/platform/js/me-record.js', '/platform/js/page-init.js']);
+  assert.deepEqual(order, ['https://netadao.org/radio/radio.js', '/design-system/js/ludum.js', '/platform/js/session.js', '/platform/js/records.js', '/platform/js/auth.js', '/platform/js/account-menu.js', '/platform/js/me-record.js', '/platform/js/page-init.js']);
   assert.ok(!html.includes('mock'));
 });

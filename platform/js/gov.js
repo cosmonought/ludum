@@ -451,6 +451,22 @@
       }, function (e) { throw new Error(declined(e) ? 'Keplr didn’t connect. Nothing was shared.' : 'Keplr couldn’t connect to ' + PINS.chainName + '.'); });
   }
 
+  /* An account action's text (ADR-036 `signArbitrary`: an empty chain id and `sign/MsgSignData`, never a transaction),
+     signed by `address` -- which must still be the account Keplr is on. LudumAuth checks the text BEFORE this is asked. */
+  function signArbitrary(address, text) {
+    var k = keplr();
+    if (!k) return Promise.reject(new Error('Keplr isn’t available in this browser.'));
+    if (typeof k.signArbitrary !== 'function') return Promise.reject(new Error('This Keplr can’t sign a message (only transactions). Use another Keplr account.'));
+    return Promise.resolve(k.getKey(PINS.chainId)).then(function (key) {
+      if (!key || key.bech32Address !== address) throw new Error('Keplr is now on another account than the one shown. Nothing was signed — check which account Keplr is on and try again.');
+      return k.signArbitrary(PINS.chainId, address, text).then(function (signed) {
+        var pub = signed && signed.pub_key && signed.pub_key.value;
+        if (typeof pub !== 'string' || typeof signed.signature !== 'string') throw new Error('Keplr’s answer wasn’t a signature. Nothing was changed.');
+        return { pubKey: pub, signature: signed.signature };
+      }, function (e) { throw new Error(declined(e) ? 'You declined the signature in Keplr. Nothing was changed.' : 'Keplr couldn’t sign the message. Nothing was changed — try again.'); });
+    });
+  }
+
   var vendorPromise = null;
   function loadVendor() {
     if (root.LudumCosmJS) return Promise.resolve(root.LudumCosmJS);
@@ -656,7 +672,7 @@
     utf8ToB64: utf8ToB64, b64ToUtf8: b64ToUtf8,
     makeReader: makeReader, readLivePins: readLivePins, readGovernor: readGovernor,
     readAllGames: readAllGames, readAllProposals: readAllProposals, readVotes: readVotes,
-    keplr: keplr, connect: connect, prepare: prepare, signAndBroadcast: signAndBroadcast
+    keplr: keplr, connect: connect, signArbitrary: signArbitrary, prepare: prepare, signAndBroadcast: signAndBroadcast
   };
   root.LudumGov = LudumGov;
   if (typeof module === 'object' && module.exports) module.exports = LudumGov;

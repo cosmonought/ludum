@@ -3,8 +3,11 @@
  *
  * The authority is Play's: the Ludum routes `moderation-queue`, `moderation-case` and `moderation-decide` answer 404 to
  * anyone who is not a reviewer bound at Play's startup, never list a case the reviewer is a party to, and take a
- * decision only under a live "Confirm it's you" (403 reauth-required with Play's confirmation link: the password is
- * typed on Play, never here). This page hides nothing the server would show and decides nothing itself.
+ * decision only under a live "Confirm it's you" (403 reauth-required). v1.2: the reviewer confirms HERE, with Ludum's
+ * own "Confirm it's you" (LudumAuth.confirmPanel: the account's password, sent once to the same account service Play
+ * uses), and the same decision is then sent again; Play's confirmation link stays the fallback. Who is a reviewer is
+ * decided by the server alone: nothing here grants or asks for the role. This page hides nothing the server would show
+ * and decides nothing itself.
  *
  * Confidential: parties are display names, seat ids and account fingerprints, never a username, wallet or id. Nothing
  * is kept in this browser except, for the length of one "Confirm it's you" round trip, which case to reopen. */
@@ -135,7 +138,9 @@
       note, R.el('div', { class: 'ld-field__foot' }, [R.el('span', { text: 'Reviewers only' }), used])
     ]), error, R.el('div', null, [go])]);
     form.addEventListener('submit', function (e) { e.preventDefault(); });
-    go.addEventListener('click', function () {
+    var confirmSlot = R.el('div', { class: 'au-confirm-slot' });
+    form.insertBefore(confirmSlot, go.parentNode);
+    function decide() {
       error.hidden = true;
       if (!chosen) { error.textContent = 'Choose where the case moves.'; error.hidden = false; return; }
       go.disabled = true;
@@ -145,10 +150,22 @@
         drawCase(frame, body, session, r.case, 'Recorded: the case is now ' + (LABEL[r.case.status] || r.case.status) + '.');
       }, function (e) {
         go.disabled = false;
-        if (e && e.error === 'reauth-required') {
+        if (e && e.error === 'reauth-required' && window.LudumAuth) {
+          /* Ludum's own "Confirm it's you"; then the SAME decision is sent again (the choice and note are kept). */
+          confirmSlot.textContent = '';
+          go.disabled = true;
+          var panel = window.LudumAuth.confirmPanel(window.LudumSession, {
+            onDone: function () { confirmSlot.textContent = ''; decide(); },
+            onCancel: function () { confirmSlot.textContent = ''; go.disabled = false; go.focus(); }
+          });
+          confirmSlot.appendChild(panel);
+          var field = panel.querySelector('input');
+          if (field) field.focus();
+          return;
+        } else if (e && e.error === 'reauth-required') {
           try { window.sessionStorage.setItem(RESUME_KEY, c.caseId); } catch (x) { /* the reviewer reopens the case */ }
           error.textContent = '';
-          error.appendChild(document.createTextNode('A decision needs “Confirm it’s you” on Play first. Your choice is not saved. '));
+          error.appendChild(document.createTextNode('A decision needs “Confirm it’s you” first. Your choice is not saved. '));
           error.appendChild(R.el('a', { class: 'ld-link', href: e.confirmUrl || window.LudumSession.confirmUrl('/moderation/'), text: 'Confirm it’s you on Play' }));
         } else if (e && e.error === 'conflict') {
           error.textContent = e.detail === 'stale' ? 'Another reviewer moved this case meanwhile. Reload it and decide again.' : (e.reason || 'That move is not allowed now.');
@@ -159,7 +176,8 @@
         }
         error.hidden = false;
       });
-    });
+    }
+    go.addEventListener('click', decide);
     var decideBody = moves.length ? form : R.notice('No moves', 'Play allows no decision from ' + (LABEL[c.status] || c.status) + '.', 'wait');
     var side = R.el('div', { class: 'ld-stack' }, [
       flash ? R.notice('Recorded', flash, '') : null,
@@ -209,7 +227,7 @@
     return session.whoami().then(function (who) {
       if (!who || who.signedIn !== true) {
         frame.textContent = '';
-        stop(body, 'Signed out', 'Sign in on Play first. Moderation is for Play’s listed reviewers.', R.el('a', { class: 'ld-btn', href: window.LudumSession.signInUrl('/moderation/'), text: 'Sign in on Play' }));
+        stop(body, 'Signed out', 'Sign in first. Moderation is for the platform’s appointed conduct reviewers.', R.el('a', { class: 'ld-btn', href: window.LudumSession.signInUrl('/moderation/'), text: 'Sign in' }));
         return;
       }
       if (!who.roles || who.roles.reviewer !== true) {

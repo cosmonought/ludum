@@ -97,7 +97,7 @@
     frame.textContent = '';
     frame.appendChild(R.rechead({ kicker: 'Profile', title: 'Your record', dek: 'Your games and cases on Ludum, from Play’s records and the Juno escrow.' }));
     var href = window.LudumSession.signInUrl('/me/');
-    frame.appendChild(R.el('div', { class: 'ld-wrap' }, [R.notice('Signed out', 'Sign in on Play to see your record. Ludum never asks for your password.', 'wait', R.el('a', { class: 'ld-btn', href: href, text: 'Sign in on Play' }))]));
+    frame.appendChild(R.el('div', { class: 'ld-wrap' }, [R.notice('Signed out', 'Sign in to see your record. One account for Ludum and play.netadao.org.', 'wait', R.el('a', { class: 'ld-btn', href: href, text: 'Sign in' }))]));
   }
 
   function errorNotice(e) {

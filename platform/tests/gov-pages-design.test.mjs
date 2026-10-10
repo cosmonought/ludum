@@ -103,7 +103,17 @@ test("register: a member's cues appear only for a connected member wallet", asyn
   assert.ok(p.text().includes("4.0%"), "voting power: the cw4 weight over the group's total weight");
   assert.ok(p.text().includes("Ready to execute"));
   assert.ok(p.text().includes("Your vote is open"));
-  assert.ok(p.storage.size === 1, "the member wallet is remembered for the account menu");
+  assert.equal(p.storage.size, 0, "signed out: nothing is remembered (membership is kept per signed-in account only)");
+});
+
+test("register: a member wallet connected while signed in is remembered under THAT account only", async () => {
+  const who = { signedIn: true, account: { name: "Ann", username: "ann", memberSince: "2026-10", authorizationWallet: null } };
+  const p = await load("register", "", { who });
+  await p.connect();
+  assert.equal(p.storage.size, 1);
+  const R = p.ctx.LudumRecords;
+  assert.ok(R.rememberedMember(p.ctx.localStorage, Date.now(), "ann"), "Ann's menu draws Appeals & Disputes");
+  assert.equal(R.rememberedMember(p.ctx.localStorage, Date.now(), "bob"), null, "another account on this browser never inherits it");
 });
 
 test("register: nothing disputed and no proposals -> empty states; an unreadable chain -> unavailable, nothing invented", async () => {
@@ -344,7 +354,7 @@ test("every governance page: the §2.4 CSP first, the records layer, no inline s
     assert.match(html, /<head>\n<meta http-equiv="Content-Security-Policy"/, rel);
     assert.match(html, new RegExp(`data-gov-page="${kind}"`), rel);
     const order = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
-    assert.deepEqual(order, ["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", "/platform/js/account-menu.js", "/platform/js/gov.js", "/platform/js/gov-case.js", "/platform/js/gov-page.js"], rel);
+    assert.deepEqual(order, ["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", "/platform/js/auth.js", "/platform/js/account-menu.js", "/platform/js/gov.js", "/platform/js/gov-case.js", "/platform/js/gov-page.js"], rel);
     assert.ok(html.indexOf("/platform/css/records.css") > html.indexOf("/design-system/css/ludum.css"), rel);
     assert.doesNotMatch(html, /<script>|\son[a-z]+=|javascript:|ld-specimen/i, rel);
   }

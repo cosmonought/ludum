@@ -105,7 +105,7 @@
       return Promise.all([G.readGovernor(reader, w.address), G.readTotalWeight(reader).catch(function () { return null; })]).then(function (r) {
         state.governor = r[0];
         state.totalWeight = r[1] && r[1].data != null ? (typeof r[1].data === 'object' ? r[1].data.weight : r[1].data) : null;
-        if (R.rememberMember) R.rememberMember(window.localStorage, r[0].member ? w.address : null, Date.now());
+        if (R.rememberMember) R.rememberMember(window.localStorage, r[0].member ? w.address : null, Date.now(), R.accountOf ? R.accountOf(state.who) : null);
       }, function (e) { state.governor = { error: why(e) }; });
     }, function (e) { state.connectError = why(e); }).then(changed);
   }

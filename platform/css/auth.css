@@ -1,0 +1,16 @@
+/* Ludum · the account pages (/me/sign-in/, /me/sign-up/, /me/recover/) and the "Confirm it's you" panel — built only from
+   the records layer's components (.ld-field, .ld-input, .ld-btn, .ld-notice); this file only sets their width and gaps. */
+.au-wrap { max-width: 640px; margin-inline: auto; padding-block: 32px 64px; }
+.au-form { gap: 24px; }
+.au-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.au-status { margin: 0; min-height: 22px; }
+.au-status:empty { min-height: 0; }
+.au-links { margin: 0; }
+.au-wallet { padding: 20px; border: 1px solid var(--rule); background: var(--paper-2); gap: 8px; }
+.au-wallet p { margin: 0; }
+.au-confirm { margin-top: 16px; padding: 20px; border: 1px solid var(--ink); gap: 16px; }
+.ld-acct__note { margin: 8px 0 0; font: 400 14px/20px var(--font-sans); color: var(--red-ink); }
+@media (max-width: 480px) {
+  .au-wrap { padding-block: 24px 48px; }
+  .au-actions .ld-btn { flex: 1 1 auto; justify-content: center; }
+}

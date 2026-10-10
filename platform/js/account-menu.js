@@ -1,9 +1,10 @@
 /* Ludum · the account slot in SiteNav (AccountMenu, with its phone card) — on every page, just before PLAY.
  *
- * Signed out: SIGN IN (Play's sign-in, returning to this page). Signed in: the player's display name, opening a short
- * menu — Profile, then Moderation (conduct reviewers only: `session.roles.reviewer`), then Appeals & Disputes (a wallet
- * the chain said is a Ludum DAO member, remembered by the governance pages), then Sign out (on Play: Play asks once and
- * returns here). On phones the same entries sit at the foot of the menu sheet, above PLAY.
+ * Signed out: SIGN IN (Ludum's own sign-in, /me/sign-in/, returning to this page). Signed in: the player's display name,
+ * opening a short menu — Profile, then Moderation (conduct reviewers only: `session.roles.reviewer`), then Appeals &
+ * Disputes (when the chain says THIS account's Authorization Wallet, or a Keplr wallet it connected, is a Ludum DAO
+ * member: `LudumRecords.checkMembership`, no Keplr needed), then Sign out (here, natively: it ends the one shared session,
+ * so Play is signed out too). On phones the same entries sit at the foot of the menu sheet, above PLAY.
  *
  * It asks `LudumSession.whoami()` once. Until the answer the slot is empty (no flash of SIGN IN for a signed-in player);
  * if Play cannot be reached the slot offers SIGN IN. Everything from the server is set as text. Needs
@@ -42,10 +43,23 @@
   function listBlock(items) {
     return el('ul', { class: 'ld-acct__list' }, items.map(function (e) { return el('li', null, [el('a', { href: e.href, 'aria-current': e.current ? 'page' : null, text: e.text })]); }));
   }
-  function outBlock(href) {
+  /** Sign out here (v1.2): the shared session ends for Ludum and Play; then this page reloads, signed out. If the
+   *  request fails, Play's own sign-out link is offered instead (nothing is left half-done). */
+  function outBlock(fallback) {
     var button = el('button', { type: 'button', text: 'Sign out' });
-    button.addEventListener('click', function () { window.location.assign(href); });
-    return el('div', { class: 'ld-acct__out' }, [button]);
+    var note = el('p', { class: 'ld-acct__note', role: 'alert', hidden: true });
+    button.addEventListener('click', function () {
+      button.disabled = true;
+      var A = window.LudumAuth;
+      var done = A ? A.signOut(window.LudumSession) : Promise.reject(new Error('no LudumAuth'));
+      done.then(function () { window.location.assign(window.location.pathname.indexOf('/me/') === 0 || window.location.pathname.indexOf('/moderation/') === 0 ? '/' : window.location.pathname + window.location.search); }, function () {
+        button.disabled = false;
+        note.textContent = 'Sign-out didn’t reach the game server. ';
+        note.appendChild(el('a', { href: fallback, text: 'Sign out on play.netadao.org' }));
+        note.hidden = false;
+      });
+    });
+    return el('div', { class: 'ld-acct__out' }, [button, note]);
   }
 
   function bindToggle(btn, panel) {
@@ -72,7 +86,7 @@
       if (sheetSlot) sheetSlot.appendChild(el('a', { class: 'ld-nav__signin', href: href }, ['Sign in', svg(ARROW_RIGHT)]));
     } else {
       var records = window.LudumRecords;
-      var member = records ? records.rememberedMember(window.localStorage, Date.now()) : null;
+      var member = records ? records.rememberedMember(window.localStorage, Date.now(), records.accountOf(session)) : null;
       var items = entries(session, member, path);
       var signOut = window.LudumSession.signOutUrl('/');
       var btn = el('button', { class: 'ld-nav__who', type: 'button', 'aria-expanded': 'false', 'aria-controls': 'ld-acct' }, [el('span', { class: 'ld-nav__who-mark', 'aria-hidden': 'true' }), el('span', { text: session.account.name }), svg(ARROW_DOWN)]);
@@ -96,7 +110,18 @@
   function start() {
     var nav = document.querySelector('header.ld-nav');
     if (!nav || !window.LudumSession) return;
-    window.LudumSession.whoami().then(function (session) { render(nav, session); }, function () { render(nav, null); });
+    window.LudumSession.whoami().then(function (session) {
+      render(nav, session);
+      /* The chain's answer for THIS account: redraw only when it differs from what was drawn. */
+      var records = window.LudumRecords;
+      if (!records || !records.checkMembership || !session || session.signedIn !== true) return;
+      records.checkMembership(session).then(function (member) {
+        if (member === null) return;
+        var drawn = !!nav.querySelector('.ld-nav__acct a[href="/disputes/"]');
+        if (drawn === member) return;
+        render(nav, session);
+      });
+    }, function () { render(nav, null); });
   }
 
   window.LudumAccountMenu = Object.freeze({ entries: entries, render: render });

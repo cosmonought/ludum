@@ -25,7 +25,7 @@ const CSP_24 = [
 ].join(" ");
 
 // B2 integration: the case page also loads the shared LudumSession client and the case-record checker (gov-case.js).
-const ALLOWED_SCRIPTS = new Set(["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", "/platform/js/account-menu.js", "/platform/js/gov.js", "/platform/js/gov-case.js", "/platform/js/gov-page.js"]);
+const ALLOWED_SCRIPTS = new Set(["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", "/platform/js/auth.js", "/platform/js/account-menu.js", "/platform/js/gov.js", "/platform/js/gov-case.js", "/platform/js/gov-page.js"]);
 
 function htmlUnder(dir) {
   return readdirSync(dir).flatMap((name) => {

@@ -63,21 +63,31 @@ test("profile tabs: Moderation only for a Play reviewer, Appeals & Disputes only
   assert.equal(R.profileTabs(player, null, "account").find((t) => t.current).key, "account");
 });
 
-test("the remembered DAO member: a convenience with a 30-day life, malformed or expired entries ignored", () => {
+test("the remembered DAO member: per ACCOUNT, ten minutes, malformed / expired / another account's / v1's ignored", () => {
   const { window, storage } = load(["records.js"]);
   const R = window.LudumRecords;
   const addr = "juno1" + "q".repeat(38);
   const now = Date.UTC(2026, 9, 9);
-  assert.equal(R.rememberedMember(window.localStorage, now), null);
-  R.rememberMember(window.localStorage, addr, now);
-  eq(R.rememberedMember(window.localStorage, now + 1000), { address: addr, checkedAt: now });
-  assert.equal(R.rememberedMember(window.localStorage, now + 31 * 86400000), null);
-  storage.set(R.DAO_MEMBER_KEY, '{"address":"evil","checkedAt":1}');
-  assert.equal(R.rememberedMember(window.localStorage, now), null);
+  assert.equal(R.rememberedMember(window.localStorage, now, "ann"), null);
+  R.rememberMember(window.localStorage, addr, now, "ann");
+  eq(R.rememberedMember(window.localStorage, now + 1000, "ann"), { checkedAt: now });
+  assert.equal(R.rememberedMember(window.localStorage, now + 1000, "bob"), null, "another account never inherits it");
+  assert.equal(R.rememberedMember(window.localStorage, now + 1000), null, "no account (signed out): nothing");
+  assert.equal(R.rememberedMember(window.localStorage, now + 11 * 60000, "ann"), null, "ten minutes, then the chain is asked again");
+  R.rememberMember(window.localStorage, addr, now, null);
+  eq(R.rememberedMember(window.localStorage, now + 1000, "ann"), { checkedAt: now }, "signed out: nothing is written");
+  storage.set(R.DAO_MEMBER_KEY, JSON.stringify({ account: "ann", member: true, keplr: "evil", checkedAt: now }));
+  assert.equal(R.rememberedMember(window.localStorage, now, "ann"), null);
   storage.set(R.DAO_MEMBER_KEY, "not json");
-  assert.equal(R.rememberedMember(window.localStorage, now), null);
-  R.rememberMember(window.localStorage, null, now);
-  assert.equal(storage.has(R.DAO_MEMBER_KEY), false);
+  assert.equal(R.rememberedMember(window.localStorage, now, "ann"), null);
+  /* v1's key (one wallet for whoever used the browser) is never read, and is removed on sight. */
+  storage.delete(R.DAO_MEMBER_KEY);
+  storage.set(R.LEGACY_DAO_MEMBER_KEY, JSON.stringify({ address: addr, checkedAt: now }));
+  assert.equal(R.rememberedMember(window.localStorage, now, "ann"), null);
+  assert.equal(storage.has(R.LEGACY_DAO_MEMBER_KEY), false);
+  R.rememberMember(window.localStorage, addr, now, "ann");
+  R.forgetMembership(window.localStorage);
+  assert.equal(storage.has(R.DAO_MEMBER_KEY), false, "sign-out forgets it");
 });
 
 test("account menu entries: Profile; Moderation for reviewers; Appeals & Disputes for a DAO wallet; the current page marked", () => {
@@ -144,7 +154,7 @@ test("the new pages load their scripts in order, with the §2.4 CSP first and th
   for (const [rel, script] of [["me/index.html", "me-record.js"], ["me/account/index.html", "account-page.js"], ["me/game/index.html", "game-record.js"], ["moderation/index.html", "moderation-page.js"], ["moderation/case/index.html", "moderation-page.js"]]) {
     const html = readFileSync(resolve(ROOT, rel), "utf8");
     const order = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
-    eq(order, ["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", "/platform/js/account-menu.js", `/platform/js/${script}`, "/platform/js/page-init.js"], rel);
+    eq(order, ["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", "/platform/js/auth.js", "/platform/js/account-menu.js", `/platform/js/${script}`, "/platform/js/page-init.js"], rel);
     assert.ok(html.indexOf("/design-system/css/ludum.css") < html.indexOf("/platform/css/records.css"), rel);
     assert.match(html, /<head>\n<meta http-equiv="Content-Security-Policy"/, rel);
     assert.doesNotMatch(html, /ld-specimen/, `${rel}: no Specimen band on a live page`);

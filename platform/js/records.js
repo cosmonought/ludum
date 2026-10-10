@@ -6,15 +6,25 @@
  * design system's own paths (Ludum.icon), never data.
  *
  * The profile tabs follow the two-authorities rule (design handoff §3): Moderation is drawn only for a conduct reviewer
- * (the signed-in Play account, `session.roles.reviewer`), Appeals & Disputes only for a wallet the chain says is a Ludum
- * DAO member (remembered by the governance pages, re-checked there on every action). The pages never merge the two.
+ * (the signed-in account, `session.roles.reviewer`, decided by the server), Appeals & Disputes only when the chain says
+ * the SIGNED-IN ACCOUNT's Authorization Wallet -- or a Keplr wallet this account connected on the governance pages -- is a
+ * Ludum DAO member. That answer is read automatically (no Keplr needed: the cw4 group's public `member` query), kept for
+ * ten minutes in this browser UNDER THIS ACCOUNT'S USERNAME, and never used for another account: a different account
+ * signing in on the same browser reads its own. It only draws a tab; every governance action re-reads the chain, and a
+ * transaction still needs Keplr. The pages never merge the two authorities.
  */
 (function (root) {
   'use strict';
 
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  var DAO_MEMBER_KEY = 'ludum.daoMember';
-  var DAO_MEMBER_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+  var DAO_MEMBER_KEY = 'ludum.daoMembership.v2';
+  /** v1's key: one wallet for whoever used the browser. Never read; removed on sight. */
+  var LEGACY_DAO_MEMBER_KEY = 'ludum.daoMember';
+  var DAO_MEMBER_TTL_MS = 10 * 60 * 1000;
+  /* The chain read for the tab (the same pins as platform/js/gov.js; pinned equal by platform/tests/membership.test.mjs). */
+  var CHAIN_REST = 'https://juno.api.t.stavr.tech';
+  var CW4_GROUP = 'juno13dvggejlcz6nxn8kzzhr2m0e94r7adepr9crclum82uv7eyegftq2yz5up';
+  var JUNO_ADDRESS = /^juno1[02-9ac-hj-np-z]{38}$/;
 
   /* ---------- pure formatting (pinned by platform/tests/records.test.mjs) ---------- */
 
@@ -109,24 +119,90 @@
     return tabs.map(function (t) { return { key: t.key, href: t.href, text: t.text, current: t.key === current }; });
   }
 
-  /** The remembered Ludum DAO member wallet (a convenience for drawing a tab; never an authority), or null. */
-  function rememberedMember(storage, nowMs) {
+  function accountOf(session) { return session && session.signedIn === true && session.account && typeof session.account.username === 'string' ? session.account.username : null; }
+
+  /** This account's remembered membership entry, or null: {account, member, keplr, checkedAt}. Another account's entry,
+   *  a malformed one or v1's key is never returned (v1's is removed). */
+  function membershipEntry(storage, nowMs, account, anyAge) {
     try {
+      if (storage && storage.getItem(LEGACY_DAO_MEMBER_KEY) !== null) storage.removeItem(LEGACY_DAO_MEMBER_KEY);
+      if (typeof account !== 'string' || account === '') return null;
       var raw = storage && storage.getItem(DAO_MEMBER_KEY);
       if (!raw) return null;
       var v = JSON.parse(raw);
-      if (!v || typeof v.address !== 'string' || !/^juno1[0-9a-z]{38,58}$/.test(v.address) || typeof v.checkedAt !== 'number') return null;
-      if (nowMs - v.checkedAt > DAO_MEMBER_TTL_MS) return null;
-      return { address: v.address, checkedAt: v.checkedAt };
+      if (!v || v.account !== account || typeof v.member !== 'boolean' || typeof v.checkedAt !== 'number') return null;
+      if (v.keplr !== null && !(typeof v.keplr === 'string' && JUNO_ADDRESS.test(v.keplr))) return null;
+      if (!anyAge && (nowMs - v.checkedAt > DAO_MEMBER_TTL_MS || v.checkedAt > nowMs)) return null;
+      return { account: v.account, member: v.member, keplr: v.keplr, checkedAt: v.checkedAt };
     } catch (e) { return null; }
   }
-  /** Remember (or forget, with null) the wallet the chain just said is a member. */
-  function rememberMember(storage, address, nowMs) {
-    try {
-      if (address === null) storage.removeItem(DAO_MEMBER_KEY);
-      else storage.setItem(DAO_MEMBER_KEY, JSON.stringify({ address: address, checkedAt: nowMs }));
-    } catch (e) { /* storage off: the tab simply is not drawn */ }
+  /** Whether to draw Appeals & Disputes for THIS account from what is remembered (fresh, this account's): {checkedAt} or
+   *  null. `account` is the signed-in username; without it nothing is drawn. */
+  function rememberedMember(storage, nowMs, account) {
+    var v = membershipEntry(storage, nowMs, account, false);
+    return v && v.member ? { checkedAt: v.checkedAt } : null;
   }
+  function writeEntry(storage, entry) {
+    try { storage.setItem(DAO_MEMBER_KEY, JSON.stringify(entry)); } catch (e) { /* storage off: the tab waits for the chain */ }
+  }
+  /** The governance pages: the chain just said the Keplr wallet `address` is (or, null, is not) a member -- remembered for
+   *  the signed-in `account` only (signed out: nothing is remembered). */
+  function rememberMember(storage, address, nowMs, account) {
+    if (typeof account !== 'string' || account === '') return;
+    if (address !== null && JUNO_ADDRESS.test(address)) { writeEntry(storage, { account: account, member: true, keplr: address, checkedAt: nowMs }); return; }
+    /* Not a member with that wallet: the account's own Authorization Wallet may still be one -- re-read next time. */
+    writeEntry(storage, { account: account, member: false, keplr: null, checkedAt: 0 });
+  }
+  /** Sign-out: the entry goes (and v1's key, if any). */
+  function forgetMembership(storage) {
+    try { storage.removeItem(DAO_MEMBER_KEY); storage.removeItem(LEGACY_DAO_MEMBER_KEY); } catch (e) { /* nothing kept */ }
+  }
+
+  function base64(text) {
+    if (typeof root.btoa === 'function') return root.btoa(unescape(encodeURIComponent(text)));
+    return Buffer.from(text, 'utf8').toString('base64');
+  }
+  /** The cw4 group's weight for `address` > 0 (the chain's public read; no wallet, no Keplr). */
+  function chainMember(fetcher, address) {
+    var url = CHAIN_REST + '/cosmwasm/wasm/v1/contract/' + CW4_GROUP + '/smart/' + encodeURIComponent(base64(JSON.stringify({ member: { addr: address } })));
+    return fetcher(url, { method: 'GET', cache: 'no-store', credentials: 'omit', redirect: 'error' }).then(function (r) {
+      if (!r || !r.ok) throw new Error('chain read ' + (r && r.status));
+      return r.json();
+    }).then(function (j) {
+      var w = j && j.data ? j.data.weight : undefined;
+      if (w === null) return false;
+      var n = typeof w === 'number' ? w : typeof w === 'string' && /^\d+$/.test(w) ? Number(w) : NaN;
+      if (!isFinite(n)) throw new Error('chain read: not a weight');
+      return n > 0;
+    });
+  }
+  /** v1.2: is the SIGNED-IN account a Ludum DAO member? Its Authorization Wallet (from the session) and any Keplr wallet
+   *  it connected (remembered under it) are read on chain -- automatically, no Keplr. Resolves true / false, or null when
+   *  it could not be read (nothing is drawn then). A fresh remembered answer for this account is used as is. */
+  function checkMembership(session, options) {
+    options = options || {};
+    var storage = options.storage !== undefined ? options.storage : root.localStorage;
+    var now = options.now !== undefined ? options.now : Date.now();
+    var fetcher = options.fetch || (root.fetch ? root.fetch.bind(root) : null);
+    var account = accountOf(session);
+    if (account === null) return Promise.resolve(false);
+    var fresh = membershipEntry(storage, now, account, false);
+    if (fresh) return Promise.resolve(fresh.member);
+    var known = membershipEntry(storage, now, account, true);
+    var wallets = [];
+    var auth = session.account.authorizationWallet;
+    if (auth && typeof auth.address === 'string' && JUNO_ADDRESS.test(auth.address)) wallets.push(auth.address);
+    if (known && known.keplr && wallets.indexOf(known.keplr) === -1) wallets.push(known.keplr);
+    if (wallets.length === 0) { writeEntry(storage, { account: account, member: false, keplr: null, checkedAt: now }); return Promise.resolve(false); }
+    if (!fetcher) return Promise.resolve(null);
+    return Promise.all(wallets.map(function (w) { return chainMember(fetcher, w).then(function (m) { return m ? w : null; }); })).then(function (found) {
+      var member = found.some(function (w) { return w !== null; });
+      var keplr = known && known.keplr && found.indexOf(known.keplr) !== -1 ? known.keplr : null;
+      writeEntry(storage, { account: account, member: member, keplr: keplr, checkedAt: now });
+      return member;
+    }, function () { return null; });
+  }
+
 
   /* ---------- DOM ---------- */
 
@@ -217,17 +293,26 @@
   /** A Mintscan-free receipt link: the chain's own REST view of one transaction. */
   function txHref(hash) { return 'https://juno.api.t.stavr.tech/cosmos/tx/v1beta1/txs/' + encodeURIComponent(String(hash)); }
 
-  /** Mount the page's record head and tabs in `slot` once the session (and the remembered DAO wallet) are known. */
+  /** Mount the page's record head and tabs in `slot` once the session is known; the Appeals tab follows the chain's
+   *  answer for THIS account (drawn at once from a fresh remembered answer, then corrected when the chain answers). */
   function profileFrame(slot, session, current, head) {
     slot.textContent = '';
     slot.appendChild(rechead(head));
-    slot.appendChild(tabsNav(profileTabs(session, rememberedMember(root.localStorage, Date.now()), current)));
+    var nav = tabsNav(profileTabs(session, rememberedMember(root.localStorage, Date.now(), accountOf(session)), current));
+    slot.appendChild(nav);
+    checkMembership(session).then(function (member) {
+      if (member === null || !nav.parentNode) return;
+      var drawn = !!nav.querySelector('a[href="/disputes/"]');
+      if (drawn !== member) { var next = tabsNav(profileTabs(session, member, current)); nav.parentNode.replaceChild(next, nav); nav = next; }
+    });
   }
 
   var api = {
     day: day, clock: clock, month: month, shortId: shortId, shortHash: shortHash, shortAddress: shortAddress, junox: junox, amountClass: amountClass,
     ordinal: ordinal, dollars: dollars, daysUntil: daysUntil, provenanceText: provenanceText, profileTabs: profileTabs,
-    rememberedMember: rememberedMember, rememberMember: rememberMember, DAO_MEMBER_KEY: DAO_MEMBER_KEY,
+    rememberedMember: rememberedMember, rememberMember: rememberMember, forgetMembership: forgetMembership, checkMembership: checkMembership,
+    membershipEntry: membershipEntry, accountOf: accountOf, DAO_MEMBER_KEY: DAO_MEMBER_KEY, LEGACY_DAO_MEMBER_KEY: LEGACY_DAO_MEMBER_KEY,
+    DAO_MEMBER_TTL_MS: DAO_MEMBER_TTL_MS, CHAIN_REST: CHAIN_REST, CW4_GROUP: CW4_GROUP,
     el: el, icon: icon, stamp: stamp, idSpan: idSpan, hashSpan: hashSpan, val: val, td: td, notice: notice, rechead: rechead, tabsNav: tabsNav,
     section: section, ledger: ledger, go: go, docketItem: docketItem, txHref: txHref, profileFrame: profileFrame
   };

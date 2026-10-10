@@ -142,7 +142,7 @@
     function stop(label, text) { body.textContent = ''; body.appendChild(R.el('div', { class: 'ld-wrap' }, [R.notice(label, text, 'stop', R.el('a', { class: 'ld-link', href: '/me/', text: 'Your record' }))])); }
     if (!id || !GAME_ID.test(id)) { stop('No game chosen', 'Open a game from your record.'); return Promise.resolve(); }
     return session.whoami().then(function (who) {
-      if (!who || who.signedIn !== true) { stop('Signed out', 'Sign in on Play to see this game.'); return; }
+      if (!who || who.signedIn !== true) { stop('Signed out', 'Sign in to see this game.'); return; }
       return session.api('game', { gameId: id }).then(function (d) { document.title = 'Game record ' + R.shortId(d.gameId) + ' — Ludum'; render(frame, body, who, d); }, function (e) {
         if (e && e.error === 'not-found') stop('Not in your record', 'That game is not one you sat at.');
         else stop('Unavailable', 'This game could not be read just now. Nothing is shown rather than an old value.');

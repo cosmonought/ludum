@@ -68,14 +68,21 @@ test("401 goes to sign in only when asked", async () => {
   assert.deepEqual(quiet.assigned, []);
   const asked = load(respond(401, { error: "signed-out" }), "/me/");
   await assert.rejects(asked.LudumSession.api("games", {}, { redirectOnSignedOut: true }));
-  assert.deepEqual(asked.assigned, ["https://play.netadao.org/?ludum=signin&return=%2Fme%2F"]);
+  assert.deepEqual(asked.assigned, ["/me/sign-in/?return=%2Fme%2F"], "v1.2: Ludum's own sign-in");
 });
 
 test("signInUrl returns only to a safe path", () => {
   const { LudumSession } = load(respond(200, {}), "/disputes/case/");
-  assert.equal(LudumSession.signInUrl(), "https://play.netadao.org/?ludum=signin&return=%2Fdisputes%2Fcase%2F");
-  assert.equal(LudumSession.signInUrl("/governance/"), "https://play.netadao.org/?ludum=signin&return=%2Fgovernance%2F");
+  assert.equal(LudumSession.signInUrl(), "/me/sign-in/?return=%2Fdisputes%2Fcase%2F");
+  assert.equal(LudumSession.signInUrl("/governance/"), "/me/sign-in/?return=%2Fgovernance%2F");
+  assert.equal(LudumSession.signUpUrl("/governance/"), "/me/sign-up/?return=%2Fgovernance%2F");
+  assert.equal(LudumSession.playSignInUrl("/governance/"), "https://play.netadao.org/?ludum=signin&return=%2Fgovernance%2F", "Play's own sign-in stays as a fallback");
   for (const bad of ["//evil.example", "https://evil.example/", "/me/?x=1", "/Me/", "/a/../b", "me/"]) {
-    assert.equal(LudumSession.signInUrl(bad), "https://play.netadao.org/?ludum=signin&return=%2F", bad);
+    assert.equal(LudumSession.signInUrl(bad), "/me/sign-in/?return=%2F", bad);
+    assert.equal(LudumSession.returnPath("?return=" + encodeURIComponent(bad)), "/", bad);
   }
+  assert.equal(LudumSession.returnPath("?return=%2Fdisputes%2Fcase%2F"), "/disputes/case/");
+  assert.equal(LudumSession.returnPath("?x=1&return=%2Fme%2F"), "/me/");
+  assert.equal(LudumSession.returnPath(""), "/");
+  assert.equal(LudumSession.returnPath("?return=%E0%A4%A"), "/", "a broken escape is not a path");
 });
