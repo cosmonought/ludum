@@ -1,10 +1,11 @@
 # Footer
 
-One quiet line that closes every page: the Neta band, the copyright, and the way back to Neta DAO.
+The footer every Neta DAO site shares — netadao.org, the Academy, Fork and Ludum — set in Ludum's frame: one line under the Neta band.
 
-**Markup.** `<footer class="ld-footer" data-theme="press">` → `.ld-footer__band`, `.ld-wrap.ld-footer__inner` → `p.ld-footer__print` (© 2026 Neta DAO), `a.ld-footer__neta` ("A Neta DAO project" and the mark, to netadao.org).
+**Markup.** `<footer class="ld-footer" data-theme="press">` → `.ld-footer__band`, `.ld-wrap.ld-footer__inner` → `a.ld-footer__name` (Ludum, home), `nav.ld-footer__nav` → `ul.ld-footer__sites` (Academy · Fork · Ludum, the current site with `aria-current`) and `ul.ld-footer__marks` (X and Discord as `a.ld-footer__icon` with their own marks, then `a.ld-footer__neta` with Neta DAO's animated mark, to netadao.org), and `p.ld-footer__print` (© 2026 Neta DAO).
 
-- The band is the Neta line at full strength (8px, `neta-pink` → `neta-cyan`, the bar of Neta DAO's mark): the footer is where Ludum signs as a Neta DAO project.
-- Nothing the nav already carries: no section links, no PLAY, no tagline. The footer only signs the page and leads back to the parent.
-- The Neta DAO mark is Neta DAO's own artwork (`assets/Logos/neta-mark-night.png`). Copy it, link it to netadao.org, never redraw or recolour it.
-- Phone: the two halves wrap onto two lines.
+- **The same on every Neta DAO site.** The same contents in the same order — the site's name, the family's addresses, X, Discord, Neta DAO's mark, the copyright — each site drawing it in its own type and colours.
+- **Marks, not words, where marks exist.** X and Discord are their own glyphs, and netadao.org is Neta DAO's mark. The Academy, Fork and Ludum have no marks of their own, so they are words.
+- **The animated mark on dark footers.** `assets/Logos/neta-mark-loop.webp` is Neta DAO's own loop, from netadao.org; on the frame it sits with `mix-blend-mode: lighten`. A light footer uses `neta-mark-paper.png` instead. Copy the mark, link it to netadao.org, never redraw or recolour it.
+- Nothing the nav already carries: no section links, no PLAY, no tagline, and no account or governance links.
+- Laptop: the copyright drops to its own line. Phone: the addresses and the marks share one row under the name.

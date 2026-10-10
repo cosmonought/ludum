@@ -329,6 +329,9 @@ html:has(.ld-tabs-bar) { scroll-padding-top: calc(var(--ld-nav-h) + 4px + 64px);
 .ld-stamp--archive { --s-bg: var(--grey); --s-fg: var(--on-grey); }
 .ld-stamp--s { padding: 4px 7px 3px; font: 600 11px/14px var(--font-mono); letter-spacing: .1em; border-width: 2px; box-shadow: inset 0 0 0 1px var(--paper); }
 .ld-stamp--tilt { transform: rotate(-3deg); }
+/* a game with more than one status: the stamps side by side, In development first */
+.ld-stamps { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; vertical-align: top; }
+.ld-stamps--s { gap: 6px; }
 .ld-stamp__dot { width: 8px; height: 8px; border-radius: var(--radius-token, 999px); background: currentColor; }
 
 /* ---------- 13. Tabs and filters ---------- */
@@ -384,18 +387,61 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 .ld-nav__home:hover .ld-nav__by { color: var(--yellow); }
 .ld-nav__home:focus-visible { outline-offset: -3px; }
 .ld-nav__links { display: flex; align-items: stretch; gap: 0; margin-right: 8px; }
-.ld-nav__links > a {
+:is(.ld-nav__links > a, .ld-nav__drop-link) {
   position: relative; display: flex; align-items: center; padding: 4px 22px 0;
   font: 400 24px/1 var(--font-display); letter-spacing: .02em; text-transform: uppercase; text-decoration: none; color: var(--on-frame);
 }
-.ld-nav__links > a::after {
+:is(.ld-nav__links > a, .ld-nav__drop-link)::after {
   content: ''; position: absolute; left: 22px; right: 22px; bottom: 0; height: 6px; background: var(--red);
   transform: scaleX(0); transform-origin: 0 50%; transition: transform var(--ld-wipe);
 }
-.ld-nav__links > a:hover::after, .ld-nav__links > a.is-hover::after { transform: scaleX(1); }
-.ld-nav__links > a[aria-current]::after { transform: scaleX(1); background: var(--yellow); }
-.ld-nav__links > a:focus-visible { outline-offset: -6px; }
+:is(.ld-nav__links > a, .ld-nav__drop-link):hover::after, :is(.ld-nav__links > a, .ld-nav__drop-link).is-hover::after { transform: scaleX(1); }
+:is(.ld-nav__links > a, .ld-nav__drop-link)[aria-current]::after { transform: scaleX(1); background: var(--yellow); }
+:is(.ld-nav__links > a, .ld-nav__drop-link):focus-visible { outline-offset: -6px; }
 .ld-nav__no { display: none; }
+/* Projects opens a short list of the games, in the account menu's vocabulary: each game directly, then the catalogue */
+.ld-nav__drop { position: relative; display: flex; align-items: stretch; }
+.ld-nav__drop > .ld-nav__drop-link { display: none; }
+.ld-nav__drop-btn {
+  position: relative; display: flex; align-items: center; gap: 8px; padding: 4px 22px 0; margin: 0;
+  font: 400 24px/1 var(--font-display); letter-spacing: .02em; text-transform: uppercase; color: var(--on-frame);
+  background: none; border: 0; cursor: pointer;
+}
+.ld-nav__drop-btn .ld-icon { width: 16px; height: 16px; margin-top: -4px; transition: transform var(--ld-wipe); }
+.ld-nav__drop-btn[aria-expanded="true"] .ld-icon { transform: rotate(180deg); }
+.ld-nav__drop-btn::after {
+  content: ''; position: absolute; left: 22px; right: 22px; bottom: 0; height: 6px; background: var(--red);
+  transform: scaleX(0); transform-origin: 0 50%; transition: transform var(--ld-wipe);
+}
+.ld-nav__drop-btn:hover::after, .ld-nav__drop-btn.is-hover::after, .ld-nav__drop-btn[aria-expanded="true"]::after { transform: scaleX(1); }
+.ld-nav__drop.is-current .ld-nav__drop-btn::after { transform: scaleX(1); background: var(--yellow); }
+.ld-nav__drop-btn:focus-visible { outline-offset: -6px; }
+.ld-nav__sub {
+  position: absolute; top: 100%; left: 0; z-index: 45; width: 320px; padding: 8px 0 14px;
+  background: var(--frame); color: var(--on-frame); border-top: 4px solid; border-image: linear-gradient(90deg, var(--neta-pink), var(--neta-cyan)) 1;
+  box-shadow: 1px 0 0 var(--rule), -1px 0 0 var(--rule), 0 1px 0 var(--rule);   /* its edge on a black page */
+}
+.ld-nav__sub { display: none; }
+.ld-nav__drop-btn[aria-expanded="true"] ~ .ld-nav__sub { display: block; }
+@media (hover: hover) and (min-width: 600px) { .ld-nav__drop:hover > .ld-nav__sub { display: block; } }
+html:not(.ld-js) .ld-nav__drop:focus-within > .ld-nav__sub { display: block; }   /* without script, focus opens it */
+.ld-nav__sub ul { margin: 0; padding: 0; list-style: none; }
+.ld-nav__sub li + li { border-top: 1px solid var(--rule); }
+.ld-nav__sub li a { position: relative; isolation: isolate; display: grid; gap: 6px; padding: 14px 20px 12px; color: var(--on-frame); text-decoration: none; }
+.ld-nav__sub li a::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--yellow); transform: scaleY(0); transform-origin: 50% 0; transition: transform var(--ld-wipe); }
+.ld-nav__sub li a:hover, .ld-nav__sub li a.is-hover { color: var(--on-yellow); }
+.ld-nav__sub li a:hover::before, .ld-nav__sub li a.is-hover::before { transform: scaleY(1); }   /* the board's flap */
+.ld-nav__sub li a[aria-current] { box-shadow: inset 6px 0 0 var(--yellow); }
+.ld-nav__sub a:focus-visible { outline-offset: -3px; }
+.ld-nav__sub-kick { font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+.ld-nav__sub li a:hover .ld-nav__sub-kick, .ld-nav__sub li a.is-hover .ld-nav__sub-kick { color: var(--on-yellow); }
+.ld-nav__sub-name { font: 400 28px/1 var(--font-display); text-transform: uppercase; }
+.ld-nav__sub-all {
+  display: flex; justify-content: space-between; align-items: center; margin: 6px 20px 0; padding-top: 12px; border-top: 1px solid var(--rule);
+  font: 600 13px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--on-frame); text-decoration: none;
+}
+.ld-nav__sub-all:hover { color: var(--yellow); }
+.ld-nav__sub-all .ld-icon { width: 16px; height: 16px; }
 .ld-nav .ld-play { min-height: 0; height: var(--ld-nav-h); padding: 4px 26px 0 28px; font-size: 30px; }
 .ld-nav .ld-play:focus-visible { outline-offset: -6px; outline-color: var(--frame); }
 .ld-nav .ld-play { border-width: 0; }
@@ -414,9 +460,11 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 .ld-nav__menu:focus-visible { outline-offset: -6px; }
 .ld-nav__panel-foot { display: none; }
 @media (max-width: 1023px) {
-  .ld-nav__links > a { padding: 4px 16px 0; font-size: 22px; }
-  .ld-nav__links > a::after { left: 16px; right: 16px; }
+  :is(.ld-nav__links > a, .ld-nav__drop-link) { padding: 4px 16px 0; font-size: 22px; }
+  :is(.ld-nav__links > a, .ld-nav__drop-link)::after { left: 16px; right: 16px; }
   .ld-nav .ld-play { padding: 4px 20px 0 22px; font-size: 26px; }
+  .ld-nav__drop-btn { padding: 4px 16px 0; font-size: 22px; }
+  .ld-nav__drop-btn::after { left: 16px; right: 16px; }
 }
 /* Phone: the bar keeps the name, PLAY and Menu; the links open as a full black sheet set large. */
 @media (max-width: 599px) {
@@ -433,9 +481,19 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
   .ld-js .ld-nav.is-open .ld-nav__links { visibility: visible; clip-path: inset(0 0 0 0); transition: clip-path var(--dur-print, 560ms) var(--ease-press), visibility 0s; }
   .ld-nav--open-demo .ld-nav__bar { flex-wrap: wrap; height: auto; }
   .ld-nav--open-demo .ld-nav__links, .ld-js .ld-nav--open-demo .ld-nav__links { position: static; order: 3; flex: 0 0 calc(100% + var(--ld-margin)); height: auto; min-height: 640px; margin: 0 0 0 calc(-1 * var(--ld-margin)); visibility: visible; clip-path: none; }
-  .ld-nav__links > a { justify-content: space-between; align-items: baseline; padding: 18px 0 12px; font-size: 64px; line-height: .9; border-bottom: 2px solid var(--rule); }
-  .ld-nav__links > a::after { left: 0; right: auto; width: 56px; bottom: -2px; }
+  :is(.ld-nav__links > a, .ld-nav__drop-link) { justify-content: space-between; align-items: baseline; padding: 18px 0 12px; font-size: 64px; line-height: .9; border-bottom: 2px solid var(--rule); }
+  :is(.ld-nav__links > a, .ld-nav__drop-link)::after { left: 0; right: auto; width: 56px; bottom: -2px; }
   .ld-nav__no { display: inline; font: 500 12px/16px var(--font-mono); letter-spacing: .1em; color: var(--ink-3); }
+  /* the sheet: a Projects row to the catalogue, the games under it at 30px, no toggle */
+  .ld-nav__drop { flex-direction: column; border-bottom: 2px solid var(--rule); }
+  .ld-nav__drop-btn, .ld-nav__sub-all { display: none; }
+  .ld-nav__drop > .ld-nav__drop-link { display: flex; border-bottom: 0; }
+  .ld-nav__sub { position: static; display: block; width: auto; padding: 0 0 14px; border: 0; background: none; box-shadow: none; }
+  .ld-nav__sub li + li { border-top: 0; }
+  .ld-nav__sub li a { padding: 8px 0; gap: 4px; }
+  .ld-nav__sub li a::before { left: -16px; right: -16px; }
+  .ld-nav__sub li a[aria-current] { box-shadow: none; color: var(--yellow); }
+  .ld-nav__sub-name { font-size: 30px; }
   .ld-nav__panel-foot { display: block; margin-top: auto; padding-top: 32px; }
   .ld-nav__panel-foot .ld-play { display: flex; justify-content: space-between; width: 100%; height: auto; min-height: 72px; padding: 6px 20px 0; font-size: 40px; }
   .ld-nav__panel-foot p { margin: 16px 0 0; font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); }
@@ -461,6 +519,14 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
   .ld-sechead__more { grid-column: 2; grid-row: 1; align-self: start; }
 }
 
+/* One rule per boundary. A section head's rule is the only rule above what follows it: a list, strip or legend set
+   straight under a head (or first in a column under it) doesn't draw one of its own. */
+:is(.ld-sechead, .ld-steps__title) + :is(.ld-meta, .ld-notes, .ld-keylist, .ld-achv, .ld-catalogue, .ld-legend, .ld-toc, .ld-disclose),
+:is(.ld-sechead, .ld-steps__title) + * > :is(.ld-meta, .ld-notes, .ld-keylist, .ld-achv, .ld-legend, .ld-disclose):first-child,
+:is(.ld-sechead, .ld-steps__title) + * > * > :is(.ld-meta, .ld-notes, .ld-keylist, .ld-achv, .ld-legend, .ld-disclose):first-child,
+:is(.ld-sechead, .ld-steps__title) + :is(.pg-two, .ld-twocol) > :is(.ld-meta, .ld-notes, .ld-keylist, .ld-achv, .ld-legend, .ld-disclose),
+:is(.ld-sechead, .ld-steps__title) + .ld-choices > .ld-choice:first-of-type { border-top: 0; }
+
 /* ---------- 17. Metadata strip ---------- */
 .ld-meta {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin: 0; padding: 0;
@@ -476,8 +542,8 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 .ld-pj .ld-meta dt { color: var(--pj-ink-3); }
 .ld-pj .ld-meta dd { color: var(--pj-ink); }
 @media (max-width: 599px) {
-  .ld-meta { grid-template-columns: 1fr 1fr; }
-  .ld-meta > div { margin-right: 0; padding: 10px 12px 12px 0; border-right: 0; border-bottom: 1px solid var(--rule); }
+  .ld-meta { grid-template-columns: 1fr 1fr; overflow: hidden; }
+  .ld-meta > div { margin-right: 0; margin-top: -1px; padding: 10px 12px 12px 0; border-right: 0; border-top: 1px solid var(--rule); }
   .ld-meta > div:nth-child(odd) { border-right: 1px solid var(--rule); margin-right: 12px; }
 }
 
@@ -491,14 +557,31 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 /* ---------- 19. Play band: the way out to play.netadao.org ---------- */
 
 /* ---------- 20. Footer ---------- */
-/* One quiet line under the Neta band: the copyright, and the way back to Neta DAO. The nav already carries everything else. */
+/* The footer every Neta DAO site shares, set in Ludum's frame: the name, the family's addresses, X and Discord as their
+   own marks, Neta DAO's animated mark, the copyright. One line on desktop; it wraps, never grows. */
 .ld-footer { background: var(--frame); color: var(--on-frame); --focus: var(--yellow); }
 .ld-footer__band { display: block; height: 8px; background: linear-gradient(90deg, var(--neta-pink), var(--neta-cyan)); }   /* the Neta line, full strength */
-.ld-footer__inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 32px; padding-block: 24px; }
+.ld-footer__inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 32px; padding-block: 20px; }
+.ld-footer__name { font: 400 28px/.8 var(--font-display); letter-spacing: -.005em; text-transform: uppercase; color: var(--on-frame); text-decoration: none; padding-top: 3px; }
+.ld-footer__name:hover { color: var(--yellow); }
+.ld-footer__nav { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px; margin-left: auto; }
+.ld-footer__sites, .ld-footer__marks { display: flex; flex-wrap: wrap; align-items: center; margin: 0; padding: 0; list-style: none; }
+.ld-footer__sites { gap: 8px 24px; padding-right: 32px; border-right: 1px solid var(--rule); }
+.ld-footer__sites a { font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); text-decoration: none; }
+.ld-footer__sites a:hover { color: var(--yellow); }
+.ld-footer__sites a[aria-current] { color: var(--on-frame); box-shadow: inset 0 -2px 0 var(--yellow); }
+.ld-footer__marks { gap: 20px; }
+.ld-footer__icon { display: grid; place-items: center; width: 32px; height: 32px; color: var(--on-frame); transition: color var(--ld-shift); }
+.ld-footer__icon:hover { color: var(--yellow); }
+.ld-footer__icon svg { display: block; width: 20px; height: 20px; }
+.ld-footer__neta { display: block; }
+.ld-footer__neta img { display: block; width: auto; height: 30px; mix-blend-mode: lighten; }   /* Neta DAO's loop, on the frame */
 .ld-footer__print { margin: 0; font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
-.ld-footer__neta { display: inline-flex; align-items: center; gap: 14px; text-decoration: none; font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); }
-.ld-footer__neta img { width: 40px; height: auto; }
-.ld-footer__neta:hover { color: var(--yellow); }
+@media (max-width: 1023px) { .ld-footer__print { flex-basis: 100%; } }
+@media (max-width: 599px) {
+  .ld-footer__nav { margin-left: 0; flex-basis: 100%; justify-content: space-between; }
+  .ld-footer__sites { padding-right: 0; border-right: 0; }
+}
 
 /* ---------- 21. Project masthead: the poster at the top of a project page ---------- */
 .ld-mast { position: relative; overflow: hidden; }
@@ -509,6 +592,7 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 }
 .ld-mast__kicker { grid-column: 1 / 9; grid-row: 1; margin: 0; font: 500 12px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--pj-ink); }
 .ld-mast__status { grid-column: 9 / 13; grid-row: 1; justify-self: end; align-self: start; }
+.ld-mast__status .ld-stamps { justify-content: flex-end; }
 .ld-mast__title { grid-column: 1 / 7; grid-row: 2; position: relative; z-index: 2; margin: 40px 0 0; font-weight: 400; }
 .ld-mast__num { display: block; font: 400 var(--ld-d0)/.8 var(--font-display); letter-spacing: -.01em; color: var(--pj-accent); }
 .ld-mast__name { display: block; margin-top: 10px; font: 400 var(--ld-d2)/.88 var(--font-display); text-transform: uppercase; color: var(--pj-ink); }
@@ -576,6 +660,7 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
   .ld-mast__kicker { grid-column: 1 / 5; grid-row: 1; padding-right: 0; }
   .ld-mast__title { grid-column: 1 / 5; grid-row: 2; margin-top: 24px; }
   .ld-mast__status { grid-column: 1 / 5; grid-row: 3; justify-self: start; margin-top: 18px; }
+  .ld-mast__status .ld-stamps { justify-content: flex-start; }
   .ld-mast__art { grid-column: 1 / 5; grid-row: 4; min-height: 0; aspect-ratio: 4 / 3; margin: 24px calc(-1 * var(--ld-margin)) 0; }
   .ld-mast__art img { object-fit: cover; object-position: 60% 60%; }
   .ld-mast__dek { grid-column: 1 / 5; grid-row: 5; margin-top: 24px; }
@@ -602,10 +687,12 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 
 /* ---------- 22. Mechanics stack: a project's verbs ---------- */
 .ld-mech { margin: 0; padding: 0; list-style: none; border-top: 2px solid var(--pj-rule, var(--rule-strong)); counter-reset: ld-mech; }
+.ld-sechead + .ld-mech { border-top: 0; }   /* straight under a section head, whose rule is the only one above it */
 .ld-mech > li {
   display: grid; grid-template-columns: 48px minmax(0, 5fr) minmax(0, 6fr); align-items: center; column-gap: var(--ld-gutter);
   padding: 14px 0 12px; border-bottom: 1px solid var(--rule);
 }
+.ld-mech > li:last-child { border-bottom: 0; }   /* rules between the verbs, none after the last */
 .ld-mech__no { font: 500 12px/16px var(--font-mono); letter-spacing: .1em; color: var(--pj-ink-3, var(--ink-3)); }
 .ld-mech__verb {
   position: relative; justify-self: start; z-index: 0; padding: 0 6px; margin-left: -6px;
@@ -623,8 +710,9 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 .ld-mech--words > li { display: block; padding: 0; border: 0; }
 .ld-mech--words .ld-mech__verb { font-size: var(--ld-d4); line-height: 1.02; }
 .ld-mech--words .ld-mech__no, .ld-mech--words .ld-mech__gloss { display: none; }
-.ld-mech--row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 2px solid var(--pj-rule, var(--rule-strong)); }
-.ld-mech--row > li { display: flex; gap: 10px; align-items: baseline; padding: 10px 0 8px; border-bottom: 1px solid var(--rule); }
+/* the row's hairlines run between its rows, never under the last: each verb draws a top rule and the row clips the first row's */
+.ld-mech--row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 2px solid var(--pj-rule, var(--rule-strong)); overflow: hidden; }
+.ld-mech--row > li { display: flex; gap: 10px; align-items: baseline; margin-top: -1px; padding: 10px 0 8px; border-bottom: 0; border-top: 1px solid var(--rule); }
 .ld-mech--row .ld-mech__no { display: inline; }
 .ld-mech--row .ld-mech__verb { font-size: var(--ld-d4); }
 .ld-mech--row .ld-mech__gloss { display: none; }
@@ -635,7 +723,8 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
   .ld-mech > li { grid-template-columns: 32px minmax(0, 1fr); row-gap: 6px; }
   .ld-mech__gloss { grid-column: 2; }
   .ld-mech--words, .ld-mech--row { grid-template-columns: 1fr 1fr; gap: 0 16px; padding-top: 0; }
-  .ld-mech--words > li { padding: 8px 0 6px; border-bottom: 1px solid var(--rule); }
+  .ld-mech--words { overflow: hidden; }
+  .ld-mech--words > li { margin-top: -1px; padding: 8px 0 6px; border-top: 1px solid var(--rule); }
   .ld-mech--words .ld-mech__verb { font-size: 30px; }
 }
 
@@ -692,6 +781,7 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
   grid-template-columns: 112px minmax(0, 1fr) 190px 190px 64px 40px; column-gap: var(--ld-gutter); align-items: center;
   padding: 26px 0 24px; border-bottom: 2px solid var(--rule-strong);
 }
+.ld-entry:last-child { border-bottom: 0; }
 .ld-entry::before { content: ''; position: absolute; inset: 0 calc(-1 * var(--ld-margin)); z-index: -1; background: var(--paper-2); transform: scaleX(0); transform-origin: 0 50%; transition: transform var(--ld-wipe); }
 .ld-entry__no { align-self: start; padding-top: 10px; font: 500 12px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
 .ld-entry__main { min-width: 0; }
@@ -742,7 +832,7 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 .ld-filters { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 0; }
 .ld-filters .ld-tabs { border-bottom: 0; }
 .ld-filters__count { font: 500 12px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
-.ld-empty { padding: 40px 0; border-bottom: 2px solid var(--rule-strong); }
+.ld-empty { padding: 40px 0; }
 .ld-empty p { margin: 0; max-width: 52ch; font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
 .ld-empty strong { display: block; margin-bottom: 8px; font: 400 var(--ld-d4)/1 var(--font-display); text-transform: uppercase; color: var(--ink); font-weight: 400; }
 
@@ -782,6 +872,7 @@ a.ld-tag:hover { background: var(--ink); color: var(--paper); }
   position: relative; display: grid; grid-template-columns: 200px minmax(0, 1fr) 220px; column-gap: var(--ld-gutter); align-items: start;
   padding: 24px 0 26px; border-bottom: 1px solid var(--rule);
 }
+.ld-note:last-child { border-bottom: 0; }
 .ld-note__meta { display: grid; gap: 6px; padding-top: 6px; }
 .ld-note__date { font: 400 14px/22px var(--font-mono); color: var(--ink); }
 .ld-note__kind { font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
@@ -797,7 +888,7 @@ a.ld-tag:hover { background: var(--ink); color: var(--paper); }
 .ld-note__dek { margin: 10px 0 0; max-width: 60ch; font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
 .ld-note__tags { justify-self: end; padding-top: 4px; position: relative; z-index: 1; }
 /* the lead note: a picture and a big title */
-.ld-note--lead { grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: auto auto 1fr; padding: 0 0 var(--space-7, 48px); border-bottom: 2px solid var(--rule-strong); }
+.ld-note--lead { grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: auto auto 1fr; padding: 0 0 var(--space-7, 48px); }
 .ld-note--lead .ld-note__art { grid-column: 1 / 7; grid-row: 1 / 4; margin: 0; aspect-ratio: 4 / 3; }
 .ld-note--lead .ld-note__art img { width: 100%; height: 100%; object-fit: cover; }
 .ld-note--lead .ld-note__meta { grid-column: 7 / 13; grid-row: 1; grid-auto-flow: column; justify-content: start; align-items: baseline; gap: 16px; padding-top: 0; }
@@ -862,7 +953,7 @@ a.ld-tag:hover { background: var(--ink); color: var(--paper); }
   background: var(--frame); color: var(--on-frame); font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase;
 }
 .ld-ledger td { padding: 10px 14px; border-bottom: 1px solid var(--rule); color: var(--ink); vertical-align: top; }
-.ld-ledger tbody tr:last-child td { border-bottom: 2px solid var(--rule-strong); }
+.ld-ledger tbody tr:last-child td { border-bottom: 0; }   /* rules between rows; none closes the table */
 .ld-ledger tbody tr { transition: background-color var(--ld-shift); }
 .ld-ledger tbody tr:hover { background: var(--paper-2); }
 .ld-ledger .is-num { text-align: right; }
@@ -883,7 +974,7 @@ a.ld-tag:hover { background: var(--ink); color: var(--paper); }
   .ld-ledger--stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .ld-ledger--stack table, .ld-ledger--stack tbody, .ld-ledger--stack tr, .ld-ledger--stack td { display: block; width: 100%; }
   .ld-ledger--stack tr { padding: 10px 0; border-bottom: 1px solid var(--rule); }
-  .ld-ledger--stack tbody tr:last-child { border-bottom: 2px solid var(--rule-strong); }
+  .ld-ledger--stack tbody tr:last-child { border-bottom: 0; }
   .ld-ledger--stack td { display: flex; justify-content: space-between; gap: 16px; padding: 3px 0; border: 0; text-align: right; }
   .ld-ledger--stack tbody tr:last-child td { border: 0; }
   .ld-ledger--stack td::before { content: attr(data-label); text-align: left; font: 500 11px/22px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
@@ -959,7 +1050,7 @@ a.ld-tag:hover { background: var(--ink); color: var(--paper); }
 }
 
 /* ---------- 33. Next note: the band at the end of a note ---------- */
-.ld-next { position: relative; display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 24px; padding: 32px 0 36px; border-top: 8px solid var(--rule-strong); border-bottom: 2px solid var(--rule-strong); isolation: isolate; }
+.ld-next { position: relative; display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 24px; padding: 32px 0 36px; border-top: 8px solid var(--rule-strong); isolation: isolate; }
 .ld-next::before { content: ''; position: absolute; inset: 0 calc(-1 * var(--ld-margin)); z-index: -1; background: var(--yellow); transform: scaleY(0); transform-origin: 50% 100%; transition: transform var(--ld-wipe); }
 .ld-next__label { display: block; margin-bottom: 14px; font: 500 12px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
 .ld-next__title { margin: 0; font: 400 var(--ld-d3)/.92 var(--font-display); text-transform: uppercase; max-width: 20ch; }
@@ -1027,7 +1118,9 @@ a.ld-tag:hover { background: var(--ink); color: var(--paper); }
 .ld-board__row:has(a:focus-visible) { outline: 3px solid var(--focus); outline-offset: -3px; }
 .ld-board__kind { display: block; margin-top: 8px; font: 400 13px/18px var(--font-mono); color: var(--ink-2); }
 .ld-board__status { justify-self: end; text-align: right; font: 600 12px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--yellow); }
-.ld-board__status::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 8px; background: currentColor; vertical-align: 1px; }
+.ld-board__status > span { display: block; white-space: nowrap; }
+.ld-board__status > span + span { margin-top: 6px; }
+.ld-board__status > span::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 8px; background: currentColor; vertical-align: 1px; }
 .ld-board__status--playable { color: #FF6B5E; }
 .ld-board__row:hover, .ld-board__row.is-hover { color: var(--on-yellow); }
 .ld-board__row:hover::before, .ld-board__row.is-hover::before { transform: scaleY(1); }
@@ -1038,12 +1131,16 @@ a.ld-tag:hover { background: var(--ink); color: var(--paper); }
 .ld-board--compact .ld-board__cols, .ld-board--compact .ld-board__clock { display: none; }
 .ld-board--compact .ld-board__row { grid-template-columns: 40px minmax(0, 1fr); row-gap: 10px; }
 .ld-board--compact .ld-board__status { grid-column: 2; justify-self: start; text-align: left; }
+.ld-board--compact .ld-board__status > span { display: inline-block; margin-right: 16px; }
+.ld-board--compact .ld-board__status > span + span { margin-top: 0; }
 .ld-board--compact .ld-board__title { font-size: 32px; }
 @media (max-width: 599px) {
   .ld-board__head, .ld-board__cols, .ld-board__row, .ld-board__foot { padding-left: 16px; padding-right: 16px; }
   .ld-board__cols { display: none; }
   .ld-board__row { grid-template-columns: 36px minmax(0, 1fr); row-gap: 10px; }
   .ld-board__status { grid-column: 2; justify-self: start; text-align: left; }
+  .ld-board__status > span { display: inline-block; margin-right: 16px; }
+  .ld-board__status > span + span { margin-top: 0; }
   .ld-board__title { font-size: 30px; }
 }
 
