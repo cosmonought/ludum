@@ -41,9 +41,7 @@
 .pg-flow__box--play li { border-top-color: #3A3631; }
 .pg-neta { display: flex; gap: 24px; align-items: center; }
 .pg-neta img { width: 96px; height: auto; }
-.pg-close { padding-top: var(--space-6, 32px); border-top: 2px solid var(--rule-strong); }
-.pg-close .ld-epigraph { max-width: 40ch; }
-.pg-close .ld-epigraph p { font-size: 20px; line-height: 30px; }
+.pg-close { padding-block: var(--space-6, 32px); }   /* the closing Epigraph panel: no rule above it */
 .pg-next { isolation: isolate; padding-block: var(--space-8, 64px); }
 @media (max-width: 1023px) {
   .pg-head__row, .pg-two { grid-template-columns: 1fr; gap: 28px; }
@@ -73,12 +71,12 @@
 </header><main id="main">
 <header class="ld-wrap pg-head"><p class="ld-label pg-head__kicker">About · Ludum</p><div class="pg-head__row"><h1 class="pg-head__title">Why games</h1><div><p class="pg-head__dek">Ludum is Neta DAO’s game publisher. It makes serious games — about capital, conflict, and coordination — and builds them in public.</p></div></div></header>
 <section class="ld-statement ld-statement--frame" data-theme="press" id="why-games"><div class="ld-wrap"><p class="ld-statement__text">Games are models you can <em>enter.</em></p></div></section>
-<section class="ld-section" aria-labelledby="a1"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">01</span><h2 class="ld-sechead__title" id="a1">What Ludum is</h2></header><div class="pg-split"><div class="pg-split__side"><figure class="ld-epigraph"><blockquote><p>“The opposite of play is not what is serious but what is real.”</p></blockquote><figcaption>Sigmund Freud, <cite>Creative Writers and Day-Dreaming</cite> (1908)</figcaption></figure></div><div class="pg-split__main"><div class="ld-prose ld-prose--initial">
+<section class="ld-section" aria-labelledby="a1"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">01</span><h2 class="ld-sechead__title" id="a1">What Ludum is</h2></header><div class="pg-split"><div class="pg-split__side"><figure class="ld-epigraph"><blockquote><p>“The opposite of play is not what is serious but what is real.”</p></blockquote><figcaption><span class="ld-epigraph__who">Sigmund Freud</span><span class="ld-epigraph__work"><cite>Creative Writers and Day-Dreaming</cite> (1908)</span></figcaption></figure></div><div class="pg-split__main"><div class="ld-prose ld-prose--initial">
   <p>Some systems are easier to play than to explain. A market where everyone owns a piece of everyone else; a network that is worth only what it connects; a rule that turns yesterday’s investment into scrap. Read about them and you understand them. Sit at a table and run them for three hours, and you feel them.</p>
   <p>Ludum publishes games of that kind: long, social and exact, about money, infrastructure and the ways people coordinate. Its first two are 18xx games — the family of railway-and-stock games that Francis Tresham began.</p>
 </div></div></div></div></section>
 <section class="ld-section" aria-labelledby="a2"><div class="ld-wrap"><header class="ld-sechead"><span class="ld-sechead__no">02</span><h2 class="ld-sechead__title" id="a2">How statuses work</h2></header><ul class="pg-keys"><li><span><span class="ld-stamp ld-stamp--playable">Playable</span></span><span>Runs on play.netadao.org now. PLAY takes you straight there.</span></li><li><span><span class="ld-stamp ld-stamp--dev">In development</span></span><span>Being built, in public. It opens on play.netadao.org first.</span></li><li><span><span class="ld-stamp ld-stamp--experimental">Experimental</span></span><span>A playable prototype. Rules and balance may change between sessions.</span></li><li><span><span class="ld-stamp ld-stamp--research">Research</span></span><span>Study and writing, for a game or about games in general.</span></li><li><span><span class="ld-stamp ld-stamp--archive">Archive</span></span><span>Finished or retired, kept on record.</span></li></ul></div></section>
-<section class="ld-section" aria-label="On play"><div class="ld-wrap pg-close"><figure class="ld-epigraph"><blockquote><p>“For play and nothing else is the mother of every habit.”</p></blockquote><figcaption>Walter Benjamin, <cite>Toys and Play</cite> (1928)</figcaption></figure></div></section></main><footer class="ld-footer" data-theme="press">
+<section class="ld-section" aria-label="On play"><div class="ld-wrap pg-close"><figure class="ld-epigraph ld-epigraph--panel"><blockquote><p>“For play and nothing else is the mother of every habit.”</p></blockquote><figcaption><span class="ld-epigraph__who">Walter Benjamin</span><span class="ld-epigraph__work"><cite>Toys and Play</cite> (1928)</span></figcaption></figure></div></section></main><footer class="ld-footer" data-theme="press">
   <span class="ld-footer__band" aria-hidden="true"></span>
   <div class="ld-wrap ld-footer__inner">
     <a class="ld-footer__name" href="/">Ludum</a>

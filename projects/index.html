@@ -41,9 +41,7 @@
 .pg-flow__box--play li { border-top-color: #3A3631; }
 .pg-neta { display: flex; gap: 24px; align-items: center; }
 .pg-neta img { width: 96px; height: auto; }
-.pg-close { padding-top: var(--space-6, 32px); border-top: 2px solid var(--rule-strong); }
-.pg-close .ld-epigraph { max-width: 40ch; }
-.pg-close .ld-epigraph p { font-size: 20px; line-height: 30px; }
+.pg-close { padding-block: var(--space-6, 32px); }   /* the closing Epigraph panel: no rule above it */
 .pg-next { isolation: isolate; padding-block: var(--space-8, 64px); }
 @media (max-width: 1023px) {
   .pg-head__row, .pg-two { grid-template-columns: 1fr; gap: 28px; }
@@ -79,7 +77,7 @@
   <span class="ld-entry__status"><span class="ld-stamps ld-stamps--s"><span class="ld-stamp ld-stamp--dev ld-stamp--s">In development</span><span class="ld-stamp ld-stamp--experimental ld-stamp--s">Experimental</span></span></span>
   <span class="ld-entry__year">2026</span>
   <span class="ld-entry__go" aria-hidden="true"><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></span>
-  <span class="ld-entry__thumb" aria-hidden="true"><img src="/assets/project-18xx/p18-board-meeting.webp" alt=""></span>
+  <span class="ld-entry__thumb ld-focal-frame" aria-hidden="true"><img class="ld-focal" style="--fx:.715;--ar:1.9397" src="/assets/project-18xx/p18-board-meeting.webp" alt=""></span>
 </li><li class="ld-entry" data-ld-status="dev research">
   <span class="ld-entry__no">LUD—02</span>
   <div class="ld-entry__main"><h3 class="ld-entry__title"><a href="/projects/20-cosmos/">20 Cosmos</a></h3><p class="ld-entry__dek">Robber barons in the internet age: blockchains, validators and the channels between them.</p></div>

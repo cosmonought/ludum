@@ -16,7 +16,7 @@ Ludum is Neta DAO's game publisher, and this is its house style: radical game pu
 - **Casing.** Display type is always uppercase (Anton). Running text is sentence case. Mono labels and actions are uppercase and tracked; mono data is sentence case.
 - **Names.** The first game is **Project 18XX**; its tables are 18XX, 18XX+ and 18XX+: A Level Playing Field.
 - **Never.** Hype words ("revolutionary", "next-gen", "the future of"), "Web3", rocket-and-moon talk, emoji, exclamation marks, real chain names or logos on 20 Cosmos material.
-- **Real lines to reuse.** "The serious business of play." · "We make serious games about capital, conflict, and coordination." · "Games are models you can enter." · "Railways for a multichain world." · "Railways built empires. Blockchains connect them."
+- **Real lines to reuse.** "Play can be a serious business" · "We make serious games about capital, conflict, and coordination." · "Games are models you can enter." · "Railways for a multichain world." · "Railways built empires. Blockchains connect them."
 - Sample copy in the templates (note titles, dates, bylines) is illustrative and marked so in each card.
 
 ## Visual foundations

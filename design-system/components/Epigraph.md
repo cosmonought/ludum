@@ -1,14 +1,17 @@
 # Epigraph
 
-A reader on play, quoted small: the line in Plex Sans italic, the source under it in mono. Three are set on Ludum, each once.
+A reader on play, quoted: the line in Plex Sans italic, the reader and the work under it. Three are set on Ludum, each once.
 
-**Markup.** `<figure class="ld-epigraph"><blockquote><p>“…”</p></blockquote><figcaption>Name, <cite>Work</cite> (year)</figcaption></figure>`; two in a row stack 28px apart.
+**Markup.** `<figure class="ld-epigraph [ld-epigraph--panel]"><blockquote><p>“…”</p></blockquote><figcaption><span class="ld-epigraph__who">Name</span><span class="ld-epigraph__work"><cite>Work</cite> (year)</span></figcaption></figure>`.
+
+- **Panel** (`ld-epigraph--panel`): how a page closes. Centred on stock, alone, with no rule above it. The line at 44px (34px on tablets, 26px on phones) in `ink`, balanced over at most 26 characters a line; under it, 28px down, the reader's name in mono capitals and the work and year in Plex Sans, both centred. One per page, the last thing before the footer.
+- **Side** (the default): beside prose in a side column, at 16px in `ink-2`, the source under it in one mono line.
 
 | Reader | Line | Where |
 |---|---|---|
-| Friedrich Schiller, *On the Aesthetic Education of Man* (1795, Letter XV) | "… he is only wholly Man when he is playing." | the **Home** page's closing section, beside the line about play.netadao.org |
-| Walter Benjamin, *Toys and Play* (1928) | "For play and nothing else is the mother of every habit." | **About**, beside "What Ludum is" |
-| Sigmund Freud, *Creative Writers and Day-Dreaming* (1908) | "The opposite of play is not what is serious but what is real." | **About**, under Benjamin |
+| Friedrich Schiller, *On the Aesthetic Education of Man* (1795, Letter XV) | "… he is only wholly Man when he is playing." | **Home**, the closing panel |
+| Walter Benjamin, *Toys and Play* (1928) | "For play and nothing else is the mother of every habit." | **About**, the closing panel |
+| Sigmund Freud, *Creative Writers and Day-Dreaming* (1908) | "The opposite of play is not what is serious but what is real." | **About**, beside "What Ludum is" |
 
-- Quiet by design: never larger than 16px, never a pull quote, never in the footer. A pull quote is Ludum's own words; an epigraph is someone else's.
+- Never a pull quote, never in the footer. A pull quote is Ludum's own words; an epigraph is someone else's.
 - Quote exactly and cite the work and year.
