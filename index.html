@@ -25,8 +25,7 @@
 .pg-split__main { grid-column: 4 / 13; min-width: 0; }
 .pg-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7, 48px); align-items: start; }
 .pg-keys { margin: 0; padding: 0; list-style: none; }   /* under a section head, whose rule is the only one above it */
-.pg-keys li { display: grid; grid-template-columns: 260px 1fr; gap: var(--ld-gutter); align-items: center; padding: 16px 0; border-bottom: 1px solid var(--rule); font: 400 15px/24px var(--font-sans); color: var(--ink-2); }
-.pg-keys li:last-child { border-bottom: 0; }
+.pg-keys li { display: grid; grid-template-columns: 260px 1fr; gap: var(--ld-gutter); align-items: center; padding: 12px 0; font: 400 15px/24px var(--font-sans); color: var(--ink-2); }   /* no hairlines: the stamps line the rows up */
 .pg-flow { display: grid; grid-template-columns: 1fr 120px 1fr; align-items: stretch; }
 .pg-flow__box { padding: 28px 28px 30px; border: 2px solid var(--rule-strong); }
 .pg-flow__box h3 { margin: 0 0 14px; font: 400 var(--ld-d3)/.9 var(--font-display); text-transform: uppercase; font-weight: 400; }
@@ -74,7 +73,7 @@
   <div class="ld-wrap ld-hero__grid">
     <h1 class="ld-hero__title" id="hero-h"><span><em>Play</em> can be</span> <span>a serious</span> <span>business</span></h1>
     <p class="ld-hero__dek">Ludum is Neta DAO’s game publisher. We make serious games about capital, conflict, and coordination.</p>
-    <div class="ld-hero__actions"><a class="ld-link" href="/about/">Why games<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a></div>
+    <div class="ld-hero__actions"><a class="ld-link" href="/about/">What Ludum is<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a></div>
     <div class="ld-hero__side"><span class="ld-hero__sun ld-sun" aria-hidden="true"></span><section class="ld-board ld-board--compact" data-theme="press" aria-labelledby="board-h">
   <header class="ld-board__head"><h2 id="board-h">Departures</h2><span class="ld-board__clock">Ludum · Games by Neta DAO</span></header>
   <div class="ld-board__cols" aria-hidden="true"><span>No.</span><span>Game</span><span style="text-align:right">Status</span></div>
@@ -88,7 +87,7 @@
   <div class="ld-wrap ld-feature__grid">
     <header class="ld-feature__head"><span class="ld-label">LUD—01 · 18xx · The gilded boardroom</span><span class="ld-stamps"><span class="ld-stamp ld-stamp--dev">In development</span><span class="ld-stamp ld-stamp--experimental">Experimental</span></span></header>
     <h3 class="ld-feature__title"><a href="/projects/project-18xx/"><span class="ld-feature__name">Project</span><span class="ld-feature__num ld-gilt">18XX</span><span class="ld-sr"> — view the project</span></a></h3>
-    <p class="ld-feature__dek">Railroads, a stock market and the people who run both: an 18xx game being built for play on Juno, at three tables. Based on the classic <i>1830: Railways and Robber Barons</i> by Francis Tresham.</p>
+    <p class="ld-feature__dek">Railroads, a stock market, and the people who run both: an 18xx game being built for play on Juno, at three tables. Based on the classic <i>1830: Railways and Robber Barons</i> by Francis Tresham.</p>
     <div class="ld-feature__meta"><dl class="ld-meta ld-meta--compact"><div><dt>Family</dt><dd>18xx · economic strategy</dd></div><div><dt>Network</dt><dd>Juno</dd></div><div><dt>Tables</dt><dd>18XX · 18XX+ · A Level Playing Field</dd></div></dl></div>
     <div class="ld-feature__actions"><a class="ld-btn ld-btn--secondary" href="/projects/project-18xx/">View project<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a><a class="ld-play" href="https://play.netadao.org" aria-label="Play Project 18XX, on play.netadao.org"><span class="ld-play__word">Play</span><span class="ld-play__what">Project 18XX</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a></div>
     <figure class="ld-feature__art ld-lineart ld-focal-frame" data-ld-reveal><img class="ld-focal" style="--fx:.715;--ar:1.9397" src="/assets/project-18xx/p18-board-meeting.webp" alt="A gold line drawing of railroad financiers in top hats and frock coats leaning over a boardroom table, a glowing network of hexagons and routes on the map between them." width="1350" height="696"><span class="ld-feature__tape ld-tape">The boardroom</span></figure>
@@ -98,7 +97,7 @@
   <div class="ld-wrap ld-feature__grid">
     <header class="ld-feature__head"><span class="ld-label">LUD—02 · 18xx · Interchain infrastructure</span><span class="ld-stamps"><span class="ld-stamp ld-stamp--dev">In development</span><span class="ld-stamp ld-stamp--research">Research</span></span></header>
     <h3 class="ld-feature__title"><a href="/projects/20-cosmos/"><span class="ld-feature__num">20</span><span class="ld-feature__name ld-feature__name--big">Cosmos</span><span class="ld-sr"> — view the project</span></a></h3>
-    <p class="ld-feature__dek">Robber barons in the internet age: an 18xx game of blockchains, validators and the channels between them, loosely based on the Cosmos ecosystem.</p>
+    <p class="ld-feature__dek">Robber barons in the internet age: an 18xx game of blockchains, validators, and the channels between them, loosely based on the Cosmos ecosystem.</p>
     <div class="ld-feature__meta"><dl class="ld-meta ld-meta--compact"><div><dt>Family</dt><dd>18xx</dd></div><div><dt>Setting</dt><dd>The Cosmos ecosystem, loosely</dd></div><div><dt>Plays on</dt><dd>play.netadao.org, when ready</dd></div></dl></div>
     <div class="ld-feature__actions"><a class="ld-btn ld-btn--secondary" href="/projects/20-cosmos/">View project<svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h17M14 6l6 6-6 6"/></svg></a><p class="ld-play ld-play--soon"><span class="ld-play__word">Play</span><span class="ld-play__what">Research · not yet on play.netadao.org</span></p></div>
     <figure class="ld-feature__art ld-lineart" data-ld-reveal><img src="/assets/20-cosmos/c20-machine-hall.webp" alt="An engraving in steel blue: a robber baron in a top hat and frock coat stands in the aisle of a vast data centre, server racks stretching away under iron cable trays lit in yellow." width="1350" height="756"><span class="ld-feature__tape ld-tape">The server farm</span></figure>

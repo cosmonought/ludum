@@ -107,6 +107,11 @@ html:has(.ld-tabs-bar) { scroll-padding-top: calc(var(--ld-nav-h) + 4px + 64px);
 .ld-wrap { width: 100%; max-width: var(--frame-max, 1600px); margin-inline: auto; padding-inline: var(--ld-margin); }
 .ld-section { padding-block: var(--ld-section); }
 .ld-section + .ld-section { padding-top: 0; }
+/* a tinted panel: the ground changes, so its own padding returns on both sides, and the change is the boundary */
+.ld-section--tint { background: var(--paper-2); }
+.ld-section--tint + .ld-section, .ld-section + .ld-section--tint { padding-top: var(--ld-section); }
+/* the first section of a page sits as close under the nav as a hero does */
+main > .ld-section:first-child { padding-top: min(var(--ld-section), var(--space-8, 64px)); }
 .ld-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--ld-gutter); }
 @media (max-width: 599px) { .ld-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .ld-measure { max-width: var(--measure, 680px); }
@@ -535,6 +540,8 @@ html:not(.ld-js) .ld-nav__drop:focus-within > .ld-nav__sub { display: block; }  
 :is(.ld-sechead, .ld-steps__title) + * > * > :is(.ld-meta, .ld-notes, .ld-keylist, .ld-achv, .ld-legend, .ld-disclose):first-child,
 :is(.ld-sechead, .ld-steps__title) + :is(.pg-two, .ld-twocol) > :is(.ld-meta, .ld-notes, .ld-keylist, .ld-achv, .ld-legend, .ld-disclose),
 :is(.ld-sechead, .ld-steps__title) + .ld-choices > .ld-choice:first-of-type { border-top: 0; }
+/* where the ground changes (the first section of a page, a tinted panel) the change is the boundary: its head draws no rule */
+:is(main > .ld-section:first-child, .ld-section--tint) > .ld-wrap > .ld-sechead:first-child { border-top: 0; padding-top: 0; }
 
 /* ---------- 17. Metadata strip ---------- */
 .ld-meta {
@@ -562,6 +569,12 @@ html:not(.ld-js) .ld-nav__drop:focus-within > .ld-nav__sub { display: block; }  
 .ld-statement__text em { font-style: normal; color: var(--red); }
 .ld-statement--frame { background: var(--frame); color: var(--on-frame); }
 .ld-statement--frame .ld-statement__text em { color: var(--yellow); }
+/* a statement with a reader beside it: the line at the left, the epigraph at the right, on the line's last baseline */
+.ld-statement__grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); column-gap: var(--ld-gutter); align-items: end; }
+.ld-statement__grid .ld-epigraph { justify-self: end; max-width: 30ch; }
+.ld-statement__grid .ld-epigraph p { font-size: 22px; line-height: 32px; color: var(--ink); }
+.ld-statement__grid .ld-epigraph figcaption { margin-top: 12px; color: var(--ink-2); }
+@media (max-width: 1023px) { .ld-statement__grid { grid-template-columns: 1fr; row-gap: 40px; } .ld-statement__grid .ld-epigraph { justify-self: start; } }
 
 /* ---------- 19. Play band: the way out to play.netadao.org ---------- */
 
@@ -878,18 +891,20 @@ html:not(.ld-js) .ld-nav__drop:focus-within > .ld-nav__sub { display: block; }  
 .ld-epigraph__who::after { content: ', '; }
 /* the panel: how a page closes, centred and large, the reader and the work under it */
 .ld-epigraph--panel { max-width: none; text-align: center; }
-.ld-epigraph--panel p { max-width: 26ch; margin-inline: auto; font: italic 400 44px/56px var(--font-sans); letter-spacing: -.01em; color: var(--ink); text-wrap: balance; }
+.ld-epigraph--panel p { margin-inline: auto; font: italic 400 44px/56px var(--font-sans); letter-spacing: -.01em; color: var(--ink); text-wrap: balance; }
 .ld-epigraph--panel figcaption { display: grid; justify-items: center; gap: 6px; margin-top: 28px; }
 .ld-epigraph--panel .ld-epigraph__who { font: 600 13px/16px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
 .ld-epigraph--panel .ld-epigraph__who::after { content: none; }
 .ld-epigraph--panel .ld-epigraph__work { font: 400 15px/22px var(--font-sans); color: var(--ink-2); }
 /* its section: as much space as the line needs, no more (48px above and below; 32px on phones) */
 .ld-section--close { padding-block: var(--space-7, 48px); }
-.ld-section:has(+ .ld-section--close) { padding-bottom: var(--space-7, 48px); }
+.ld-section:not(.ld-section--tint):has(+ .ld-section--close) { padding-bottom: var(--space-7, 48px); }
+.ld-section--tint + .ld-section--close { padding-top: var(--space-7, 48px); }
 @media (max-width: 1023px) { .ld-epigraph--panel p { font-size: 34px; line-height: 44px; } }
 @media (max-width: 599px) {
   .ld-epigraph--panel p { font-size: 26px; line-height: 34px; } .ld-epigraph--panel figcaption { margin-top: 20px; }
-  .ld-section--close { padding-block: 32px; } .ld-section:has(+ .ld-section--close) { padding-bottom: 32px; }
+  .ld-section--close { padding-block: 32px; } .ld-section:not(.ld-section--tint):has(+ .ld-section--close) { padding-bottom: 32px; }
+  .ld-section--tint + .ld-section--close { padding-top: 32px; }
 }
 .ld-tag--p18 { --ld-tag: var(--p18-gold-deep); }
 .ld-tag--cosmos { --ld-tag: var(--blue); }

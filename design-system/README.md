@@ -2,7 +2,7 @@ Ludum is Neta DAO's game publisher, and this is its house style: radical game pu
 
 ## Ludum and Play
 
-- **ludum.netadao.org** is the publisher's house: projects, notes, research, why games.
+- **ludum.netadao.org** is the publisher's house: projects, notes, research, and what Ludum is.
 - **play.netadao.org** is where the games run.
 - Every PLAY on Ludum leaves for play.netadao.org and says so. Ludum never stands between a player and a game, and nobody has to come through Ludum to play. PLAY wears Neta DAO's cyan (`neta-cyan`), because Play is Neta DAO's.
 - Homepage priority is fixed: **the games first, then what can be played, then the writing.**
@@ -13,6 +13,7 @@ Ludum is Neta DAO's game publisher, and this is its house style: radical game pu
 - **Voice.** Plain, confident, specific; a publisher talking about its list. Short declarative sentences. Third person for the house ("Ludum publishes…"), never "we're excited to…".
 - **Say only what is true and settled.** Project 18XX's facts come from its own repository: its actions (buy, sell, operate, withhold, rust, bankrupt), its three tables, its house rules, its train roster. 20 Cosmos has no published rules: describe its world and themes, never its mechanics. No dates, prices or player counts until they are real. A diagram or table that isn't the game's own says "illustrative".
 - **Statuses are promises.** PLAYABLE · IN DEVELOPMENT · EXPERIMENTAL · RESEARCH · ARCHIVE, and nothing else ("Coming soon", "Beta" and "New" don't exist).
+- **Lists take the Oxford comma**: "capital, conflict, and coordination".
 - **Casing.** Display type is always uppercase (Anton). Running text is sentence case. Mono labels and actions are uppercase and tracked; mono data is sentence case.
 - **Names.** The first game is **Project 18XX**; its tables are 18XX, 18XX+ and 18XX+: A Level Playing Field.
 - **Never.** Hype words ("revolutionary", "next-gen", "the future of"), "Web3", rocket-and-moon talk, emoji, exclamation marks, real chain names or logos on 20 Cosmos material.
@@ -27,14 +28,14 @@ Ludum is Neta DAO's game publisher, and this is its house style: radical game pu
 
 **Project identities.** A project field sets five roles with one class and pins its own theme, so the site's theme never re-tints a game:
 - `ld-pj--p18` + `data-theme="press"` — the gilded boardroom, taken from the game's own art and code: `p18-ground` near-black, `p18-paper` text, `p18-gold` with a gilt gradient (`ld-gilt`) for its numerals, walnut and sepia on its plates, and on the board its own land and tile tiers (`p18-land`, `p18-tile-*`). Its name is set in Anton with 18XX in gilt (`ld-gilt`); its feature and masthead pictures are gold line drawings on black whose edges fade into the field (`ld-lineart`); the title cards of its three tables are shown as made in gilt frames (`ld-giltframe`).
-- `ld-pj--cosmos` + `data-theme="press"` — robber barons in the internet age: the 18xx system with blockchains for railroads, validators for trains, and IBC channels, relayers and bridges for track. `p20c-night` ground, `p20c-cream` linework, `p20c-yellow` signal, `p20c-blue` zones, `p20c-line` channels; its pictures are steel-blue engravings of internet-age machinery and money on night navy (`assets/20 Cosmos/`), faded into the field (`ld-lineart`). No trains or rails, and not outer space: no planets, nebulae or starfields.
+- `ld-pj--cosmos` + `data-theme="press"` — robber barons in the internet age: the 18xx system with blockchains for railroads, validators for trains, and IBC channels, relayers, and bridges for track. `p20c-night` ground, `p20c-cream` linework, `p20c-yellow` signal, `p20c-blue` zones, `p20c-line` channels; its pictures are steel-blue engravings of internet-age machinery and money on night navy (`assets/20 Cosmos/`), faded into the field (`ld-lineart`). No trains or rails, and not outer space: no planets, nebulae or starfields.
 - A new project takes its accent from the house pigments first; two projects never share both ground and accent.
 
 **Type.** Anton (display, uppercase, `d0`–`d5`, line height under 1) and IBM Plex — Sans for reading (`lede`, `body`, `body-s`), Mono for the apparatus (`label`, `label-s`, `data`, `button`, `nav-m`). Display sizes step down at 1279 / 1023 / 599px through `--ld-d0`…`--ld-d5` and the `.ld-d0`–`.ld-d5` classes. One picked-out word per heading, in `red`. Text is always live type, never set into pictures. See **TypeScale**.
 
 **Layout.** 12 columns from tablet up, 4 on phones; margins 48 / 32 / 24 / 16; gutters 24 (16 from tablet down); frame max 1600px; reading measure 680px. Compositions overlap and bleed on purpose (numerals over pictures, pictures off the edge); reading text never does. Spacing `space-1`…`space-10` (4 → 128). See **Grid** and **Responsive**.
 
-**Page rhythm.** A page is cream stock, framed by the black nav and footer; dark fields (a game's identity, a frame-black statement) are set into the stock. Every page comes back to stock before the footer, so the footer never meets a dark field: the homepage closes on stock, the projects index ends on its status key, and each game page ends with a **Next project** band on stock. The one place two dark fields meet is the homepage, where the two games follow each other. Check every change against the whole page, top to bottom, at desktop and phone.
+**Page rhythm.** A page is cream stock, framed by the black nav and footer; dark fields (a game's identity, a frame-black statement) and tinted panels (`ld-section--tint`, `paper-2`) are set into the stock. Where the grounds alternate, the change of ground is the boundary and no section draws a rule. Every page comes back to stock before the footer, so the footer never meets a dark field: the homepage closes on stock, the projects index ends on its status key, and each game page ends with a **Next project** band on stock. The one place two dark fields meet is the homepage, where the two games follow each other. Check every change against the whole page, top to bottom, at desktop and phone.
 
 **Rules, corners, shadows.** Structure is drawn with rules: `rule-hair` 1px between rows, `rule-2` for modules and controls, `rule-4` over metadata, `rule-bar` 8px, `rule-band` 16px stripe bands on field edges. One rule per boundary: a rule opens a section or separates two rows. Nothing closes with a rule (a table, list or strip ends with its last row), and nothing set straight under a section head draws a rule of its own. `radius-0` everywhere; `radius-token` only for drawn pieces, stations, the hub and the red sun. No shadows: sheets are set apart by `rule-strong`.
 
