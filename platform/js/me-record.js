@@ -3,7 +3,11 @@
  * MAX_PAGES) and, for each disputed table only, `game` (whose dispute says who challenged).
  *
  * JUNOX (escrow money, integer ujunox strings) and in-game dollars are never mixed. A figure the server marks
- * unavailable is shown as "—", never filled in. Needs session.js and records.js. */
+ * unavailable is shown as "—", never filled in. Needs session.js and records.js.
+ *
+ * Phase 4: the Games ledger is the completed-game history (and tables in play): a table cancelled before the deal is
+ * not a game, so it has no finish and no result; one that held escrow money keeps an audit line under "Cancelled
+ * tables" (its refund), and one nobody funded is not listed. Finish is your rank as the server recorded it. */
 (function () {
   'use strict';
   var R = window.LudumRecords;
@@ -30,15 +34,45 @@
     return { text: R.junox(net, true), cls: R.amountClass(net), sub: sub };
   }
 
+  /** Phase 4 (pure): a table cancelled or expired before the deal is never a game -- no result, no rank, never a loss.
+   *  The server says so (`history`, API §5.3); a server without that field is read from the table's own status. */
+  function isCancelled(g) {
+    if (g.history && g.history.value) return g.history.value === 'cancelled';
+    var t = g.table && g.table.value;
+    return t === 'cancelled' || t === 'expired' || (t === 'archived' && !g.startedAt);
+  }
+
+  /** Phase 4 (pure): the Finish cell -- your rank in the game's own standings (ties share a rank, as the game ranks
+   *  them), from the server's recorded result; "—" when no result is recorded (a free table's needs a replay). */
+  function finishOf(g) {
+    var r = g.inGame && g.inGame.rank;
+    if (!r || typeof r.value !== 'number') return { text: '—', sub: null };
+    var tied = g.inGame.tied && g.inGame.tied.value === true;
+    return { text: R.ordinal(r.value), sub: 'of ' + g.playerCount + (tied ? ' · tied' : '') };
+  }
+
+  /** Phase 4 (pure): a cancelled table's escrow line -- what came back, never a signed result. Null for a table no
+   *  escrow game was bound to: nothing was funded, so there is nothing to account for. */
+  function refundOf(g) {
+    var m = g.money;
+    if (!m || !m.chainGameId) return null;
+    var escrow = m.escrow && m.escrow.value;
+    var net = m.net && m.net.value ? m.net.value.amount : null;
+    if (net === null || escrow !== 'cancelled') return { text: '—', cls: 'ld-amt ld-amt--zero', sub: escrow === 'funding' ? 'Refund pending' : 'Not yet known' };
+    return { text: R.junox((BigInt(net) + BigInt(m.anteGross.amount)).toString()), cls: 'ld-amt ld-amt--zero', sub: 'Refunded' };
+  }
+
   /** The head's three figures (pure), from every summary read. */
   function headOf(games) {
     var paid = BigInt(0), anyPaid = false, last = null;
     games.forEach(function (g) {
-      var m = g.money;
-      if (m && m.net && m.net.value && m.escrow && m.escrow.value !== 'disputed') {
+      var m = g.money, cancelled = isCancelled(g);
+      /* A cancelled table counts only what the escrow actually refunded (never an expected deposit). */
+      if (m && m.net && m.net.value && m.escrow && m.escrow.value !== 'disputed' && (!cancelled || m.escrow.value === 'cancelled')) {
         paid += BigInt(m.net.value.amount) + BigInt(m.anteGross.amount);
         anyPaid = true;
       }
+      if (cancelled) return;
       var at = g.endedAt || g.startedAt || g.createdAt;
       if (at && (last === null || at > last)) last = at;
     });
@@ -53,12 +87,29 @@
     var st = TABLE_STAMP[g.table && g.table.value] || ['—', 'closed'];
     var r = resultOf(g);
     var sub = r.caseId ? R.el('span', null, [r.sub + ' · ', R.el('a', { class: 'ld-inline', href: '/disputes/case/?id=' + r.caseId, text: 'case ' + r.caseId })]) : r.sub;
+    var f = finishOf(g);
     return R.el('tr', null, [
       R.td('Game', [gameName(g)], 'is-key'),
       R.td('Table', [R.val(R.el('a', { href: gameHref(g) }, [R.idSpan(g.gameId)]))]),
       R.td('Status', [R.val(R.stamp(st[0], st[1]))]),
-      R.td('Ante · JUNOX', [R.val(g.money ? R.el('span', { class: 'ld-amt', text: R.junox(g.money.anteGross.amount) }) : R.el('span', { class: 'ld-amt ld-amt--zero', text: '—' }))], 'is-num'),
+      R.td('Finish', [R.val(f.text, f.sub)], 'is-num'),
+      R.td('Ante · JUNOX', [R.val(anteCell(g))], 'is-num'),
       R.td('Result · JUNOX', [R.val(R.el('span', { class: r.cls, text: r.text }), sub)], 'is-num'),
+      R.go(gameHref(g))
+    ]);
+  }
+
+  function anteCell(g) { return g.money ? R.el('span', { class: 'ld-amt', text: R.junox(g.money.anteGross.amount) }) : R.el('span', { class: 'ld-amt ld-amt--zero', text: '—' }); }
+
+  /** Phase 4: a cancelled table that held escrow money -- its audit line (the full ledger is on its record page). */
+  function cancelledRow(g, refund) {
+    var st = TABLE_STAMP[g.table && g.table.value] || ['Cancelled', 'closed'];
+    return R.el('tr', null, [
+      R.td('Game', [gameName(g)], 'is-key'),
+      R.td('Table', [R.val(R.el('a', { href: gameHref(g) }, [R.idSpan(g.gameId)]))]),
+      R.td('Status', [R.val(R.stamp(st[0], st[1]))]),
+      R.td('Ante · JUNOX', [R.val(anteCell(g))], 'is-num'),
+      R.td('Refund · JUNOX', [R.val(R.el('span', { class: refund.cls, text: refund.text }), refund.sub)], 'is-num'),
       R.go(gameHref(g))
     ]);
   }
@@ -125,11 +176,18 @@
           meta: [['Games played', String(head.played)], ['Total paid to you', head.paid], ['Last played', head.last]]
         });
         body.textContent = '';
-        var games = all.length
-          ? R.ledger({ columns: [['Game'], ['Table'], ['Status'], ['Ante', true, 'JUNOX'], ['Result', true, 'JUNOX'], ['']], rows: all.map(gameRow),
-              note: 'Result is what the escrow paid or refunded you, less your ante; network fees are not included. A disputed table’s payout is held until its case is resolved; a free table has no ante.' + (end.more ? ' Older tables are not listed here.' : '') })
+        /* Phase 4: cancelled tables are not games. Those that held escrow money keep their audit line below. */
+        var played = all.filter(function (g) { return !isCancelled(g); });
+        var refunds = [];
+        all.forEach(function (g) { var refund = isCancelled(g) ? refundOf(g) : null; if (refund) refunds.push(cancelledRow(g, refund)); });
+        var games = played.length
+          ? R.ledger({ columns: [['Game'], ['Table'], ['Status'], ['Finish', true], ['Ante', true, 'JUNOX'], ['Result', true, 'JUNOX'], ['']], rows: played.map(gameRow),
+              note: 'Finish is your place in the game’s own standings; tied players share a place. Result is what the escrow paid or refunded you, less your ante; network fees are not included. A disputed table’s payout is held until its case is resolved; a free table has no ante.' + (end.more ? ' Older tables are not listed here.' : '') })
           : R.notice('No games yet', 'Tables you sit at on play.netadao.org appear here.', 'wait');
-        body.appendChild(R.section('01', 'r1', 'Games', 'Every table you have sat at, newest first.', [R.el('div', { class: 'ld-record' }, [games])]));
+        var parts = [games];
+        if (refunds.length) parts.push(R.ledger({ title: 'Cancelled tables', columns: [['Game'], ['Table'], ['Status'], ['Ante', true, 'JUNOX'], ['Refund', true, 'JUNOX'], ['']], rows: refunds,
+          note: 'Cancelled before the deal: not games, so no finish and no result. The escrow refunds each deposit’s net ante; the network subsidy is not refunded.' }));
+        body.appendChild(R.section('01', 'r1', 'Games', 'Every game you have played or are playing, newest first.', [R.el('div', { class: 'ld-record' }, parts)]));
         var disputed = all.filter(function (g) { return g.money && g.money.chainGameId && ((g.disputed && g.disputed.value === true) || (g.money.escrow && g.money.escrow.value === 'disputed')); });
         var casesHost = R.el('div', { class: 'ld-record' }, [R.el('p', { class: 'ld-body-s', text: disputed.length ? 'Reading your cases…' : '' })]);
         body.appendChild(R.section('02', 'r2', 'Cases', 'Disputed tables you sat at, and where each one stands.', [casesHost, howDecided()]));
@@ -147,7 +205,7 @@
     });
   }
 
-  window.LudumMeRecord = { resultOf: resultOf, headOf: headOf, mount: mount };
+  window.LudumMeRecord = { resultOf: resultOf, headOf: headOf, isCancelled: isCancelled, finishOf: finishOf, refundOf: refundOf, mount: mount };
   function start() {
     var root = document.querySelector('[data-ludum-record]');
     if (root && window.LudumSession && R) mount(root, window.LudumSession);

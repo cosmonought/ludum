@@ -114,6 +114,53 @@ test("Your record: the Result cell -- free, held, still playing, paid, refunded;
   eq(head, { played: 2, paid: "11.223333 JUNOX", last: "9 Oct 2026" });
 });
 
+test("Phase 4: a cancelled table is never a completed game -- read from the server's `history`, else the table status", () => {
+  const { window } = load(["records.js", "me-record.js"]);
+  const M = window.LudumMeRecord;
+  const fact = (value) => ({ value, provenance: "server-recorded" });
+  const g = (table, extra = {}) => ({ gameId: "g_1", table: fact(table), startedAt: null, ...extra });
+  /* The new server's field wins. */
+  assert.equal(M.isCancelled(g("archived", { history: fact("cancelled") })), true);
+  assert.equal(M.isCancelled(g("archived", { history: fact("completed"), startedAt: "2026-10-01T00:00:00.000Z" })), false);
+  assert.equal(M.isCancelled(g("waiting", { history: fact("open") })), false);
+  /* The deployed server (no `history`): the table's own status. */
+  for (const t of ["cancelled", "expired"]) assert.equal(M.isCancelled(g(t)), true, t);
+  assert.equal(M.isCancelled(g("archived")), true, "archived without ever starting");
+  assert.equal(M.isCancelled(g("archived", { startedAt: "2026-10-01T00:00:00.000Z" })), false);
+  for (const t of ["completed", "active", "waiting"]) assert.equal(M.isCancelled(g(t)), false, t);
+});
+
+test("Phase 4: a cancelled table's escrow line is a refund, never a loss; an unfunded one has none; the head ignores both", () => {
+  const { window } = load(["records.js", "me-record.js"]);
+  const M = window.LudumMeRecord;
+  const money = (chainGameId, escrow, net, provenance = "chain-observed") => ({ chainGameId, anteGross: { amount: "10000000", denom: "ujunox" }, escrow: { value: escrow, provenance: escrow === null ? "unavailable" : provenance },
+    net: net === null ? { value: null, provenance: "unavailable", reason: "x" } : { value: { amount: net, denom: "ujunox" }, provenance } });
+  const g = (m, extra = {}) => ({ gameId: "g_1", money: m, table: { value: "cancelled" }, createdAt: "2026-10-09T00:00:00.000Z", startedAt: null, endedAt: "2026-10-09T01:00:00.000Z", ...extra });
+  /* Never funded: no escrow game bound. The deployed server's pending "-ante" row (the defect) is not drawn at all. */
+  assert.equal(M.refundOf(g(money(null, null, "-10000000", "pending"))), null);
+  assert.equal(M.refundOf(g(null)), null);
+  /* Funded, then cancelled on chain: the net ante came back. */
+  eq(M.refundOf(g(money("12", "cancelled", "-250000"))), { text: "9.75", cls: "ld-amt ld-amt--zero", sub: "Refunded" });
+  /* Funded, the chain cancel not yet seen: pending, not a loss. */
+  eq(M.refundOf(g(money("12", "funding", "-10000000", "pending"))), { text: "—", cls: "ld-amt ld-amt--zero", sub: "Refund pending" });
+  eq(M.refundOf(g(money("12", null, null))), { text: "—", cls: "ld-amt ld-amt--zero", sub: "Not yet known" });
+  /* The head: an expected deposit on a cancelled table is not "paid", nor is it "last played"; a real refund is paid. */
+  eq(M.headOf([g(money(null, null, "-10000000", "pending"))]), { played: 0, paid: "—", last: "—" });
+  eq(M.headOf([g(money("12", "cancelled", "-250000"))]), { played: 0, paid: "9.75 JUNOX", last: "—" });
+});
+
+test("Phase 4: the Finish cell -- your rank from the recorded result, ties shared as the game ranks them", () => {
+  const { window } = load(["records.js", "me-record.js"]);
+  const M = window.LudumMeRecord;
+  const g = (rank, tied, playerCount = 3) => ({ playerCount, inGame: { rank: rank === null ? { value: null, provenance: "unavailable", reason: "x" } : { value: rank, provenance: "server-recorded" }, ...(tied === undefined ? {} : { tied: { value: tied, provenance: "server-recorded" } }) } });
+  eq(M.finishOf(g(1, false, 2)), { text: "1st", sub: "of 2" });
+  eq(M.finishOf(g(2, false, 2)), { text: "2nd", sub: "of 2" });
+  eq(M.finishOf(g(1, true)), { text: "1st", sub: "of 3 · tied" });
+  eq(M.finishOf(g(3, undefined)), { text: "3rd", sub: "of 3" }, "the deployed server sends no `tied`");
+  eq(M.finishOf(g(null)), { text: "—", sub: null });
+  eq(M.finishOf({ playerCount: 2 }), { text: "—", sub: null });
+});
+
 test("Your account: the display name's sentences, and every refusal in words", () => {
   const { window } = load(["records.js", "account-page.js"]);
   const A = window.LudumAccountPage;
