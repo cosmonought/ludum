@@ -397,8 +397,13 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
 .ld-nav__bar { display: flex; align-items: stretch; height: var(--ld-nav-h); max-width: var(--frame-max, 1600px); margin: 0 auto; padding-left: var(--ld-margin); }
 .ld-nav__home { display: flex; align-items: center; gap: 14px; margin-right: auto; color: var(--on-frame); text-decoration: none; }
 .ld-nav__name { font: 400 40px/.8 var(--font-display); letter-spacing: -.01em; text-transform: uppercase; padding-top: 3px; }
-.ld-nav__by { padding-left: 14px; border-left: 2px solid; border-image: linear-gradient(180deg, var(--neta-pink), var(--neta-cyan)) 1; font: 500 11px/14px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
-.ld-nav__home:hover .ld-nav__by { color: var(--yellow); }
+/* the byline behind a perforation: a column of punched holes in the Neta colours (Ludum the ticket, the byline its stub),
+   and the byline lit in the same colours, "Games by" pink and "Neta DAO" cyan. The settled state of the netadao.org card */
+.ld-nav__by { position: relative; padding-left: 14px; font: 500 11px/14px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--neta-pink);
+  background: linear-gradient(180deg, var(--neta-pink) 14px, var(--neta-cyan) 14px); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.ld-nav__by::before { content: ''; position: absolute; left: -1px; top: -3px; height: 32px; width: 4px;   /* five whole holes */ background: linear-gradient(180deg, var(--neta-pink), var(--neta-cyan));
+  -webkit-mask: radial-gradient(circle 2px at 50% 2px, #000 98%, transparent) 0 0 / 4px 7px repeat-y; mask: radial-gradient(circle 2px at 50% 2px, #000 98%, transparent) 0 0 / 4px 7px repeat-y; }
+@media (forced-colors: active) { .ld-nav__by { background: none; -webkit-text-fill-color: currentColor; } }
 .ld-nav__home:focus-visible { outline-offset: -3px; }
 .ld-nav__links { display: flex; align-items: stretch; gap: 0; margin-right: 8px; }
 :is(.ld-nav__links > a, .ld-nav__drop-link) {
