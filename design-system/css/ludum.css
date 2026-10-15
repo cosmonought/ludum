@@ -401,8 +401,8 @@ a.ld-wordmark:hover .ld-wordmark__by { color: var(--yellow); }
    and the byline lit in the same colours, "Games by" pink and "Neta DAO" cyan. The settled state of the netadao.org card */
 .ld-nav__by { position: relative; padding-left: 14px; font: 500 11px/14px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--neta-pink);
   background: linear-gradient(180deg, var(--neta-pink) 14px, var(--neta-cyan) 14px); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-.ld-nav__by::before { content: ''; position: absolute; left: -1px; top: -3px; height: 32px; width: 4px;   /* five whole holes */ background: linear-gradient(180deg, var(--neta-pink), var(--neta-cyan));
-  -webkit-mask: radial-gradient(circle 2px at 50% 2px, #000 98%, transparent) 0 0 / 4px 7px repeat-y; mask: radial-gradient(circle 2px at 50% 2px, #000 98%, transparent) 0 0 / 4px 7px repeat-y; }
+.ld-nav__by::before { content: ''; position: absolute; left: -1px; top: -1.25px; height: 34.25px; width: 4px;   /* five holes, exactly the height of LUDUM's capitals and level with them */ background: linear-gradient(180deg, var(--neta-pink), var(--neta-cyan));
+  -webkit-mask: radial-gradient(circle 2px at 50% 2px, #000 98%, transparent) 0 0 / 4px 7.5625px repeat-y; mask: radial-gradient(circle 2px at 50% 2px, #000 98%, transparent) 0 0 / 4px 7.5625px repeat-y; }
 @media (forced-colors: active) { .ld-nav__by { background: none; -webkit-text-fill-color: currentColor; } }
 .ld-nav__home:focus-visible { outline-offset: -3px; }
 .ld-nav__links { display: flex; align-items: stretch; gap: 0; margin-right: 8px; }
