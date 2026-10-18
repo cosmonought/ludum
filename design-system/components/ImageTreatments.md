@@ -13,7 +13,7 @@ How pictures sit on Ludum's paper. Wrap the `<img>` in `.ld-treat` with one trea
 | `ld-giltframe` (not a treatment) | a gold double rule on `p18-panel`; the picture untouched | Project 18XX's title cards, and nothing else |
 
 - **In Press** (and inside any `data-theme="press"` field) `--print` stops multiplying and `--ink` inverts and screens, so an engraving prints as cream lines on black. The behaviour follows the nearest `[data-theme]`.
-- Steel Meridian's pictures live in `assets/steel-meridian/`: tonal engravings in steel blue-grey, each with one red light (a forge, a firebox, a red-hot rivet), shown as made with `ld-lineart`. The crossing (homepage), the span (masthead), the firebox (overview).
+- Steel Meridian's pictures live in `assets/steel-meridian/`: tonal engravings in steel blue-grey, each with one red light (a forge, a firebox, a red-hot rivet), and the span, a white line engraving on the masthead with no colour; all shown with `ld-lineart`, the span's ground matched to `sm-steel`. The crossing (homepage), the span (masthead), the firebox (overview).
 - House imagery comes from `assets/Imagery/` (crops of the supplied sheets, standing in until final photography): railway engraving, the 18xx board, pieces and certificates. 20 Cosmos's engravings live in `assets/20 Cosmos/`.
 - Project 18XX's pictures live in `assets/Project 18XX/`: two gold line drawings (feature and masthead) and the three title cards from its repository. Show them as made — never print-treated, duotoned, screened or collaged.
 - No space imagery for 20 Cosmos (the reference sheet's planets and starfields are out of brief). No stock photos of screens, coins or "blockchain" graphics, anywhere.
