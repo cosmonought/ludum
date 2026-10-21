@@ -1,7 +1,7 @@
 # Ludum platform
 
-The signed-in parts of ludum.netadao.org — **/me/** (Your record), **/me/account/** (Your account), **/me/game/?id=**
-(Game record), **/moderation/** and **/moderation/case/?id=** (conduct review, Play's reviewers only), **/disputes/**,
+The signed-in parts of ludum.netadao.org — **/me/** (Your record: your figures and your games, each game's result
+opening in place, **/me/?game=‹gameId›** opening one), **/me/account/** (Your account), **/moderation/** and **/moderation/case/?id=** (conduct review, Play's reviewers only), **/disputes/**,
 **/disputes/case/?id=** and **/governance/** — the account slot in every page's nav, and the shared pieces they stand on. The contract they follow is the 1830Juno repository's
 `docs/ludum/LUDUM_PLATFORM_ARCHITECTURE.md` (§2.1 sign-in, §2.4 scripts and CSP, §5 the API).
 
@@ -10,7 +10,7 @@ The platform adds only the account slot to the marketing pages (`records.css`, `
 `account-menu.js`, after `ludum.js`) and never edits their content or `design-system/`.
 
 The designed addresses map onto fixed paths (Claude Design handoff §8.4): `/account/` → `/me/`, Your account →
-`/me/account/`, `/account/games/‹no›/` → `/me/game/?id=‹gameId›`, `/account/moderation/` (and `cases/‹id›/`) →
+`/me/account/`, `/account/games/‹no›/` → `/me/?game=‹gameId›` (the retired **/me/game/?id=** page leads there too), `/account/moderation/` (and `cases/‹id›/`) →
 `/moderation/` (and `/moderation/case/?id=‹caseId›`), `/account/appeals/` → `/disputes/`, `/cases/‹no›/` →
 `/disputes/case/?id=‹chainGameId›`; New appeal is the Case file's proposal section and a proposal is
 `/governance/#proposal-‹no›`.

@@ -340,7 +340,7 @@ test("route map: the design's /account/ and /cases/ addresses go to the engineer
   const require = createRequire(import.meta.url);
   const M = require("../js/route-map.js");
   const cases = {
-    "/account/": "/me/", "/account": "/me/", "/account/details/": "/me/account/", "/account/games/g_xfqa37t6wt6ajvnbx5j3f5dn2g/": "/me/game/?id=g_xfqa37t6wt6ajvnbx5j3f5dn2g",
+    "/account/": "/me/", "/account": "/me/", "/account/details/": "/me/account/", "/account/games/g_xfqa37t6wt6ajvnbx5j3f5dn2g/": "/me/?game=g_xfqa37t6wt6ajvnbx5j3f5dn2g",
     "/account/moderation/": "/moderation/", ["/account/moderation/cases/cc_" + "a".repeat(32) + "/"]: "/moderation/case/?id=cc_" + "a".repeat(32),
     "/account/appeals/": "/disputes/", "/account/appeals/new/": "/governance/new/", "/account/appeals/proposals/13/": "/governance/proposal/?id=13", "/cases/52/": "/disputes/case/?id=52",
   };

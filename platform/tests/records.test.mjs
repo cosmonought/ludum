@@ -132,10 +132,11 @@ test("v1.3 Your record: a credit table's wager, net credits and rating change; a
   const voided = M.creditCells({ credits: credit({ outcome: "void", payout: null, net: 0, ratingDelta: null, place: null }) });
   eq([voided.net.text, voided.rating.text, voided.note], ["0", "—", "Returned"], "a void: the wager came back, nobody was rated");
   const open = M.creditCells({ credits: credit({ outcome: "open", payout: null, net: null, ratingDelta: null, place: null }) });
-  eq([open.wager.text, open.net.text, open.rating.text, open.note], ["100", "—", "—", "In play"]);
+  eq([open.wager.text, open.net.text, open.rating.text, open.note], ["100", "—", "—", null], "in play: the Status says so, once");
   const free = M.creditCells({ credits: null, money: null });
   eq([free.wager.text, free.net.text, free.rating.text, free.note], ["—", "—", "—", null], "a free table: nothing invented");
-  eq(M.creditCells({ credits: null, money: { chainGameId: "47" } }).note, "JUNOX table (retired)", "a real-money table: a historical label, no figure");
+  const junox = M.creditCells({ credits: null, money: { chainGameId: "47" } });
+  eq([junox.wager.text, junox.net.text, junox.rating.text, junox.note], ["—", "—", "—", null], "§17: a retired real-money table: dashes, and no repeated notice about the escrow");
 });
 
 test("v1.3 Your record: the filters keep a game by its recorded game and its status; newest or oldest first", () => {
@@ -196,25 +197,59 @@ test("Your account: the name's change is offered only while it can still be used
   assert.match(A.refusalText({ error: "conflict", detail: "taken" }), /Another player/);
 });
 
-test("v1.3 Game record: a readable title (the game and its table code), how it ended, your figures and the players by place", () => {
-  const { window } = load(["records.js", "game-record.js"]);
-  const G = window.LudumGameRecord;
+test("§17 a game's playing time: from the deal to its last moment, in days, hours and minutes -- never estimated", () => {
+  const { window: { LudumRecords: R } } = load(["records.js"]);
+  const at = (h, m = 0, d = 0) => new Date(Date.UTC(2026, 9, 12 + d, h, m)).toISOString();
+  eq([R.duration(at(1, 11), at(3, 43)), R.duration(at(0, 0), at(4, 12, 1)), R.duration(at(0, 0), at(8, 5, 3)), R.duration(at(1, 0), at(1, 47)), R.duration(at(1, 0), at(1, 0))],
+    ["2h 32m", "1d 4h 12m", "3d 8h 05m", "47m", "0m"]);
+  eq([R.duration(null, at(1)), R.duration(at(1), null), R.duration("not a time", at(1)), R.duration(at(3), at(1))], [null, null, null, null], "a missing or unreadable time, or an end before the start: no duration");
+});
+
+test("§17 Your record: a game's result in place -- the time from the deal (never the table's opening), and only what the row does not say", () => {
+  const { window } = load(["records.js", "me-record.js"]);
+  const M = window.LudumMeRecord;
+  const fact = (value) => ({ value, provenance: "server-recorded" });
+  const base = { gameId: "g_aaaaaaaaaaaaaaaaaaaaaaaaaa", createdAt: "2026-10-12T00:40:00.000Z", startedAt: "2026-10-12T01:11:00.000Z", endedAt: "2026-10-12T03:43:00.000Z", playerCount: 3, table: fact("completed"), history: fact("completed"), credits: null, clockEnd: null };
+  eq(M.playedOf(base), { start: base.startedAt, end: base.endedAt, text: "2h 32m" }, "the deal to the board's end; the table's opening (31 minutes earlier) is never the start");
+  eq(M.factsOf(base), [["Played", "2h 32m"]], "a free game: its playing time, nothing invented");
+  eq(M.playedOf({ ...base, startedAt: null }), null, "no deal recorded: no duration");
+  eq(M.playedOf({ ...base, table: fact("active"), history: fact("open"), endedAt: null }), null, "still being played: no duration");
+  eq(M.factsOf({ ...base, table: fact("active"), history: fact("open"), endedAt: null }), [["Began", "12 Oct 2026"]]);
+  eq(M.factsOf({ ...base, table: fact("waiting"), history: fact("open"), startedAt: null, endedAt: null }), [], "waiting for players: nothing to say");
+  /* A credit game: the pool, your payout, an advance, how it was settled -- never its wager, net or rating again (the row has them). */
+  const credit = { wager: 50, outcome: "scored", reason: null, defaulted: null, place: 1, payout: 90, net: 40, fronted: 20, ratingDelta: 16, pool: 150 };
+  eq(M.factsOf({ ...base, credits: credit }), [["Played", "2h 32m"], ["Pool", "150 credits"], ["Your payout", "90 credits"], ["Ludum advanced", "20 credits"], ["Ended", "Settled."]]);
+  const voided = { ...credit, outcome: "void", reason: "clock-live-timeout-annul", payout: null, net: 0, ratingDelta: null, place: null, fronted: 0 };
+  const annulled = { ...base, table: fact("active"), history: fact("open"), endedAt: null, credits: voided, clockEnd: { how: "annulled", at: "2026-10-12T02:20:00.000Z", defaulted: null } };
+  eq(M.factsOf(annulled), [["Played", "1h 09m"], ["Pool", "150 credits"], ["Your payout", "Wager returned"], ["Ended", "Voided: an overdue turn the other players did not all vote to foreclose. Every wager was returned; nobody was rated."]],
+    "a clock-ended game: played until the clock's own end");
+  for (const [label] of M.factsOf({ ...base, credits: credit })) assert.ok(!["Wager", "Net credits", "Rating change", "Game", "Table", "Date"].includes(label), `${label}: the row already says it`);
+  assert.doesNotMatch(JSON.stringify(M.factsOf({ ...base, credits: credit })), /\$/, "credits are never written in dollars");
+});
+
+test("§17 a game the clock ended: its status says how, from the server's clock (never \"In play\"); settled games keep the competition's words", () => {
+  const { window } = load(["records.js", "me-record.js"]);
+  const R = window.LudumRecords, M = window.LudumMeRecord;
+  const fact = (value) => ({ value, provenance: "server-recorded" });
+  const free = (clockEnd) => ({ table: fact("active"), history: fact("open"), credits: null, clockEnd });
+  eq([R.outcomeOf(free({ how: "annulled", at: "x", defaulted: null })).text, R.outcomeOf(free({ how: "forfeit", at: "x", defaulted: true })).text, R.outcomeOf(free({ how: "forfeit", at: "x", defaulted: false })).text, R.outcomeOf(free(null)).text],
+    ["Annulled", "Forfeited", "Ended by forfeit", "In play"]);
+  eq(R.outcomeOf({ ...free({ how: "forfeit", at: "x", defaulted: false }), credits: { outcome: "foreclosed", defaulted: false } }).text, "Won by forfeit", "a credit game: C2's result first");
+  assert.equal(M.endingOf(free({ how: "forfeit", at: "x", defaulted: true })), "You forfeited on the clock (an overdue turn).");
+  assert.equal(M.endingOf(free(null)), null);
+  assert.equal(M.dateOf({ ...free({ how: "annulled", at: "2026-10-13T00:00:00.000Z" }), startedAt: "2026-10-12T00:00:00.000Z", createdAt: "2026-10-11T00:00:00.000Z" }), "2026-10-13T00:00:00.000Z", "the row's date is when the clock ended it");
+});
+
+test("§17 the players by place; a game opened by its address; the old game-record page leads to it", () => {
+  const { window } = load(["records.js", "me-record.js", "game-record.js"]);
+  const M = window.LudumMeRecord, G = window.LudumGameRecord;
   const fact = (value) => (value === null ? { value: null, provenance: "unavailable", reason: "x" } : { value, provenance: "server-recorded" });
-  const seat = (name, place, you = false, profileName = name) => ({ displayName: name, you, rank: fact(place), finalNetWorth: fact(place === null ? null : { dollars: 1000 * (5 - place) }), profileName });
-  const d = { gameId: "g_3vh2qxaaaaaaaaaaaaaaaaaaqtsw", game: { key: "project-18xx", name: "Project 18XX", edition: "levelPlayingField", source: "recorded" }, tableCode: "JUNO-ABCD-EFGH", playerCount: 3,
-    endedAt: "2026-10-11T00:58:00.000Z", startedAt: "2026-10-10T20:00:00.000Z", table: fact("completed"),
-    credits: { wager: 100, outcome: "scored", reason: null, defaulted: null, place: 2, payout: 116, net: 16, fronted: 0, ratingDelta: 5.3333 },
-    seats: [seat("Ann", 2, true), seat("Bo", 1), seat("Cy", null, false, null)] };
-  assert.equal(G.titleOf(d), "18xx+: LPF — Table JUNO-ABCD-EFGH");
-  assert.equal(G.titleOf({ ...d, tableCode: null }), "18xx+: LPF", "no code kept: never an internal id");
-  assert.equal(G.dekOf(d), "Ended 11 Oct 2026. You finished 2nd of 3.");
-  const meta = G.metaOf(d).map((m) => [m[0], typeof m[1] === "string" ? m[1] : m[1].textContent]);
-  eq(meta.map((m) => m[0]), ["Your finish", "Wager", "Payout", "Net credits", "Rating change"]);
-  eq([meta[0][1], meta[1][1], meta[2][1]], ["2nd of 3", "100", "116"]);
-  eq(G.standingsOf(d).map((s) => s.displayName), ["Bo", "Ann", "Cy"], "by place; an unknown place last");
-  eq(G.metaOf({ ...d, credits: null }).map((m) => m[0]), ["Your finish"], "a table not played for credits shows no credit figure");
-  assert.match(G.dekOf({ ...d, credits: { ...d.credits, outcome: "void", reason: "clock-live-timeout-annul", payout: null, net: 0, ratingDelta: null, place: null } }), /^Voided: .*Every wager was returned; nobody was rated\.$/);
-  assert.match(G.dekOf({ ...d, credits: { ...d.credits, outcome: "foreclosed", defaulted: true, reason: "clock-live-strike3-foreclosure" } }), /^You forfeited: a third missed action clock\.$/);
+  const seat = (name, place) => ({ displayName: name, rank: fact(place) });
+  eq(M.standingsOf([seat("Ann", 2), seat("Bo", 1), seat("Cy", null), seat("Di", 3)]).map((x) => x.displayName), ["Bo", "Ann", "Di", "Cy"], "by place; an unknown place last, in seat order");
+  assert.equal(M.openedIn("?game=g_3vh2qxaaaaaaaaaaaaaaaaaaqtsw"), "g_3vh2qxaaaaaaaaaaaaaaaaaaqtsw");
+  for (const bad of ["", "?game=", "?game=../x", "?game=G_ABC123", "?game=g_<script>", "?id=g_3vh2qxaaaaaaaaaaaaaaaaaaqtsw"]) assert.equal(M.openedIn(bad), null, bad);
+  assert.equal(G.targetOf("?id=g_3vh2qxaaaaaaaaaaaaaaaaaaqtsw"), "/me/?game=g_3vh2qxaaaaaaaaaaaaaaaaaaqtsw", "an old link opens that game in Your record");
+  for (const bad of ["", "?id=", "?id=//evil.example", "?id=g_x%22onload", "?id=https://evil.example/"]) assert.equal(G.targetOf(bad), "/me/", `${bad}: Your record, never elsewhere`);
 });
 
 test("Moderation: Play's transitions, and the filter counts", () => {
@@ -258,7 +293,9 @@ test("v1.3 the profile pages speak to players: no internal terminology in what t
   const said = (file) => readFileSync(resolve(JS, file), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
   for (const file of ["me-record.js", "game-record.js", "player-page.js", "account-page.js"]) {
     const text = said(file);
-    eq([file, (text.match(/Hybrid|Elo|game server|on this server|record_schema|protocol|C[123]|principal|ledger entr|ratingUnits/i) || [null])[0]], [file, null]);
+    eq([file, (text.match(/Hybrid|Elo\b|game server|on this server|record_schema|protocol|\bC[123]\b|principal|ledger entr|ratingUnits/i) || [null])[0]], [file, null]);
+    /* §17: no player-facing technical record, escrow ledger, internal game id or repeated notice about the retired escrow. */
+    eq([file, (text.match(/Technical record|Escrow ledger|Escrow game|Escrow state|Game id|JUNOX table|retired real-money|Not readable now|Ante\b/) || [null])[0]], [file, null]);
   }
   /* The distinctions that matter are still said (in the tooltips): what others see, and when. */
   const record = said("me-record.js");

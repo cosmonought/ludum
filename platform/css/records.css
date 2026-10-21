@@ -468,3 +468,66 @@ a.ld-stamp--link:focus-visible { outline: 3px solid var(--focus); outline-offset
 .ld-sum--figures dt { flex-wrap: wrap; }
 /* The account page's in-place forms: an empty slot or status line takes no room. */
 [data-pw] > :empty, [data-wallet] > :empty { display: none; }
+
+/* ---------- 1830Juno §17 (owner review 2026-10-21): Your record is the game history -- a game's result opens in place ---------- */
+/* A page of data has no numbered chapters: a plain section head is its title (and its dek under it). */
+.ld-sechead--plain { grid-template-columns: minmax(0, 1fr) auto; }
+.ld-sechead--plain .ld-sechead__dek { grid-column: 1 / -1; }
+/* The figures sit straight under the profile tabs; the games follow them closely. */
+.ld-section--rec.ld-section--figures { padding-top: var(--space-6, 32px); }
+.ld-section--figures + .ld-section--rec { padding-top: var(--space-5, 24px); }
+
+/* The Finish cell is the row's disclosure: the place, "of N" under it, and an arrow that turns while the result is open. */
+.ld-finish { display: inline-flex; align-items: flex-start; gap: 8px; margin: 0; padding: 2px 0; border: 0; background: none; color: inherit; font: inherit; text-align: right; cursor: pointer; }
+.ld-finish__icon { width: 16px; height: 16px; margin-top: 3px; transition: transform var(--ld-wipe); }
+.ld-finish[aria-expanded="true"] .ld-finish__icon { transform: rotate(180deg); }
+.ld-finish:hover .ld-finish__text { color: var(--red-ink); }
+.ld-finish:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.ld-ledger--games tbody tr.ld-games__row { cursor: pointer; }
+.ld-ledger--games tbody tr.ld-games__row.is-open, .ld-ledger--games tbody tr.ld-games__more { background: var(--paper-2); }
+.ld-ledger--games tbody tr.ld-games__row.is-open td { border-bottom-color: transparent; }
+.ld-games__more[hidden] { display: none !important; }
+.ld-ledger--games tbody tr.ld-games__more > td { padding: 2px 14px 22px; }
+
+/* The result: the players by place with their final net worth (in-game dollars), then a few facts (credits as credits). */
+.ld-result { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px 56px; font: 400 14px/22px var(--font-mono); }
+.ld-result__players { flex: 1 1 340px; max-width: 560px; min-width: 0; }
+/* Each line (and the head) is one grid row of the same columns: place, player, net worth. */
+.ld-standings { margin: 0; padding: 0; list-style: none; }
+.ld-standings > li, .ld-standings__head { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; column-gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.ld-standings--noplace > li, .ld-standings__head.ld-standings--noplace { grid-template-columns: minmax(0, 1fr) auto; }
+.ld-standings--noworth > li, .ld-standings__head.ld-standings--noworth { grid-template-columns: 64px minmax(0, 1fr); }
+.ld-standings--noplace.ld-standings--noworth > li, .ld-standings__head.ld-standings--noplace.ld-standings--noworth { grid-template-columns: minmax(0, 1fr); }
+.ld-standings > li:last-child { border-bottom: 0; }
+.ld-standings > li > span { min-width: 0; overflow-wrap: anywhere; }
+.ld-standings__head { padding: 0 0 4px; font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); border-bottom: 2px solid var(--rule-strong); }
+.ld-standings .is-num, .ld-standings__head .is-num { text-align: right; font-variant-numeric: tabular-nums; }
+/* Your own line: bolder, with the yellow edge set into the gutter so its columns stay in line with the others. */
+.ld-standings > li.is-you { font-weight: 600; box-shadow: inset 4px 0 0 var(--yellow); margin-left: -12px; padding-left: 12px; }
+.ld-standings a { color: inherit; text-decoration: none; border-bottom: 2px solid var(--red); }
+.ld-standings a:hover { color: var(--red-ink); }
+.ld-result__you { color: var(--ink-3); font-weight: 400; }
+.ld-result__note { margin: 8px 0 0; font: 400 13px/20px var(--font-mono); color: var(--ink-3); }
+.ld-result__note .ld-link { font-size: 13px; }
+.ld-result__facts { flex: 1 1 260px; max-width: 460px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 20px; margin: 0; padding-top: 2px; }
+.ld-result__facts > div { display: contents; }
+.ld-result__facts dt { font: 500 11px/22px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+.ld-result__facts dd { margin: 0; }
+/* The playing time; the deal and the end one press away. */
+.ld-result__times > summary { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; border-bottom: 1px dashed var(--ink-3); }
+.ld-result__times > summary::-webkit-details-marker { display: none; }
+.ld-result__times > summary::after { content: '+'; font-weight: 600; color: var(--ink-3); }
+.ld-result__times[open] > summary::after { content: '−'; }
+.ld-result__times > summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.ld-result__times > span { display: block; margin-top: 4px; font-size: 13px; line-height: 20px; color: var(--ink-2); }
+@media (max-width: 599px) {
+  /* The stacked row: the result reads straight down under it, with no column labels. */
+  .ld-ledger--stack tr.ld-games__more > td { display: block; padding: 6px 0 16px; text-align: left; font: 400 14px/22px var(--font-mono); text-transform: none; }
+  .ld-ledger--stack tr.ld-games__more > td::before { display: none; }
+  .ld-ledger--stack tr.ld-games__row.is-open { border-bottom: 0; padding-bottom: 4px; }
+  .ld-ledger--stack tbody tr.ld-games__more { padding: 0; border-bottom: 1px solid var(--rule); }
+  .ld-result { gap: 16px; }
+  .ld-standings > li, .ld-standings__head { grid-template-columns: 44px minmax(0, 1fr) auto; }
+  .ld-standings--noworth > li, .ld-standings__head.ld-standings--noworth { grid-template-columns: 44px minmax(0, 1fr); }
+  .ld-result__facts { flex-basis: 100%; }
+}

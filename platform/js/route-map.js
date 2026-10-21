@@ -3,7 +3,7 @@
  * replaces the location. Only these exact shapes are mapped, to paths on this origin (never an open redirect):
  *   /account/                          -> /me/
  *   /account/details/ | /account/account/ -> /me/account/
- *   /account/games/<gameId>/           -> /me/game/?id=<gameId>
+ *   /account/games/<gameId>/           -> /me/?game=<gameId>  (that game's result, opened in Your record)
  *   /account/moderation/               -> /moderation/
  *   /account/moderation/cases/<id>/    -> /moderation/case/?id=<id>
  *   /account/appeals/                  -> /disputes/
@@ -16,7 +16,7 @@
   var RULES = [
     [/^\/account\/?$/, function () { return '/me/'; }],
     [/^\/account\/(?:details|account)\/?$/, function () { return '/me/account/'; }],
-    [/^\/account\/games\/(g_[0-9a-z]{6,40})\/?$/, function (m) { return '/me/game/?id=' + m[1]; }],
+    [/^\/account\/games\/(g_[0-9a-z]{6,40})\/?$/, function (m) { return '/me/?game=' + m[1]; }],
     [/^\/account\/moderation\/?$/, function () { return '/moderation/'; }],
     [/^\/account\/moderation\/cases\/(cc_[0-9a-f]{32})\/?$/, function (m) { return '/moderation/case/?id=' + m[1]; }],
     [/^\/account\/appeals\/?$/, function () { return '/disputes/'; }],

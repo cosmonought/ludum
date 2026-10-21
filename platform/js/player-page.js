@@ -56,7 +56,7 @@
       stat('Lifetime Earnings', shown(p.lifetimeEarnings, function (v) { return R.credits(v); }, 'settled games'), TIPS.earnings)
     ];
     p.ratings.forEach(function (r) { parts.push(stat('Skill Rating · ' + r.name, shown(r.rating, R.rating, 'rated games'), TIPS.rating)); });
-    body.appendChild(R.section('01', 'pl1', 'Public figures', null, [R.el('dl', { class: 'ld-sum ld-sum--figures ld-sum--' + Math.min(5, parts.length) }, parts), R.el('div', { class: 'ld-findrow' }, [finder('')])]));
+    body.appendChild(R.section(null, 'pl1', 'Public figures', null, [R.el('dl', { class: 'ld-sum ld-sum--figures ld-sum--' + Math.min(5, parts.length) }, parts), R.el('div', { class: 'ld-findrow' }, [finder('')])]));
   }
 
   function stop(frame, body, title, label, text, kind, initial) {

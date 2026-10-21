@@ -72,7 +72,7 @@
   }
 
   function render(frame, body, who, acct, session) {
-    R.profileFrame(frame, who, 'account', { kicker: 'Profile', muted: 'Only you can see this page', title: acct.displayName.name });
+    R.profileFrame(frame, who, 'account', { kicker: 'Only you can see this page', title: acct.displayName.name });
     body.textContent = '';
     var a = who.account;
     var dl = R.el('dl', { class: 'ld-facts' }, [
@@ -90,7 +90,7 @@
       R.el('dt', { text: 'Authorization Wallet' }), R.el('dd', null, [walletControls(a, session)])
     ]);
     var right = R.el('div', null, [R.el('p', { class: 'ld-label', style: 'margin-bottom:12px', text: 'Account facts' }), tablemateFacts(acct.tablemates)]);
-    body.appendChild(R.section('01', 'd1', 'Account', null, [R.el('div', { class: 'ld-twocol' }, [R.el('div', { class: 'ld-stack' }, [dl]), right])]));
+    body.appendChild(R.section(null, 'd1', 'Account', null, [R.el('div', { class: 'ld-twocol' }, [R.el('div', { class: 'ld-stack' }, [dl]), right])]));
   }
 
   /* ---------- small forms in place ---------- */
@@ -230,7 +230,7 @@
     return session.whoami().then(function (who) {
       if (!who || who.signedIn !== true) {
         frame.textContent = '';
-        frame.appendChild(R.rechead({ kicker: 'Profile', title: 'Your account' }));
+        frame.appendChild(R.rechead({ kicker: null, title: 'Your account' }));
         frame.appendChild(R.el('div', { class: 'ld-wrap' }, [R.notice('Signed out', 'Sign in to see your account.', 'wait', R.el('a', { class: 'ld-btn', href: window.LudumSession.signInUrl('/me/account/'), text: 'Sign in' }))]));
         return;
       }

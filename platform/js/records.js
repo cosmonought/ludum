@@ -1,4 +1,4 @@
-/* Ludum · LudumRecords — the shared pieces of the records pages (/me/, /me/account/, /me/game/, /moderation/), built
+/* Ludum · LudumRecords — the shared pieces of the records pages (/me/, /me/account/, /players/, /moderation/), built
  * from the records layer's components (platform/css/records.css): the record head, the profile tabs, stamps, amounts,
  * shortened ids and hashes, notices and the docket.
  *
@@ -130,6 +130,20 @@
     var text = Math.abs(r).toFixed(1);
     return r > 0 ? '+' + text : r < 0 ? '−' + text : text;
   }
+  /** 1830Juno §17: a game's playing time between two ISO instants -- "47m", "2h 32m", "1d 4h 12m", "3d 8h 05m" (whole
+   *  minutes, rounded down; minutes take two digits after hours). Null for a missing or unreadable time, or an end before
+   *  the start: never estimated. */
+  function duration(startIso, endIso) {
+    var a = typeof startIso === 'string' ? Date.parse(startIso) : NaN;
+    var b = typeof endIso === 'string' ? Date.parse(endIso) : NaN;
+    if (!isFinite(a) || !isFinite(b) || b < a) return null;
+    var minutes = Math.floor((b - a) / 60000);
+    var d = Math.floor(minutes / 1440), h = Math.floor((minutes % 1440) / 60), m = minutes % 60;
+    var mm = (m < 10 ? '0' : '') + m;
+    if (d > 0) return d + 'd ' + h + 'h ' + mm + 'm';
+    if (h > 0) return h + 'h ' + mm + 'm';
+    return m + 'm';
+  }
   /** The class of a signed figure: gain, loss or zero. */
   function signClass(n) {
     if (typeof n !== 'number' || !isFinite(n) || n === 0) return 'ld-amt ld-amt--zero';
@@ -152,13 +166,17 @@
     var games = typeof figure.games === 'number' ? figure.games : 0;
     return 'Private · ' + games + ' of ' + needed + ' ' + (unit || 'games');
   }
-  /** A game's outcome for this account, as one short status: from its credit result where it has one (a clock-ended game's
-   *  record stays "in play"), else the table's own status. {text, kind} for a stamp. */
+  /** A game's outcome for this account, as one short status: from its credit result where it has one, else how its clock
+   *  ended it (1830Juno §17: a clock-ended game's record stays "in play"; the server says how it ended), else the table's
+   *  own status. {text, kind} for a stamp. */
   function outcomeOf(g) {
     var c = g && g.credits;
     if (c && c.outcome === 'void') return { text: 'Voided', kind: 'closed' };
     if (c && c.outcome === 'foreclosed') return { text: c.defaulted ? 'Forfeited' : 'Won by forfeit', kind: 'closed' };
     if (c && (c.outcome === 'scored' || c.outcome === 'settled')) return { text: 'Completed', kind: 'closed' };
+    var e = g && g.clockEnd;
+    if (e && e.how === 'annulled') return { text: 'Annulled', kind: 'closed' };
+    if (e && e.how === 'forfeit') return { text: e.defaulted ? 'Forfeited' : 'Ended by forfeit', kind: 'closed' };
     var history = g && g.history && g.history.value;
     var table = g && g.table && g.table.value;
     if (history === 'cancelled' || table === 'cancelled' || table === 'expired') return { text: 'Cancelled', kind: 'closed' };
@@ -302,9 +320,9 @@
   }
   /** The record head: kicker, title, dek and the meta strip. */
   function rechead(opts) {
-    var kicker = el('div', { class: 'ld-rechead__kicker' }, opts.back
+    var kicker = opts.kicker === null && !opts.back && !opts.muted ? null : el('div', { class: 'ld-rechead__kicker' }, opts.back
       ? [el('a', { class: 'ld-link ld-link--back', href: opts.back.href }, [icon('arrow-left'), opts.back.text]), opts.muted ? el('span', { class: 'ld-label ld-muted', text: opts.muted }) : null]
-      : [el('span', { class: 'ld-label', text: opts.kicker || 'Profile' }), opts.muted ? el('span', { class: 'ld-label ld-muted', text: opts.muted }) : null]);
+      : [opts.kicker === null ? null : el('span', { class: 'ld-label', text: opts.kicker || 'Profile' }), opts.muted ? el('span', { class: 'ld-label ld-muted', text: opts.muted }) : null]);
     var meta = opts.meta && opts.meta.length ? el('dl', { class: 'ld-meta' }, opts.meta.map(function (m) { return el('div', null, [el('dt', { text: m[0] }), el('dd', null, [m[1]])]); })) : null;
     return el('header', { class: 'ld-wrap ld-rechead' }, [
       kicker,
@@ -319,10 +337,11 @@
       return el('a', { href: t.href, 'aria-current': t.current ? 'page' : null, text: t.text });
     }))]);
   }
-  /** A records section: number, title and dek, then the body. */
+  /** A records section: number, title and dek, then the body. 1830Juno §17: a page of data has no numbered chapters --
+   *  `no` null draws the head without its number. */
   function section(no, id, title, dek, body, extraClass) {
     return el('section', { class: 'ld-section ld-section--rec' + (extraClass ? ' ' + extraClass : ''), 'aria-labelledby': id }, [el('div', { class: 'ld-wrap' }, [
-      el('header', { class: 'ld-sechead ld-sechead--s' }, [el('span', { class: 'ld-sechead__no', text: no }), el('h2', { class: 'ld-sechead__title', id: id, text: title }), dek ? el('p', { class: 'ld-sechead__dek', text: dek }) : null])
+      el('header', { class: 'ld-sechead ld-sechead--s' + (no === null ? ' ld-sechead--plain' : '') }, [no === null ? null : el('span', { class: 'ld-sechead__no', text: no }), el('h2', { class: 'ld-sechead__title', id: id, text: title }), dek ? el('p', { class: 'ld-sechead__dek', text: dek }) : null])
     ].concat(body))]);
   }
   /** A stacked ledger: caption, header row and body rows. `columns`: [label, numeric?, unit?]. */
@@ -392,7 +411,7 @@
     el: el, icon: icon, stamp: stamp, idSpan: idSpan, hashSpan: hashSpan, val: val, td: td, notice: notice, rechead: rechead, tabsNav: tabsNav,
     section: section, ledger: ledger, go: go, docketItem: docketItem, txHref: txHref, profileFrame: profileFrame,
     credits: credits, rating: rating, ratingChange: ratingChange, signClass: signClass, gameName: gameName, publicState: publicState,
-    outcomeOf: outcomeOf, tip: tip
+    outcomeOf: outcomeOf, tip: tip, duration: duration
   };
   root.LudumRecords = api;
   if (typeof module === 'object' && module.exports) module.exports = api;
