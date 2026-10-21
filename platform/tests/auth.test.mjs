@@ -313,3 +313,88 @@ test("the account pages: the §2.4 CSP first, no third-party script, the forms' 
     assert.doesNotMatch(src, /localStorage\.setItem|sessionStorage|document\.cookie|innerHTML/, "no credential is ever stored or parsed as HTML");
   }
 });
+
+/* ---------------- v1.3 (1830Juno §16): Change Authorization Wallet, here on Ludum ---------------- */
+
+const NEW = "juno1x" + "q".repeat(37);
+const OP = "0011223344556677889900aabbccddee";
+const replaceText = (purpose, signer, over = {}) => [
+  "18COSMOS/PROFILE-AUTHORIZATION/v1",
+  `Project 18XX: ${purpose === "REPLACE-APPROVE" ? "approve replacing this account's Authorization Wallet." : "make this wallet this account's new Authorization Wallet."}`,
+  "This is not a transaction: it moves no funds and grants no permission to spend.",
+  `Purpose: ${purpose}`,
+  `Site: ${over.site ?? SITE}`,
+  "Account: Ann.Player",
+  `Authorization wallet: ${NEW}`,
+  `Replaces: ${over.replaces ?? WALLET}`,
+  `Signer: ${signer}`,
+  `Operation: ${over.operation ?? OP}`,
+  "Nonce: 99887766554433221100ffeeddccbbaa",
+  "Expires: 2026-10-10T12:00:00.000Z",
+].join("\n");
+const switchable = (start) => {
+  const k = { address: start, signed: [], connect: () => Promise.resolve({ address: k.address }), signArbitrary: (addr, text) => { k.signed.push([addr, text]); return Promise.resolve({ pubKey: "PK-" + addr.slice(-4), signature: "SIG-" + addr.slice(-4) }); } };
+  return k;
+};
+
+test("v1.3: Change Authorization Wallet -- the NEW wallet signs ACCEPT, then the CURRENT one signs APPROVE; each text checked before Keplr signs", async () => {
+  const A = load(["auth.js"]).window.LudumAuth;
+  const realNow = Date.now;
+  Date.now = () => BEFORE;
+  try {
+    const approve = replaceText("REPLACE-APPROVE", WALLET);
+    const accept = replaceText("REPLACE-ACCEPT", NEW);
+    const S = fakeSession({ "wallet-challenge": { operation: OP, texts: [{ purpose: "REPLACE-APPROVE", text: approve }, { purpose: "REPLACE-ACCEPT", text: accept }] }, "wallet-replace": { ok: true, authorizationWallet: { address: NEW } } });
+    const keplr = switchable(NEW);
+    const input = { username: "ann.player", current: WALLET };
+    const pending = await A.acceptNewWallet(S, keplr, input);
+    eq(S.calls, [["wallet-challenge", { newWallet: NEW }]]);
+    eq(keplr.signed, [[NEW, accept]], "the new wallet signed its acceptance, nothing else");
+    keplr.address = OTHER;
+    await assert.rejects(A.approveWithCurrent(S, keplr, input, pending), (e) => e.local === true && /Switch Keplr back to your current Authorization Wallet/.test(e.message));
+    eq(keplr.signed.length, 1, "Keplr on a third wallet: nothing signed");
+    keplr.address = WALLET;
+    const done = await A.approveWithCurrent(S, keplr, input, pending);
+    assert.equal(done.authorizationWallet.address, NEW);
+    eq(keplr.signed[1], [WALLET, approve]);
+    eq(S.calls[1], ["wallet-replace", { operation: OP, approvePubKey: "PK-" + WALLET.slice(-4), approveSignature: "SIG-" + WALLET.slice(-4), acceptPubKey: "PK-" + NEW.slice(-4), acceptSignature: "SIG-" + NEW.slice(-4) }]);
+  } finally { Date.now = realNow; }
+});
+
+test("v1.3: nothing is signed for the current wallet as the new one, another site, another wallet replaced or another request; the refusals in words", async () => {
+  const A = load(["auth.js"]).window.LudumAuth;
+  const realNow = Date.now;
+  Date.now = () => BEFORE;
+  try {
+    const input = { username: "ann.player", current: WALLET };
+    const same = switchable(WALLET);
+    const S0 = fakeSession({});
+    await assert.rejects(A.acceptNewWallet(S0, same, input), (e) => e.local === true && /current Authorization Wallet/.test(e.message));
+    eq(S0.calls, [], "nothing minted for the wallet already designated");
+    for (const [label, over] of [["another site", { site: "https://evil.example" }], ["another wallet replaced", { replaces: OTHER }], ["another request", { operation: "ffffffffffffffffffffffffffffffff" }]]) {
+      const S = fakeSession({ "wallet-challenge": { operation: OP, texts: [{ text: replaceText("REPLACE-APPROVE", WALLET) }, { text: replaceText("REPLACE-ACCEPT", NEW, over) }] } });
+      const k = switchable(NEW);
+      await assert.rejects(A.acceptNewWallet(S, k, input), (e) => e.local === true, label);
+      eq(k.signed, [], `${label}: nothing signed`);
+    }
+    const reauth = fakeSession({ "wallet-challenge": { reject: { status: 403, error: "reauth-required" } } });
+    await assert.rejects(A.acceptNewWallet(reauth, switchable(NEW), input), (e) => e.error === "reauth-required", "the page asks Confirm it's you, then starts again");
+    assert.match(A.sentence({ error: "wallet-unavailable" }, "wallet"), /24 hours/);
+    assert.match(A.sentence({ error: "reauth-required" }, "wallet"), /Confirm it’s you/);
+    assert.match(A.sentence({ error: "stale" }, "wallet"), /Nothing was changed/);
+  } finally { Date.now = realNow; }
+});
+
+test("v1.3: LudumSession reaches the profile routes and the two wallet actions -- and still nothing else of Play's account surface", async () => {
+  const calls = [];
+  const window = { location: { pathname: "/me/account/", assign() {} }, fetch: (url, init) => { calls.push({ url, init }); return Promise.resolve({ status: 200, json: () => Promise.resolve({ ok: true }) }); } };
+  vm.runInNewContext(readFileSync(resolve(JS, "session.js"), "utf8"), { window, Promise, JSON, Object, Error, encodeURIComponent, decodeURIComponent, String, isFinite });
+  const S = window.LudumSession;
+  await S.api("profile", {});
+  await S.api("player", { name: "Marlowe" });
+  await S.auth("wallet-challenge", { newWallet: NEW });
+  await S.auth("wallet-replace", { operation: OP });
+  eq(calls.map((c) => c.url.replace("https://play.netadao.org/gs/api/ludum/v1/", "")), ["profile", "player", "auth/wallet-challenge", "auth/wallet-replace"]);
+  for (const bad of ["authorization-wallet/challenge", "sign-out-others", "me"]) await assert.rejects(S.auth(bad, {}), (e) => e.error === "bad-request");
+  assert.equal(calls.length, 4);
+});

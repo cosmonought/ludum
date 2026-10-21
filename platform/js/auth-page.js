@@ -16,7 +16,7 @@
 
   var WALLET_EXPLAINED = [
     'This wallet proves ownership of your account and lets you recover it if you forget your password. It does not need to be your main wallet. Neta DAO never controls it and cannot access its funds — the private key and seed phrase never leave Keplr.',
-    'You may prefer a dedicated Keplr wallet just for account authorization, and other wallets for your games. Signing is free: it is not a transaction and moves nothing.'
+    'You may prefer a dedicated Keplr wallet just for account authorization. Signing is free: it is not a transaction and moves nothing.'
   ];
 
   function field(id, label, input, hint) {
@@ -97,7 +97,7 @@
   }
 
   function walletBlock(purpose) {
-    var lines = purpose === 'create' ? WALLET_EXPLAINED : ['Switch Keplr to the Authorization Wallet you chose when you created the account — a wallet you only used for games can’t recover it. Every other device signed in to the account is signed out; your seats, tables and game wallets don’t change.'];
+    var lines = purpose === 'create' ? WALLET_EXPLAINED : ['Switch Keplr to your account’s Authorization Wallet. Every other device signed in to the account is signed out; your seats and tables don’t change.'];
     return R.el('div', { class: 'ld-stack au-wallet' }, [R.el('p', { class: 'ld-label', text: purpose === 'create' ? 'Authorization Wallet' : 'Your account’s Authorization Wallet' })].concat(lines.map(function (t) { return R.el('p', { class: 'ld-body-s', text: t }); })));
   }
 
@@ -115,7 +115,7 @@
     var p = input('au-password', 'password', 'new-password', { maxlength: '1024', minlength: String(A.PASSWORD_MIN), 'aria-describedby': 'au-password-hint' });
     var ui = form(body, 'Create an account', [
       field('au-username', 'Username', u, 'For signing in; never shown to other players. No spaces.'),
-      field('au-name', 'Display name', n, 'Shown at your tables, on Ludum and on play.netadao.org. Names are unique; you may change it once before your first game.'),
+      field('au-name', 'Name', n, 'Your name at every table. Names are unique; you can change it once, before your first game.'),
       field('au-password', 'Password', p, 'At least ' + A.PASSWORD_MIN + ' characters.'),
       walletBlock('create')
     ], 'Sign with Keplr and create account', [link(withReturn('/me/sign-in/', back), 'I already have an account')]);
