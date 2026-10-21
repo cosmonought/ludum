@@ -140,7 +140,7 @@
       if (rows.length) parts.push(R.ledger({ title: 'Escrow ledger', unit: 'JUNOX', columns: [['Entry'], ['Amount', true, 'JUNOX']], rows: rows }));
       parts.push(R.el('dl', { class: 'ld-facts' }, [
         R.el('dt', { text: 'Escrow game' }), R.el('dd', { text: m.chainGameId ? m.chainGameId + ' on ' + m.chainId : '—' }),
-        R.el('dt', { text: 'Escrow state' }), R.el('dd', { text: m.escrow && m.escrow.value ? m.escrow.value.replace(/_/g, ' ') : 'Not readable on this server' })
+        R.el('dt', { text: 'Escrow state' }), R.el('dd', { text: m.escrow && m.escrow.value ? m.escrow.value.replace(/_/g, ' ') : 'Not readable now' })
       ]));
       if (d.caseUrl) parts.push(R.el('a', { class: 'ld-link', href: '/disputes/case/?id=' + m.chainGameId }, ['Open the case file', R.icon('arrow-right')]));
       var relayed = d.transactions && d.transactions.value ? d.transactions.value.relayed : [];

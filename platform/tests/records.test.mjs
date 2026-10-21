@@ -252,3 +252,18 @@ test("v1.3 a player's public page: the name asked for, and each public figure or
   eq(P.shown({ state: "established", value: 1340, games: 23 }, (v) => String(v), "settled games"), { value: "1340", small: null });
   eq(P.shown({ state: "provisional", games: 2, needed: 5 }, (v) => String(v), "rated games"), { value: "Not shown yet", small: "2 of 5 rated games" });
 });
+
+test("v1.3 the profile pages speak to players: no internal terminology in what they say (moved from Play's M2-E check)", () => {
+  /* Comments are stripped: they may name anything. Strings are what a player can be shown. */
+  const said = (file) => readFileSync(resolve(JS, file), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+  for (const file of ["me-record.js", "game-record.js", "player-page.js", "account-page.js"]) {
+    const text = said(file);
+    eq([file, (text.match(/Hybrid|Elo|game server|on this server|record_schema|protocol|C[123]|principal|ledger entr|ratingUnits/i) || [null])[0]], [file, null]);
+  }
+  /* The distinctions that matter are still said (in the tooltips): what others see, and when. */
+  const record = said("me-record.js");
+  assert.match(record, /Other players see this figure once you have 5 credit-settled games/);
+  assert.match(record, /never below 0/);
+  assert.match(record, /It counts activity, not skill/);
+});
+

@@ -1,6 +1,6 @@
 /* Ludum · /me/account/ — Profile · Your account: your name (its one change, while it is still yours to use), the username
- * you sign in with, your password, your Authorization Wallet (changed here: both wallets sign in Keplr), and the facts
- * players at your tables see. Reads `session` and `account`; writes `display-name` (the server decides) and, through
+ * you sign in with, your password, your Authorization Wallet (changed here: both wallets sign in Keplr), and a few facts
+ * from Play's records. Reads `session` and `account`; writes `display-name` (the server decides) and, through
  * Play's own account handlers (`auth/*`), the password and the Authorization Wallet.
  *
  * The name's states (the owner's rule): "changeable" -- one change before the first game, offered; "locked-seated" -- a
@@ -55,7 +55,8 @@
     return R.el('dd', null, [field]);
   }
 
-  /** What players at your tables see (the facts Play shows them), as plain facts. */
+  /** The account's facts from Play's records (the `account` route's `tablemates`), as plain facts. Real-money tables, the
+   *  only ones whose seats were shown these, are retired: the page says what they are, not who sees them. */
   function tablemateFacts(facts) {
     if (!facts.value) return R.notice('Unavailable', 'These facts could not be read just now.', 'wait');
     var f = facts.value;
@@ -88,7 +89,7 @@
       R.el('dt', { text: 'Password' }), R.el('dd', null, [passwordControls(a, session)]),
       R.el('dt', { text: 'Authorization Wallet' }), R.el('dd', null, [walletControls(a, session)])
     ]);
-    var right = R.el('div', null, [R.el('p', { class: 'ld-label', style: 'margin-bottom:12px', text: 'What players at your tables see' }), tablemateFacts(acct.tablemates)]);
+    var right = R.el('div', null, [R.el('p', { class: 'ld-label', style: 'margin-bottom:12px', text: 'Account facts' }), tablemateFacts(acct.tablemates)]);
     body.appendChild(R.section('01', 'd1', 'Account', null, [R.el('div', { class: 'ld-twocol' }, [R.el('div', { class: 'ld-stack' }, [dl]), right])]));
   }
 
