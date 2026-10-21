@@ -1,7 +1,7 @@
 /* Ludum · the account slot in SiteNav (AccountMenu, with its phone card) — on every page, just before PLAY.
  *
- * Signed out: SIGN IN (Ludum's own sign-in, /me/sign-in/, returning to this page). Signed in: the player's display name,
- * opening a short menu — Profile, then Moderation (conduct reviewers only: `session.roles.reviewer`), then Appeals &
+ * Signed out: SIGN IN (Ludum's own sign-in, /me/sign-in/, returning to this page). Signed in: the player's name,
+ * opening a short menu — Your record, Your account, then Moderation (conduct reviewers only: `session.roles.reviewer`), then Appeals &
  * Disputes (when the chain says THIS account's Authorization Wallet, or a Keplr wallet it connected, is a Ludum DAO
  * member: `LudumRecords.checkMembership`, no Keplr needed), then Sign out (here, natively: it ends the one shared session,
  * so Play is signed out too). On phones the same entries sit at the foot of the menu sheet, above PLAY.
@@ -28,17 +28,19 @@
 
   /** The menu's entries for this visitor (pure: pinned by platform/tests/account-menu.test.mjs). */
   function entries(session, daoMember, path) {
-    var list = [{ href: '/me/', text: 'Profile' }];
+    /* v1.3: Ludum is the one profile -- your record and your account, each one press away. */
+    var list = [{ href: '/me/', text: 'Your record' }, { href: '/me/account/', text: 'Your account' }];
     if (session && session.roles && session.roles.reviewer === true) list.push({ href: '/moderation/', text: 'Moderation' });
     if (daoMember) list.push({ href: '/disputes/', text: 'Appeals & Disputes' });
     return list.map(function (e) {
-      var here = typeof path === 'string' && (path === e.href || (e.href !== '/me/' && path.indexOf(e.href) === 0) || (e.href === '/me/' && path.indexOf('/me/') === 0));
+      var here = typeof path === 'string' && (path === e.href || (e.href !== '/me/' && path.indexOf(e.href) === 0) || (e.href === '/me/' && path.indexOf('/me/') === 0 && path.indexOf('/me/account/') !== 0));
       return { href: e.href, text: e.text, current: here };
     });
   }
 
   function whoBlock(account) {
-    return el('p', { class: 'ld-acct__who' }, [el('span', { class: 'ld-acct__name', text: account.name }), el('span', { class: 'ld-acct__user', text: 'Signed in as ' + account.username })]);
+    /* v1.3: one player-facing name. The username (for signing in) is on Your account only. */
+    return el('p', { class: 'ld-acct__who' }, [el('span', { class: 'ld-acct__name', text: account.name })]);
   }
   function listBlock(items) {
     return el('ul', { class: 'ld-acct__list' }, items.map(function (e) { return el('li', null, [el('a', { href: e.href, 'aria-current': e.current ? 'page' : null, text: e.text })]); }));

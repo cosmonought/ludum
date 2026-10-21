@@ -19,7 +19,7 @@ export const ALLOW = Object.freeze([
   "CNAME", "index.html", "404.html",
   "about", "projects", "assets",
   "design-system/css", "design-system/js", "design-system/fonts",
-  "me", "disputes", "governance", "moderation",
+  "me", "players", "disputes", "governance", "moderation",
   "platform/css", "platform/js", "platform/vendor/cosmjs-0.32.4.min.js",
 ]);
 /** Never published, even inside an allowed directory. */

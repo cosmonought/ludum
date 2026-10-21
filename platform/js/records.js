@@ -109,6 +109,66 @@
     return text;
   }
 
+  /* ---------- v1.3: Credits, ratings and games (pure; pinned by platform/tests/records.test.mjs) ---------- */
+
+  /** Whole credits: "1,340", "−48" (U+2212), "+52" when `signed` and above zero; "—" for anything else. */
+  function credits(n, signed) {
+    if (typeof n !== 'number' || !isFinite(n) || Math.floor(n) !== n) return '—';
+    var text = String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    if (n < 0) return '−' + text;
+    return signed && n > 0 ? '+' + text : text;
+  }
+  /** A Skill Rating, as players read it: whole points ("1,468"). */
+  function rating(n) {
+    if (typeof n !== 'number' || !isFinite(n)) return '—';
+    return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+  /** A rating change: "+16.0", "−5.3", "0.0"; "—" when the game was not rated. */
+  function ratingChange(n) {
+    if (typeof n !== 'number' || !isFinite(n)) return '—';
+    var r = Math.round(n * 10) / 10;
+    var text = Math.abs(r).toFixed(1);
+    return r > 0 ? '+' + text : r < 0 ? '−' + text : text;
+  }
+  /** The class of a signed figure: gain, loss or zero. */
+  function signClass(n) {
+    if (typeof n !== 'number' || !isFinite(n) || n === 0) return 'ld-amt ld-amt--zero';
+    return n < 0 ? 'ld-amt ld-amt--loss' : 'ld-amt ld-amt--gain';
+  }
+  /* Project 18XX's three editions, by the names players use. Another game: its own name. */
+  var EDITIONS = { standard: '18xx', plus: '18xx+', levelPlayingField: '18xx+: LPF' };
+  /** The game a table played, from the server's recorded game ({key, name, edition}); "Project 18XX" for an older
+   *  server that does not send it. Never read from a label. */
+  function gameName(game) {
+    if (!game || typeof game !== 'object') return 'Project 18XX';
+    if (game.key === 'project-18xx' && Object.prototype.hasOwnProperty.call(EDITIONS, game.edition)) return EDITIONS[game.edition];
+    return typeof game.name === 'string' && game.name ? game.name : 'Project 18XX';
+  }
+  /** What anyone else is shown of a figure, in a few words: "Public", or how far it is from being shown. */
+  function publicState(figure, unit) {
+    if (!figure || typeof figure !== 'object') return '';
+    if (figure.state === 'established') return 'Public';
+    var needed = typeof figure.needed === 'number' ? figure.needed : 5;
+    var games = typeof figure.games === 'number' ? figure.games : 0;
+    return 'Private · ' + games + ' of ' + needed + ' ' + (unit || 'games');
+  }
+  /** A game's outcome for this account, as one short status: from its credit result where it has one (a clock-ended game's
+   *  record stays "in play"), else the table's own status. {text, kind} for a stamp. */
+  function outcomeOf(g) {
+    var c = g && g.credits;
+    if (c && c.outcome === 'void') return { text: 'Voided', kind: 'closed' };
+    if (c && c.outcome === 'foreclosed') return { text: c.defaulted ? 'Forfeited' : 'Won by forfeit', kind: 'closed' };
+    if (c && (c.outcome === 'scored' || c.outcome === 'settled')) return { text: 'Completed', kind: 'closed' };
+    var history = g && g.history && g.history.value;
+    var table = g && g.table && g.table.value;
+    if (history === 'cancelled' || table === 'cancelled' || table === 'expired') return { text: 'Cancelled', kind: 'closed' };
+    if (history === 'completed' || table === 'completed') return { text: 'Completed', kind: 'closed' };
+    if (table === 'waiting') return { text: 'Waiting', kind: '' };
+    if (table === 'active') return { text: 'In play', kind: '' };
+    if (table === 'archived') return { text: 'Archived', kind: 'closed' };
+    return { text: '—', kind: 'closed' };
+  }
+
   /* ---------- the tabs' rule (pure) ---------- */
 
   /** The profile tabs this visitor sees, in order. `current` is one of "record" | "account" | "moderation" | "appeals". */
@@ -290,6 +350,22 @@
       el('div', { class: 'ld-docket__aside' }, d.aside ? [d.aside] : [])
     ]);
   }
+  /** v1.3: a short explanation behind a small "?" button -- shown on press (and on keyboard focus), hidden on Escape or
+   *  a second press. The text is the tooltip's only copy of it (never repeated on the page). */
+  var tipSerial = 0;
+  function tip(label, text) {
+    tipSerial += 1;
+    var id = 'ld-tip-' + tipSerial;
+    var bubble = el('span', { class: 'ld-tip__text', role: 'tooltip', id: id, hidden: true, text: text });
+    var button = el('button', { class: 'ld-tip__btn', type: 'button', 'aria-expanded': 'false', 'aria-controls': id, 'aria-describedby': id }, [el('span', { class: 'ld-sr', text: 'About ' + label }), el('span', { 'aria-hidden': 'true', text: '?' })]);
+    var wrap = el('span', { class: 'ld-tip' }, [button, bubble]);
+    function set(open) { button.setAttribute('aria-expanded', open ? 'true' : 'false'); bubble.hidden = !open; }
+    button.addEventListener('click', function (e) { e.stopPropagation(); set(bubble.hidden); });
+    button.addEventListener('blur', function () { set(false); });
+    wrap.addEventListener('keydown', function (e) { if (e.key === 'Escape') set(false); });
+    return wrap;
+  }
+
   /** A Mintscan-free receipt link: the chain's own REST view of one transaction. */
   function txHref(hash) { return 'https://juno.api.t.stavr.tech/cosmos/tx/v1beta1/txs/' + encodeURIComponent(String(hash)); }
 
@@ -314,7 +390,9 @@
     membershipEntry: membershipEntry, accountOf: accountOf, DAO_MEMBER_KEY: DAO_MEMBER_KEY, LEGACY_DAO_MEMBER_KEY: LEGACY_DAO_MEMBER_KEY,
     DAO_MEMBER_TTL_MS: DAO_MEMBER_TTL_MS, CHAIN_REST: CHAIN_REST, CW4_GROUP: CW4_GROUP,
     el: el, icon: icon, stamp: stamp, idSpan: idSpan, hashSpan: hashSpan, val: val, td: td, notice: notice, rechead: rechead, tabsNav: tabsNav,
-    section: section, ledger: ledger, go: go, docketItem: docketItem, txHref: txHref, profileFrame: profileFrame
+    section: section, ledger: ledger, go: go, docketItem: docketItem, txHref: txHref, profileFrame: profileFrame,
+    credits: credits, rating: rating, ratingChange: ratingChange, signClass: signClass, gameName: gameName, publicState: publicState,
+    outcomeOf: outcomeOf, tip: tip
   };
   root.LudumRecords = api;
   if (typeof module === 'object' && module.exports) module.exports = api;

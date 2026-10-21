@@ -31,6 +31,9 @@
  *                                     auth("confirm", {password}))
  *
  * v1.1 routes (1830Juno §5.1): "account", "display-name", "moderation-queue", "moderation-case", "moderation-decide".
+ * v1.3 (1830Juno §16): "profile" (the account's own Credits, Lifetime Earnings, Skill Ratings and games played) and
+ * "player" (anyone's public profile, by display name); auth actions "wallet-challenge" and "wallet-replace" (Change
+ * Authorization Wallet, here on Ludum).
  * Their extra error codes: "conflict" (409, with `detail`) and "reauth-required" (403, with `confirmUrl`).
  *
  * Every call is exactly the §2.1 fetch: POST, mode "cors", credentials "include", cache "no-store", redirect "error",
@@ -41,9 +44,9 @@
 
   var PLAY_ORIGIN = 'https://play.netadao.org';
   var API_BASE = PLAY_ORIGIN + '/gs/api/ludum/v1/';
-  var ROUTES = ['session', 'games', 'game', 'case', 'account', 'display-name', 'moderation-queue', 'moderation-case', 'moderation-decide'];
+  var ROUTES = ['session', 'games', 'game', 'case', 'account', 'display-name', 'moderation-queue', 'moderation-case', 'moderation-decide', 'profile', 'player'];
   var RETURN_PATH = /^\/[a-z0-9\/_-]{0,128}$/;
-  var AUTH_ACTIONS = ['start', 'sign-in', 'authorization', 'create', 'recover', 'confirm', 'sign-out', 'password'];
+  var AUTH_ACTIONS = ['start', 'sign-in', 'authorization', 'create', 'recover', 'confirm', 'sign-out', 'password', 'wallet-challenge', 'wallet-replace'];
 
   function ApiError(status, error, detail, extra) {
     this.name = 'LudumApiError';

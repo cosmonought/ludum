@@ -96,7 +96,7 @@
         cases.length ? R.el('div', { class: 'ld-filters', style: 'margin-bottom:16px' }, [filters, countLabel]) : null, ledgerEl
       ]));
       body.appendChild(R.section('02', 'm2', 'What this review can and cannot do', null, [R.el('div', { class: 'ld-twocol' }, [
-        R.notice('Separate from money and appeals', 'Conduct review belongs to Play’s server and its listed reviewers. It never touches a table’s money, a dispute or a Ludum DAO vote; those are the escrow’s and the DAO’s.', ''),
+        R.notice('Separate from credits and appeals', 'Conduct review belongs to Play’s server and its listed reviewers. It never changes a table’s credits, a result or a Ludum DAO vote.', ''),
         R.notice('No sanctions here', 'A decision records a status and a note. It changes no game, seat, profile or payout, and no player is told. Any action beyond that is not defined.', '')
       ])]));
     });
@@ -114,7 +114,7 @@
     frame.appendChild(R.rechead({
       back: { href: '/moderation/', text: 'Moderation' }, muted: 'Conduct review · Case', no: R.el('span', { class: 'ld-id', title: c.caseId, text: R.shortId(c.caseId) }),
       title: c.categoryLabel,
-      dek: c.reporter.nickname + ' reported ' + c.reported.nickname + ' at table ' + R.shortId(c.gameId) + (c.evidence.table.money ? ', a real-money table' : ', a free table') + '.' + (c.reports > 1 ? ' ' + (c.reports - 1) + ' later report' + (c.reports > 2 ? 's' : '') + ' added.' : ''),
+      dek: c.reporter.nickname + ' reported ' + c.reported.nickname + ' at table ' + R.shortId(c.gameId) + (c.evidence.table.money ? ', a retired real-money table' : '') + '.' + (c.reports > 1 ? ' ' + (c.reports - 1) + ' later report' + (c.reports > 2 ? 's' : '') + ' added.' : ''),
       meta: [['Status', stampOf(c.status)], ['Revision', String(c.revision)], ['Opened', R.day(iso(c.createdAt)) + ' · ' + R.clock(iso(c.createdAt))]]
     }));
     body.textContent = '';
@@ -195,7 +195,7 @@
     var facts = R.el('dl', { class: 'ld-facts' }, [
       R.el('dt', { text: 'Log pointer, first report' }), R.el('dd', { text: logLine }),
       R.el('dt', { text: 'Check' }), R.el('dd', { text: c.verification.detail }),
-      R.el('dt', { text: 'Money at the table' }), R.el('dd', { text: ev.table.money ? (ev.money ? 'Real money · phase ' + (ev.money.phase || 'unknown') + (ev.money.held ? ' · held' : '') : 'Real money · not readable then') : 'A free table: no money, no dispute' }),
+      R.el('dt', { text: 'Retired real-money escrow' }), R.el('dd', { text: ev.table.money ? (ev.money ? 'Phase ' + (ev.money.phase || 'unknown') + (ev.money.held ? ' · held' : '') : 'Not readable then') : 'None' }),
       R.el('dt', { text: 'Reporter’s note' }), R.el('dd', { text: c.note === null ? 'None' : '“' + c.note + '”' }),
       R.el('dt', { text: 'Not captured' }), R.el('dd', { text: ev.not_captured.length ? ev.not_captured.join('; ') : 'Nothing missing' })
     ]);

@@ -1,49 +1,33 @@
-/* Ludum · /me/ — Profile · Your record (AccountRecord): the head (games played, total paid to you, last played), the
- * profile tabs, the Games ledger and the Cases ledger, as designed. Reads `session`, `games` (every page, up to
- * MAX_PAGES) and, for each disputed table only, `game` (whose dispute says who challenged).
+/* Ludum · /me/ — Profile · Your record: your figures first (Credits, Lifetime Earnings, each game's Skill Rating, games
+ * played), then your games and your cases. Reads `session`, `profile` (1830Juno §16: the server's own figures, never
+ * recomputed here), `games` (every page, up to MAX_PAGES) and, for each disputed table only, `game`.
  *
- * JUNOX (escrow money, integer ujunox strings) and in-game dollars are never mixed. A figure the server marks
- * unavailable is shown as "—", never filled in. Needs session.js and records.js.
+ * The Games table names the GAME by its recorded edition (18xx, 18xx+, 18xx+: LPF), lists only the optional rules the host
+ * chose, shows the table's code while the server still holds it (a private table's is released when it starts; never
+ * invented), and, for a credit table, the wager, the net credits and the Skill Rating change. A table that was not played
+ * for credits shows a dash there: nothing is converted or guessed. Needs session.js and records.js.
  *
- * Phase 4: the Games ledger is the completed-game history (and tables in play): a table cancelled before the deal is
- * not a game, so it has no finish and no result; one that held escrow money keeps an audit line under "Cancelled
- * tables" (its refund), and one nobody funded is not listed. Finish is your rank as the server recorded it. */
+ * Owner rules kept: a cancelled table is not a game (Phase 4); the private / public thresholds are the server's (the
+ * page says which figures others see, and why, only in the tooltips). */
 (function () {
   'use strict';
   var R = window.LudumRecords;
   var MAX_PAGES = 10;
 
-  var TABLE_STAMP = {
-    waiting: ['Waiting', ''], active: ['Playing', ''], completed: ['Complete', 'closed'], cancelled: ['Cancelled', 'closed'],
-    expired: ['Expired', 'closed'], archived: ['Archived', 'closed']
-  };
+  /* ---------- pure (pinned by platform/tests/records.test.mjs) ---------- */
 
-  /** The Result cell's model (pure): the signed net in JUNOX and the line under it. */
-  function resultOf(g) {
-    var m = g.money;
-    if (!m) return { text: '—', cls: 'ld-amt ld-amt--zero', sub: 'Free table' };
-    var escrow = m.escrow && m.escrow.value;
-    var net = m.net && m.net.value ? m.net.value.amount : null;
-    if (escrow === 'disputed') return { text: 'Held', cls: 'ld-amt ld-amt--held', sub: 'Disputed', caseId: m.chainGameId };
-    if (net === null) {
-      var live = g.table && (g.table.value === 'active' || g.table.value === 'waiting');
-      return { text: '—', cls: 'ld-amt ld-amt--zero', sub: live ? 'Still playing' : 'Not yet known' };
-    }
-    var back = (BigInt(net) + BigInt(m.anteGross.amount)).toString();
-    var sub = escrow === 'annulled' ? 'Annulled · ' + R.junox(back) + ' refunded' : escrow === 'cancelled' ? 'Cancelled · ' + R.junox(back) + ' refunded' : 'Paid ' + R.junox(back);
-    return { text: R.junox(net, true), cls: R.amountClass(net), sub: sub };
-  }
-
-  /** Phase 4 (pure): a table cancelled or expired before the deal is never a game -- no result, no rank, never a loss.
-   *  The server says so (`history`, API §5.3); a server without that field is read from the table's own status. */
+  /** Phase 4: a table cancelled or expired before the deal is never a game. The server says so (`history`); a server
+   *  without that field is read from the table's own status. */
   function isCancelled(g) {
     if (g.history && g.history.value) return g.history.value === 'cancelled';
     var t = g.table && g.table.value;
     return t === 'cancelled' || t === 'expired' || (t === 'archived' && !g.startedAt);
   }
+  /** Phase 4: whether a cancelled table still has a line here: only one whose escrow held money (its record keeps the
+   *  refund). A table nobody funded is not listed. */
+  function keepsCancelled(g) { return !!(g.money && g.money.chainGameId); }
 
-  /** Phase 4 (pure): the Finish cell -- your rank in the game's own standings (ties share a rank, as the game ranks
-   *  them), from the server's recorded result; "—" when no result is recorded (a free table's needs a replay). */
+  /** The Finish cell: your place in the recorded result (ties share it), or "—". */
   function finishOf(g) {
     var r = g.inGame && g.inGame.rank;
     if (!r || typeof r.value !== 'number') return { text: '—', sub: null };
@@ -51,68 +35,135 @@
     return { text: R.ordinal(r.value), sub: 'of ' + g.playerCount + (tied ? ' · tied' : '') };
   }
 
-  /** Phase 4 (pure): a cancelled table's escrow line -- what came back, never a signed result. Null for a table no
-   *  escrow game was bound to: nothing was funded, so there is nothing to account for. */
-  function refundOf(g) {
-    var m = g.money;
-    if (!m || !m.chainGameId) return null;
-    var escrow = m.escrow && m.escrow.value;
-    var net = m.net && m.net.value ? m.net.value.amount : null;
-    if (net === null || escrow !== 'cancelled') return { text: '—', cls: 'ld-amt ld-amt--zero', sub: escrow === 'funding' ? 'Refund pending' : 'Not yet known' };
-    return { text: R.junox((BigInt(net) + BigInt(m.anteGross.amount)).toString()), cls: 'ld-amt ld-amt--zero', sub: 'Refunded' };
+  /** The credit cells of one game (pure): wager, net credits and rating change -- a dash where the game has none. A
+   *  table played before credits says so once, under its wager. */
+  function creditCells(g) {
+    var c = g.credits;
+    var dash = { text: '—', cls: 'ld-amt ld-amt--zero' };
+    if (!c) return { wager: dash, net: dash, rating: dash, note: g.money ? 'JUNOX table (retired)' : null };
+    var net = c.outcome === 'open' || typeof c.net !== 'number' ? dash : { text: R.credits(c.net, true), cls: R.signClass(c.net) };
+    var rating = typeof c.ratingDelta === 'number' ? { text: R.ratingChange(c.ratingDelta), cls: R.signClass(c.ratingDelta) } : dash;
+    return { wager: { text: R.credits(c.wager), cls: 'ld-amt' }, net: net, rating: rating, note: c.outcome === 'open' ? 'In play' : c.outcome === 'void' ? 'Returned' : null };
   }
 
-  /** The head's three figures (pure), from every summary read. */
-  function headOf(games) {
-    var paid = BigInt(0), anyPaid = false, last = null;
-    games.forEach(function (g) {
-      var m = g.money, cancelled = isCancelled(g);
-      /* A cancelled table counts only what the escrow actually refunded (never an expected deposit). */
-      if (m && m.net && m.net.value && m.escrow && m.escrow.value !== 'disputed' && (!cancelled || m.escrow.value === 'cancelled')) {
-        paid += BigInt(m.net.value.amount) + BigInt(m.anteGross.amount);
-        anyPaid = true;
-      }
-      if (cancelled) return;
-      var at = g.endedAt || g.startedAt || g.createdAt;
-      if (at && (last === null || at > last)) last = at;
+  /** The row's date: when it ended, else began, else was opened. */
+  function dateOf(g) { return g.endedAt || g.startedAt || g.createdAt || null; }
+
+  /** The filters' keys of one game: its game name and its outcome. */
+  function facetsOf(g) { return { game: R.gameName(g.game), outcome: R.outcomeOf(g).text }; }
+
+  /** The games a filter keeps, newest or oldest first (pure). */
+  function filtered(games, filter) {
+    var out = games.filter(function (g) {
+      var f = facetsOf(g);
+      return (!filter.game || f.game === filter.game) && (!filter.outcome || f.outcome === filter.outcome);
     });
-    var played = games.filter(function (g) { return g.startedAt !== null; }).length;
-    return { played: played, paid: anyPaid ? R.junox(paid.toString()) + ' JUNOX' : '—', last: last ? R.day(last) : '—' };
+    out.sort(function (a, b) {
+      var x = dateOf(a) || '', y = dateOf(b) || '';
+      return filter.oldest ? (x < y ? -1 : x > y ? 1 : 0) : (x < y ? 1 : x > y ? -1 : 0);
+    });
+    return out;
   }
 
-  function gameName(g) { return g.variant || (g.product && g.product.name) || 'Game'; }
+  /* ---------- the figures ---------- */
+
+  var TIPS = {
+    credits: 'Your available credits plus any in play at unfinished tables, including credits Ludum has advanced. Other players see this figure once you have 5 credit-settled games.',
+    earnings: 'Payouts minus wagers, over every settled game. Grants and advances never count. Other players see it once you have 5 credit-settled games, and never below 0.',
+    rating: 'Each game has its own Skill Rating. 18xx, 18xx+ and 18xx+: LPF share one. It is provisional until 5 rated games; other players see it from then.',
+    played: 'Tables played to the end. Your place is among every player with a completed game; ties share a place. It counts activity, not skill.'
+  };
+
+  function stat(label, value, small, tipText, cls) {
+    return R.el('div', cls ? { class: cls } : null, [
+      R.el('dt', null, [label, ' ', R.tip(label, tipText)]),
+      R.el('dd', null, [value, small ? R.el('small', { text: small }) : null])
+    ]);
+  }
+
+  /** The summary strip: Credits, Lifetime Earnings, each game's Skill Rating, games played. */
+  function figures(p) {
+    var c = p.credits;
+    var parts = [
+      stat('Credits', R.credits(c.holdings), R.publicState(p.publicCredits, 'settled games'), TIPS.credits),
+      stat('Lifetime Earnings', R.el('span', { class: R.signClass(p.lifetimeEarnings), text: R.credits(p.lifetimeEarnings, true) }), R.publicState(p.publicLifetimeEarnings, 'settled games'), TIPS.earnings)
+    ];
+    p.ratings.forEach(function (r) {
+      parts.push(stat('Skill Rating · ' + r.name, R.rating(r.rating), r.established ? 'Established' : 'Provisional · ' + r.games + ' of 5', TIPS.rating));
+    });
+    var gp = p.gamesPlayed || { count: 0, rank: null, of: 0 };
+    parts.push(stat('Games played', String(gp.count), gp.rank === null ? null : 'Rank #' + gp.rank + ' of ' + gp.of, TIPS.played));
+    var dl = R.el('dl', { class: 'ld-sum ld-sum--figures ld-sum--' + Math.min(5, parts.length) }, parts);
+    var detail = null;
+    if (c.inPlay > 0 || c.advanceOutstanding > 0) {
+      var bits = ['Available ' + R.credits(c.available), 'In play ' + R.credits(c.inPlay)];
+      if (c.advanceOutstanding > 0) bits.push('Ludum advance ' + R.credits(c.advanceOutstanding) + ' (repaid from later winnings)');
+      detail = R.el('p', { class: 'ld-sum__line', text: bits.join(' · ') });
+    }
+    return R.el('div', { class: 'ld-figures' }, [dl, detail]);
+  }
+
+  /* ---------- the games ---------- */
+
   function gameHref(g) { return '/me/game/?id=' + encodeURIComponent(g.gameId); }
 
   function gameRow(g) {
-    var st = TABLE_STAMP[g.table && g.table.value] || ['—', 'closed'];
-    var r = resultOf(g);
-    var sub = r.caseId ? R.el('span', null, [r.sub + ' · ', R.el('a', { class: 'ld-inline', href: '/disputes/case/?id=' + r.caseId, text: 'case ' + r.caseId })]) : r.sub;
+    var o = R.outcomeOf(g);
     var f = finishOf(g);
+    var c = creditCells(g);
+    var code = typeof g.tableCode === 'string' && g.tableCode ? g.tableCode : null;
+    var rules = Array.isArray(g.rules) && g.rules.length ? g.rules.join(' · ') : '—';
+    var mode = g.mode === 'live' ? 'Live' : g.mode === 'async' ? 'Async' : null;
     return R.el('tr', null, [
-      R.td('Game', [gameName(g)], 'is-key'),
-      R.td('Table', [R.val(R.el('a', { href: gameHref(g) }, [R.idSpan(g.gameId)]))]),
-      R.td('Status', [R.val(R.stamp(st[0], st[1]))]),
+      R.td('Date', [R.val(R.day(dateOf(g)))]),
+      R.td('Game', [R.val(R.el('span', { class: 'ld-game-cell', text: R.gameName(g.game) }), mode)], 'is-key'),
+      R.td('Variant rules', [R.val(rules)]),
+      R.td('Table', [R.val(R.el('a', { class: 'ld-code-cell', href: gameHref(g), title: code ? null : 'This table’s code was released when it started', text: code || 'Record' }))]),
+      R.td('Status', [R.val(R.stamp(o.text, o.kind))]),
       R.td('Finish', [R.val(f.text, f.sub)], 'is-num'),
-      R.td('Ante · JUNOX', [R.val(anteCell(g))], 'is-num'),
-      R.td('Result · JUNOX', [R.val(R.el('span', { class: r.cls, text: r.text }), sub)], 'is-num'),
+      R.td('Wager', [R.val(R.el('span', { class: c.wager.cls, text: c.wager.text }), c.note)], 'is-num'),
+      R.td('Net credits', [R.val(R.el('span', { class: c.net.cls, text: c.net.text }))], 'is-num'),
+      R.td('Rating change', [R.val(R.el('span', { class: c.rating.cls, text: c.rating.text }))], 'is-num'),
       R.go(gameHref(g))
     ]);
   }
 
-  function anteCell(g) { return g.money ? R.el('span', { class: 'ld-amt', text: R.junox(g.money.anteGross.amount) }) : R.el('span', { class: 'ld-amt ld-amt--zero', text: '—' }); }
+  var COLUMNS = [['Date'], ['Game'], ['Variant rules'], ['Table'], ['Status'], ['Finish', true], ['Wager', true], ['Net credits', true], ['Rating change', true], ['']];
 
-  /** Phase 4: a cancelled table that held escrow money -- its audit line (the full ledger is on its record page). */
-  function cancelledRow(g, refund) {
-    var st = TABLE_STAMP[g.table && g.table.value] || ['Cancelled', 'closed'];
-    return R.el('tr', null, [
-      R.td('Game', [gameName(g)], 'is-key'),
-      R.td('Table', [R.val(R.el('a', { href: gameHref(g) }, [R.idSpan(g.gameId)]))]),
-      R.td('Status', [R.val(R.stamp(st[0], st[1]))]),
-      R.td('Ante · JUNOX', [R.val(anteCell(g))], 'is-num'),
-      R.td('Refund · JUNOX', [R.val(R.el('span', { class: refund.cls, text: refund.text }), refund.sub)], 'is-num'),
-      R.go(gameHref(g))
+  /** The Games table with its two filters and its order (lightweight: selects, no framework). */
+  function gamesBlock(games, more) {
+    var host = R.el('div', { class: 'ld-record' });
+    if (!games.length) { host.appendChild(R.notice('No games yet', 'Tables you sit at on play.netadao.org appear here.', 'wait')); return host; }
+    var filter = { game: '', outcome: '', oldest: false };
+    function options(values) { return [''].concat(values).map(function (v) { return R.el('option', { value: v, text: v || 'All' }); }); }
+    function unique(key) { var seen = []; games.forEach(function (g) { var v = facetsOf(g)[key]; if (seen.indexOf(v) === -1) seen.push(v); }); return seen.sort(); }
+    function select(id, label, values, onChange) {
+      var s = R.el('select', { class: 'ld-select', id: id }, values);
+      s.addEventListener('change', function () { onChange(s.value); draw(); });
+      return R.el('label', { class: 'ld-filter', for: id }, [R.el('span', { class: 'ld-label-s', text: label }), s]);
+    }
+    var bar = R.el('div', { class: 'ld-filterbar', role: 'group', 'aria-label': 'Filter your games' }, [
+      select('rec-game', 'Game', options(unique('game')), function (v) { filter.game = v; }),
+      select('rec-outcome', 'Status', options(unique('outcome')), function (v) { filter.outcome = v; }),
+      select('rec-order', 'Order', [R.el('option', { value: 'new', text: 'Newest first' }), R.el('option', { value: 'old', text: 'Oldest first' })], function (v) { filter.oldest = v === 'old'; })
     ]);
+    var count = R.el('p', { class: 'ld-filters__count', role: 'status' });
+    var slot = R.el('div');
+    function draw() {
+      var rows = filtered(games, filter);
+      count.textContent = rows.length + ' of ' + games.length + ' game' + (games.length === 1 ? '' : 's');
+      slot.textContent = '';
+      slot.appendChild(rows.length
+        ? R.ledger({ label: 'Your games', columns: COLUMNS, rows: rows.map(gameRow), note: more ? 'Older games are not listed here.' : null })
+        : R.notice('No games match', 'Choose “All” to see every game.', 'wait'));
+    }
+    host.appendChild(R.el('div', { class: 'ld-filterhead' }, [bar, count]));
+    host.appendChild(slot);
+    draw();
+    return host;
   }
+
+  /* ---------- cases (the retired escrow's disputes: kept as they were) ---------- */
 
   function caseRow(g, detail) {
     var m = g.money, d = detail && detail.dispute && detail.dispute.value;
@@ -121,7 +172,7 @@
     var deadline = !d ? '—' : d.resolution ? 'Resolved ' + R.day(d.resolvedAt) : null;
     return R.el('tr', null, [
       R.td('Case', [R.el('a', { href: '/disputes/case/?id=' + m.chainGameId, text: m.chainGameId })], 'is-key'),
-      R.td('Game · table', [R.val(gameName(g), R.idSpan(g.gameId))]),
+      R.td('Game', [R.val(R.gameName(g.game), R.el('a', { href: gameHref(g), text: g.tableCode || 'Record' }))]),
       R.td('Disputed', [R.val(d ? R.day(d.disputedAt) : '—')]),
       R.td('Challenger', [R.val(d ? (d.challengerIsYou ? 'You' : 'Another seat') : '—')]),
       R.td('Status', [R.val(status)]),
@@ -130,29 +181,14 @@
     ]);
   }
 
-  function howDecided() {
-    var steps = [
-      ['Challenge', 'Inside a table’s challenge window, a player submits a challenge to the result.'],
-      ['Review', 'Neta DAO’s Ludum DAO reviews challenges and may contact players for further information through Neta DAO’s Discord server.'],
-      ['Resolution', 'The Ludum DAO votes and executes a resolution.']
-    ];
-    return R.el('div', { style: 'margin-top:32px' }, [R.el('details', { class: 'ld-disclose' }, [
-      R.el('summary', null, [R.el('span', { text: 'How a dispute is decided' })]),
-      R.el('div', { class: 'ld-disclose__body' }, [R.el('ol', { class: 'ld-vflow' }, steps.map(function (s) {
-        return R.el('li', null, [R.el('span', { class: 'ld-vflow__name', text: s[0] }), R.el('span', { class: 'ld-vflow__text', text: s[1] })]);
-      }))])
-    ])]);
-  }
-
   function signedOut(frame) {
     frame.textContent = '';
-    frame.appendChild(R.rechead({ kicker: 'Profile', title: 'Your record', dek: 'Your games and cases on Ludum, from Play’s records and the Juno escrow.' }));
-    var href = window.LudumSession.signInUrl('/me/');
-    frame.appendChild(R.el('div', { class: 'ld-wrap' }, [R.notice('Signed out', 'Sign in to see your record. One account for Ludum and play.netadao.org.', 'wait', R.el('a', { class: 'ld-btn', href: href, text: 'Sign in' }))]));
+    frame.appendChild(R.rechead({ kicker: 'Profile', title: 'Your record' }));
+    frame.appendChild(R.el('div', { class: 'ld-wrap' }, [R.notice('Signed out', 'Sign in to see your record.', 'wait', R.el('a', { class: 'ld-btn', href: window.LudumSession.signInUrl('/me/'), text: 'Sign in' }))]));
   }
 
   function errorNotice(e) {
-    var text = e && e.error === 'rate-limited' ? 'Too many requests. Try again in a minute.' : 'Your record is unavailable right now. Nothing is shown rather than an old value.';
+    var text = e && e.error === 'rate-limited' ? 'Too many requests. Try again in a minute.' : 'Your record is unavailable right now. Try again in a moment.';
     return R.el('div', { class: 'ld-wrap' }, [R.notice('Unavailable', text, 'stop')]);
   }
 
@@ -165,37 +201,28 @@
       function page(cursor, n) {
         return session.api('games', cursor === null ? { limit: 50 } : { cursor: cursor, limit: 50 }).then(function (r) {
           all = all.concat(r.games);
-          return r.nextCursor !== null && n + 1 < MAX_PAGES ? page(r.nextCursor, n + 1) : { more: r.nextCursor !== null, asOf: r.asOf };
+          return r.nextCursor !== null && n + 1 < MAX_PAGES ? page(r.nextCursor, n + 1) : { more: r.nextCursor !== null };
         });
       }
-      return page(null, 0).then(function (end) {
-        var head = headOf(all);
+      /* The figures are read beside the games; a server without them (or without the competition) shows the games alone. */
+      var standing = session.api('profile', {}).catch(function () { return null; });
+      return Promise.all([page(null, 0), standing]).then(function (both) {
+        var end = both[0], profile = both[1];
         R.profileFrame(frame, who, 'record', {
           kicker: 'Profile', muted: 'Only you can see this page', title: who.account.name,
-          dek: 'Your games and cases on Ludum, from Play’s records and the Juno escrow.',
-          meta: [['Games played', String(head.played)], ['Total paid to you', head.paid], ['Last played', head.last]]
+          meta: [['Public profile', R.el('a', { class: 'ld-link', href: '/players/?name=' + encodeURIComponent(who.account.name), text: 'How others see you' })]]
         });
         body.textContent = '';
-        /* Phase 4: cancelled tables are not games. Those that held escrow money keep their audit line below. */
-        var played = all.filter(function (g) { return !isCancelled(g); });
-        var refunds = [];
-        all.forEach(function (g) { var refund = isCancelled(g) ? refundOf(g) : null; if (refund) refunds.push(cancelledRow(g, refund)); });
-        var games = played.length
-          ? R.ledger({ columns: [['Game'], ['Table'], ['Status'], ['Finish', true], ['Ante', true, 'JUNOX'], ['Result', true, 'JUNOX'], ['']], rows: played.map(gameRow),
-              note: 'Finish is your place in the game’s own standings; tied players share a place. Result is what the escrow paid or refunded you, less your ante; network fees are not included. A disputed table’s payout is held until its case is resolved; a free table has no ante.' + (end.more ? ' Older tables are not listed here.' : '') })
-          : R.notice('No games yet', 'Tables you sit at on play.netadao.org appear here.', 'wait');
-        var parts = [games];
-        if (refunds.length) parts.push(R.ledger({ title: 'Cancelled tables', columns: [['Game'], ['Table'], ['Status'], ['Ante', true, 'JUNOX'], ['Refund', true, 'JUNOX'], ['']], rows: refunds,
-          note: 'Cancelled before the deal: not games, so no finish and no result. The escrow refunds each deposit’s net ante; the network subsidy is not refunded.' }));
-        body.appendChild(R.section('01', 'r1', 'Games', 'Every game you have played or are playing, newest first.', [R.el('div', { class: 'ld-record' }, parts)]));
+        if (profile) body.appendChild(R.section('01', 'r0', 'Your figures', null, [figures(profile)], 'ld-section--figures'));
+        var listed = all.filter(function (g) { return !isCancelled(g) || keepsCancelled(g); });
+        body.appendChild(R.section(profile ? '02' : '01', 'r1', 'Games', null, [gamesBlock(listed, end.more)]));
         var disputed = all.filter(function (g) { return g.money && g.money.chainGameId && ((g.disputed && g.disputed.value === true) || (g.money.escrow && g.money.escrow.value === 'disputed')); });
-        var casesHost = R.el('div', { class: 'ld-record' }, [R.el('p', { class: 'ld-body-s', text: disputed.length ? 'Reading your cases…' : '' })]);
-        body.appendChild(R.section('02', 'r2', 'Cases', 'Disputed tables you sat at, and where each one stands.', [casesHost, howDecided()]));
-        if (!disputed.length) { casesHost.textContent = ''; casesHost.appendChild(R.notice('No cases', 'None of your tables has been disputed.', 'wait')); return; }
+        if (!disputed.length) return;
+        var casesHost = R.el('div', { class: 'ld-record' }, [R.el('p', { class: 'ld-body-s', text: 'Reading your cases…' })]);
+        body.appendChild(R.section(profile ? '03' : '02', 'r2', 'Cases', 'Disputed tables you sat at, and where each one stands.', [casesHost]));
         return Promise.all(disputed.map(function (g) { return session.api('game', { gameId: g.gameId }).catch(function () { return null; }); })).then(function (details) {
           casesHost.textContent = '';
-          casesHost.appendChild(R.ledger({ columns: [['Case'], ['Game · table'], ['Disputed'], ['Challenger'], ['Status'], ['Resolver deadline'], ['']], rows: disputed.map(function (g, i) { return caseRow(g, details[i]); }),
-            note: 'A case is the dispute of one table’s money; it never changes the game’s result.' }));
+          casesHost.appendChild(R.ledger({ label: 'Your cases', columns: [['Case'], ['Game'], ['Disputed'], ['Challenger'], ['Status'], ['Resolver deadline'], ['']], rows: disputed.map(function (g, i) { return caseRow(g, details[i]); }) }));
         });
       });
     }).catch(function (e) {
@@ -205,7 +232,7 @@
     });
   }
 
-  window.LudumMeRecord = { resultOf: resultOf, headOf: headOf, isCancelled: isCancelled, finishOf: finishOf, refundOf: refundOf, mount: mount };
+  window.LudumMeRecord = { isCancelled: isCancelled, keepsCancelled: keepsCancelled, finishOf: finishOf, creditCells: creditCells, filtered: filtered, facetsOf: facetsOf, mount: mount };
   function start() {
     var root = document.querySelector('[data-ludum-record]');
     if (root && window.LudumSession && R) mount(root, window.LudumSession);
