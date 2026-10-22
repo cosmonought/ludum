@@ -58,8 +58,8 @@ test("v1.3 formatting: credits, ratings, rating changes, the game's name from it
   const game = (edition, key = "project-18xx", name = "Project 18XX") => ({ key, name, edition, source: "recorded" });
   eq([R.gameName(game("standard")), R.gameName(game("plus")), R.gameName(game("levelPlayingField")), R.gameName(game("steel-meridian", "steel-meridian", "18Heartland: Steel Meridian")), R.gameName(undefined)],
     ["18xx", "18xx+", "18xx+: LPF", "18Heartland: Steel Meridian", "Project 18XX"]);
-  assert.equal(R.publicState({ state: "established", value: 163, games: 7 }), "Public");
-  assert.equal(R.publicState({ state: "provisional", games: 3, needed: 5 }, "settled games"), "Private · 3 of 5 settled games");
+  /* Owner policy 2026-10-22: no figure is private until a game count, so there is no "Private · n of 5" state to say. */
+  assert.equal(R.publicState, undefined);
   const fact = (value) => ({ value, provenance: "server-recorded" });
   eq([
     R.outcomeOf({ credits: { outcome: "void" }, table: fact("active") }).text,
@@ -275,7 +275,7 @@ test("the new pages load their scripts in order, with the §2.4 CSP first and th
   }
 });
 
-test("v1.3 a player's public page: the name asked for, and each public figure or how far it is from being shown", () => {
+test("v1.5 a player's public page: the name asked for; Identity, Experience and Performance from the first day, a Skill Rating labelled Provisional until 5", () => {
   const { window } = load(["records.js", "player-page.js"]);
   const P = window.LudumPlayerPage;
   assert.equal(P.nameOf("?name=Marlowe"), "Marlowe");
@@ -284,8 +284,25 @@ test("v1.3 a player's public page: the name asked for, and each public figure or
   assert.equal(P.nameOf(""), null);
   assert.equal(P.nameOf("?name=%20%20"), null);
   assert.equal(P.nameOf("?name=" + "x".repeat(65)), null);
-  eq(P.shown({ state: "established", value: 1340, games: 23 }, (v) => String(v), "settled games"), { value: "1340", small: null });
-  eq(P.shown({ state: "provisional", games: 2, needed: 5 }, (v) => String(v), "rated games"), { value: "Not shown yet", small: "2 of 5 rated games" });
+  const rows = (stats) => stats.map((s) => [s.label, s.value, s.small]);
+  const rating = (state, value, games) => ({ domain: "project-18xx", name: "Project 18XX", rating: state === "established" ? { state, value, games } : { state, value, games, needed: 5 } });
+  /* A new account: every figure shown at once. */
+  const fresh = P.profileOf({ name: "Ann", memberSince: "2026-10", completedGames: 0, uniqueOpponents: 0, activityRank: null, credits: { state: "established", value: 500, games: 0 }, lifetimeEarnings: { state: "established", value: 0, games: 0 }, ratings: [rating("provisional", 1500, 0)] });
+  assert.equal(fresh.memberSince, "Oct 2026");
+  eq(rows(fresh.experience), [["Completed Games", "0", null], ["Unique Opponents", "0", null], ["Activity Rank", "—", "Not ranked yet"]]);
+  eq(rows(fresh.performance), [["Credits", "500", null], ["Lifetime Earnings", "0", null], ["Skill Rating · Project 18XX", "1,500", "Provisional · 0 of 5"]]);
+  /* Four rated games: still provisional; the fifth removes the label. */
+  const four = P.profileOf({ name: "Bo", memberSince: "2026-09", completedGames: 4, uniqueOpponents: 3, activityRank: { rank: 12, of: 40 }, credits: { state: "established", value: 1340, games: 4 }, lifetimeEarnings: { state: "established", value: 52, games: 4 }, ratings: [rating("provisional", 1523.4, 4)] });
+  eq(rows(four.experience), [["Completed Games", "4", null], ["Unique Opponents", "3", null], ["Activity Rank", "#12", "of 40"]]);
+  eq(rows(four.performance).slice(2), [["Skill Rating · Project 18XX", "1,523", "Provisional · 4 of 5"]]);
+  const five = P.profileOf({ name: "Bo", completedGames: 5, credits: { state: "established", value: 1340, games: 5 }, lifetimeEarnings: { state: "established", value: 52, games: 5 }, ratings: [rating("established", 1531, 5), { domain: "steel-meridian", name: "Steel Meridian", rating: { state: "provisional", value: 1500, games: 0, needed: 5 } }] });
+  eq(rows(five.performance).slice(2), [["Skill Rating · Project 18XX", "1,531", null], ["Skill Rating · Steel Meridian", "1,500", "Provisional · 0 of 5"]], "each game its own rating; established: no label");
+  /* An older server's answer (no experience, a figure without its value): dashes, never a guess. */
+  const old = P.profileOf({ name: "Cy", credits: { state: "provisional", games: 2, needed: 5 }, lifetimeEarnings: { state: "provisional", games: 2, needed: 5 }, ratings: [] });
+  assert.equal(old.memberSince, null);
+  eq(rows(old.experience), [["Completed Games", "—", null], ["Unique Opponents", "—", null], ["Activity Rank", "—", null]]);
+  eq(rows(old.performance), [["Credits", "—", null], ["Lifetime Earnings", "—", null]]);
+  for (const s of [...fresh.experience, ...fresh.performance]) assert.ok(typeof s.tip === "string" && s.tip.length > 0 && s.tip.length <= 120, `a short tooltip for ${s.label}`);
 });
 
 test("v1.3 the profile pages speak to players: no internal terminology in what they say (moved from Play's M2-E check)", () => {
@@ -297,10 +314,16 @@ test("v1.3 the profile pages speak to players: no internal terminology in what t
     /* §17: no player-facing technical record, escrow ledger, internal game id or repeated notice about the retired escrow. */
     eq([file, (text.match(/Technical record|Escrow ledger|Escrow game|Escrow state|Game id|JUNOX table|retired real-money|Not readable now|Ante\b/) || [null])[0]], [file, null]);
   }
-  /* The distinctions that matter are still said (in the tooltips): what others see, and when. */
+  /* The distinctions that matter are still said (in the tooltips): what others see. Owner policy 2026-10-22: nothing
+     is withheld until a game count, so no page says a figure is private or "not shown yet". */
   const record = said("me-record.js");
-  assert.match(record, /Other players see this figure once you have 5 credit-settled games/);
+  assert.match(record, /Other players see this total on your public profile/);
   assert.match(record, /never below 0/);
   assert.match(record, /It counts activity, not skill/);
+  for (const file of ["me-record.js", "player-page.js", "account-page.js", "records.js"]) {
+    eq([file, (said(file).match(/Not shown yet|Private ·|once you have 5|once a player has 5|Players met/) || [null])[0]], [file, null]);
+  }
+  assert.match(said("player-page.js"), /'Unique Opponents'/);
+  assert.match(said("account-page.js"), /'Unique opponents'/);
 });
 

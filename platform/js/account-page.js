@@ -65,7 +65,7 @@
     var rows = [
       ['Member since', R.month(f.memberSince)],
       ['Completed games', completed === null ? '—' : String(completed)],
-      ['Players met', opponents === null ? '—' : String(opponents)],
+      ['Unique opponents', opponents === null ? '—' : String(opponents)],
       ['Authorization Wallet since', f.authorizationWalletSince ? R.month(f.authorizationWalletSince) : '—']
     ];
     return R.el('dl', { class: 'ld-facts' }, rows.reduce(function (out, r) { return out.concat([R.el('dt', { text: r[0] }), R.el('dd', { text: r[1] })]); }, []));

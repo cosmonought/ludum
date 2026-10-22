@@ -158,14 +158,6 @@
     if (game.key === 'project-18xx' && Object.prototype.hasOwnProperty.call(EDITIONS, game.edition)) return EDITIONS[game.edition];
     return typeof game.name === 'string' && game.name ? game.name : 'Project 18XX';
   }
-  /** What anyone else is shown of a figure, in a few words: "Public", or how far it is from being shown. */
-  function publicState(figure, unit) {
-    if (!figure || typeof figure !== 'object') return '';
-    if (figure.state === 'established') return 'Public';
-    var needed = typeof figure.needed === 'number' ? figure.needed : 5;
-    var games = typeof figure.games === 'number' ? figure.games : 0;
-    return 'Private · ' + games + ' of ' + needed + ' ' + (unit || 'games');
-  }
   /** A game's outcome for this account, as one short status: from its credit result where it has one, else how its clock
    *  ended it (1830Juno §17: a clock-ended game's record stays "in play"; the server says how it ended), else the table's
    *  own status. {text, kind} for a stamp. */
@@ -410,7 +402,7 @@
     DAO_MEMBER_TTL_MS: DAO_MEMBER_TTL_MS, CHAIN_REST: CHAIN_REST, CW4_GROUP: CW4_GROUP,
     el: el, icon: icon, stamp: stamp, idSpan: idSpan, hashSpan: hashSpan, val: val, td: td, notice: notice, rechead: rechead, tabsNav: tabsNav,
     section: section, ledger: ledger, go: go, docketItem: docketItem, txHref: txHref, profileFrame: profileFrame,
-    credits: credits, rating: rating, ratingChange: ratingChange, signClass: signClass, gameName: gameName, publicState: publicState,
+    credits: credits, rating: rating, ratingChange: ratingChange, signClass: signClass, gameName: gameName,
     outcomeOf: outcomeOf, tip: tip, duration: duration
   };
   root.LudumRecords = api;

@@ -1,5 +1,5 @@
-/* Ludum · /me/ — Profile · Your record: your figures first (Credits, Lifetime Earnings, each game's Skill Rating, games
- * played), then your games and your cases. Reads `session`, `profile` (1830Juno §16: the server's own figures, never
+/* Ludum · /me/ — Profile · Your record: your figures first (Credits, Lifetime Earnings, each game's Skill Rating,
+ * completed games and the activity rank), then your games and your cases. Reads `session`, `profile` (1830Juno §16: the server's own figures, never
  * recomputed here), `games` (every page, up to MAX_PAGES) and, when a game is opened here or it is a disputed table,
  * `game`.
  *
@@ -12,8 +12,9 @@
  * how it was settled. A table that was not played for credits shows a dash there: nothing is converted or guessed.
  * /me/?game=<gameId> opens that game's result (the old /me/game/?id= page leads here). Needs session.js and records.js.
  *
- * Owner rules kept: a cancelled table is not a game (Phase 4); the private / public thresholds are the server's (the
- * page says which figures others see, and why, only in the tooltips); another player's payout is never shown. */
+ * Owner rules kept: a cancelled table is not a game (Phase 4); what others see is the server's (owner policy
+ * 2026-10-22: every figure from the start, a Skill Rating labelled provisional until 5 rated games -- the tooltips say
+ * so); another player's payout is never shown. */
 (function () {
   'use strict';
   var R = window.LudumRecords;
@@ -154,10 +155,10 @@
   /* ---------- the figures ---------- */
 
   var TIPS = {
-    credits: 'Your available credits plus any in play at unfinished tables, including credits Ludum has advanced. Other players see this figure once you have 5 credit-settled games.',
-    earnings: 'Payouts minus wagers, over every settled game. Grants and advances never count. Other players see it once you have 5 credit-settled games, and never below 0.',
-    rating: 'Each game has its own Skill Rating. 18xx, 18xx+ and 18xx+: LPF share one. It is provisional until 5 rated games; other players see it from then.',
-    played: 'Tables played to the end. Your place is among every player with a completed game; ties share a place. It counts activity, not skill.'
+    credits: 'Your available credits plus any in play at unfinished tables, including credits Ludum has advanced. Other players see this total on your public profile.',
+    earnings: 'Payouts minus wagers, over every settled game. Grants and advances never count. Other players see it on your public profile, never below 0.',
+    rating: 'Each game has its own Skill Rating. 18xx, 18xx+ and 18xx+: LPF share one. It is provisional until 5 rated games; other players see it, with the same label.',
+    played: 'Games played to the end. Your Activity Rank is your place among every player with a completed game; ties share a place. It counts activity, not skill.'
   };
 
   function stat(label, value, small, tipText, cls) {
@@ -167,18 +168,19 @@
     ]);
   }
 
-  /** The summary strip: Credits, Lifetime Earnings, each game's Skill Rating, games played. */
+  /** The summary strip: Credits, Lifetime Earnings, each game's Skill Rating, completed games. Owner policy 2026-10-22:
+   *  every one of them is public from the start, so no figure says when others will see it. */
   function figures(p) {
     var c = p.credits;
     var parts = [
-      stat('Credits', R.credits(c.holdings), R.publicState(p.publicCredits, 'settled games'), TIPS.credits),
-      stat('Lifetime Earnings', R.el('span', { class: R.signClass(p.lifetimeEarnings), text: R.credits(p.lifetimeEarnings, true) }), R.publicState(p.publicLifetimeEarnings, 'settled games'), TIPS.earnings)
+      stat('Credits', R.credits(c.holdings), null, TIPS.credits),
+      stat('Lifetime Earnings', R.el('span', { class: R.signClass(p.lifetimeEarnings), text: R.credits(p.lifetimeEarnings, true) }), null, TIPS.earnings)
     ];
     p.ratings.forEach(function (r) {
-      parts.push(stat('Skill Rating · ' + r.name, R.rating(r.rating), r.established ? 'Established' : 'Provisional · ' + r.games + ' of 5', TIPS.rating));
+      parts.push(stat('Skill Rating · ' + r.name, R.rating(r.rating), r.established ? null : 'Provisional · ' + r.games + ' of 5', TIPS.rating));
     });
     var gp = p.gamesPlayed || { count: 0, rank: null, of: 0 };
-    parts.push(stat('Games played', String(gp.count), gp.rank === null ? null : 'Rank #' + gp.rank + ' of ' + gp.of, TIPS.played));
+    parts.push(stat('Completed Games', String(gp.count), gp.rank === null ? null : 'Activity Rank #' + gp.rank + ' of ' + gp.of, TIPS.played));
     var dl = R.el('dl', { class: 'ld-sum ld-sum--figures ld-sum--' + Math.min(5, parts.length) }, parts);
     var detail = null;
     if (c.inPlay > 0 || c.advanceOutstanding > 0) {
