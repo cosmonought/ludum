@@ -111,15 +111,19 @@ test("the remembered DAO member: per ACCOUNT, ten minutes, malformed / expired /
   assert.equal(storage.has(R.DAO_MEMBER_KEY), false, "sign-out forgets it");
 });
 
-test("account menu entries: Your record and Your account; Moderation for reviewers; Appeals & Disputes for a DAO wallet; the current page marked", () => {
+test("account menu (the pass, owner 2026-10-22): one entry, Sign out; the name is a link to your profile, marked on your own pages; nothing opens on hover", () => {
   const { window } = load(["records.js", "account-menu.js"], { LudumSession: { whoami: () => new Promise(() => {}) } });
   const M = window.LudumAccountMenu;
-  const plain = (list) => list.map((e) => [e.text, e.href, e.current]);
-  eq(plain(M.entries({ roles: { reviewer: false } }, null, "/")), [["Your record", "/me/", false], ["Your account", "/me/account/", false]]);
-  eq(plain(M.entries({ roles: { reviewer: true } }, { address: "juno1x" }, "/moderation/case/")), [
-    ["Your record", "/me/", false], ["Your account", "/me/account/", false], ["Moderation", "/moderation/", true], ["Appeals & Disputes", "/disputes/", false]]);
-  eq(plain(M.entries({}, null, "/me/game/")), [["Your record", "/me/", true], ["Your account", "/me/account/", false]]);
-  eq(plain(M.entries({}, null, "/me/account/")), [["Your record", "/me/", false], ["Your account", "/me/account/", true]]);
+  eq(M.entries(), [{ action: "sign-out", text: "Sign out" }]);
+  for (const own of ["/me/", "/me/account/"]) assert.equal(M.isOwnProfile(own), true, own);
+  for (const other of ["/", "/players/", "/moderation/", "/disputes/", "/me/sign-in/", "/me/recover/"]) assert.equal(M.isOwnProfile(other), false, other);
+  const src = readFileSync(resolve(JS, "account-menu.js"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  assert.match(src, /class: 'ld-nav__who', href: '\/me\/'/, "the name is an ordinary link to /me/");
+  assert.match(src, /'aria-controls': 'ld-out', 'aria-label': 'Account menu'/, "a separate arrow button controls the menu");
+  assert.match(src, /e\.detail === 0/, "opened from the keyboard, Sign out takes the focus");
+  assert.match(src, /e\.key === 'Escape'/);
+  assert.doesNotMatch(src, /mouseover|mouseenter|:hover/, "nothing opens on hover");
+  assert.doesNotMatch(src, /Your record|Your account|Appeals/, "Games, Account and Disputes are reached from the profile");
 });
 
 test("v1.3 Your record: a credit table's wager, net credits and rating change; a table before credits shows dashes, never a converted figure", () => {
@@ -186,15 +190,20 @@ test("Phase 4: the Finish cell -- your rank from the recorded result, ties share
   eq(M.finishOf({ playerCount: 2 }), { text: "—", sub: null });
 });
 
-test("Your account: the name's change is offered only while it can still be used; every refusal in words", () => {
-  const { window } = load(["records.js", "account-page.js"]);
+test("Your account (v1.6): four rows -- the Player Name permanent (no change anywhere), the wallet, the password's date, the sessions", () => {
+  const { window } = load(["records.js", "pass.js", "ticket.js", "account-page.js"]);
   const A = window.LudumAccountPage;
-  assert.equal(A.nameOffer({ state: "changeable" }), "change");
-  assert.equal(A.nameOffer({ state: "locked-seated" }), "locked", "seated at a waiting table: shown, closed, with why");
-  assert.equal(A.nameOffer({ state: "changed", changedAt: "2026-10-09T10:00:00.000Z" }), "none", "used: no control and no notice");
-  assert.equal(A.nameOffer({ state: "locked-playing" }), "none", "a game has begun: no control and no notice");
-  for (const detail of ["taken", "unchanged", "already-changed", "locked-playing", "locked-seated", "bad-name"]) assert.notEqual(A.refusalText({ error: "conflict", detail }), A.refusalText({}), detail);
-  assert.match(A.refusalText({ error: "conflict", detail: "taken" }), /Another player/);
+  const rows = A.rowsOf({ account: { name: "Caspian", authorizationWallet: { address: "juno1q8dk3lmn2p4r6t8v0x2z4b6d8f0h2j4lx7q2k", since: "2026-10-14T09:00:00.000Z" }, passwordSetAt: "2026-10-15T09:00:00.000Z" } });
+  eq(rows, { name: "Caspian", wallet: { address: "juno1q8dk3lmn2p4r6t8v0x2z4b6d8f0h2j4lx7q2k", short: "juno1q8dk…x7q2k", since: "14 Oct 2026" }, password: "Changed 15 Oct 2026" });
+  eq(A.rowsOf({ account: { name: "Bo", authorizationWallet: null } }), { name: "Bo", wallet: null, password: "Set" });
+  assert.equal(A.sessionsText(0), "No other session was signed in.");
+  assert.equal(A.sessionsText(2), "Signed out 2 other sessions.");
+  const src = readFileSync(resolve(JS, "account-page.js"), "utf8");
+  assert.doesNotMatch(src, /display-name|Change name|change it once|Sign-in username/, "no ordinary name change and no separate username");
+  assert.match(src, /It is permanent\./);
+  assert.match(src, /Confirm with your current password, or with Keplr\./);
+  assert.match(src, /Nothing changes until the new wallet accepts\./);
+  assert.match(src, /released it less than 24 hours ago/, "wallet exclusivity's cooldown, named");
 });
 
 test("§17 a game's playing time: from the deal to its last moment, in days, hours and minutes -- never estimated", () => {
@@ -261,69 +270,95 @@ test("Moderation: Play's transitions, and the filter counts", () => {
   eq(M.counts([c("open"), c("open"), c("under-review"), c("escalated"), c("no-violation"), c("conduct-confirmed")]), { all: 6, open: 2, review: 1, escalated: 1, closed: 2 });
 });
 
-test("the new pages load their scripts in order, with the §2.4 CSP first and the records layer after ludum.css", () => {
+test("the new pages load their scripts in order, with the §2.4 CSP first and the records layer after ludum.css (v1.6: the pass after it)", () => {
   const ROOT = resolve(JS, "..", "..");
-  for (const [rel, script] of [["me/index.html", "me-record.js"], ["me/account/index.html", "account-page.js"], ["me/game/index.html", "game-record.js"], ["moderation/index.html", "moderation-page.js"], ["moderation/case/index.html", "moderation-page.js"], ["players/index.html", "player-page.js"]]) {
-    const html = readFileSync(resolve(ROOT, rel), "utf8");
+  const pass = ["/platform/js/pass.js"];
+  for (const [rel, before, script] of [
+    ["me/index.html", pass, "me-record.js"],
+    ["me/account/index.html", [...pass, "/platform/js/ticket.js", "/platform/js/gov.js"], "account-page.js"],
+    ["me/game/index.html", [], "game-record.js"],
+    ["moderation/index.html", [], "moderation-page.js"],
+    ["moderation/case/index.html", [], "moderation-page.js"],
+    ["players/index.html", pass, "player-page.js"],
+  ]) {
+    /* Read as the site serves it, line ends normalised (a Windows checkout writes CRLF; the published file is LF). */
+    const html = readFileSync(resolve(ROOT, rel), "utf8").replace(/\r\n/g, "\n");
     const order = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
-    /* PHASE 4: the account page also loads gov.js (Keplr), for "Forgot current password?" signed in. */
-    const keplr = rel === "me/account/index.html" ? ["/platform/js/gov.js"] : [];
-    eq(order, ["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", ...keplr, "/platform/js/auth.js", "/platform/js/account-menu.js", `/platform/js/${script}`, "/platform/js/page-init.js"], rel);
+    eq(order, ["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", ...before, "/platform/js/auth.js", "/platform/js/account-menu.js", `/platform/js/${script}`, "/platform/js/page-init.js"], rel);
     assert.ok(html.indexOf("/design-system/css/ludum.css") < html.indexOf("/platform/css/records.css"), rel);
+    if (before.length) assert.ok(html.indexOf("/platform/css/records.css") < html.indexOf("/platform/css/pass.css"), `${rel}: the pass's stylesheet after the records layer`);
     assert.match(html, /<head>\n<meta http-equiv="Content-Security-Policy"/, rel);
     assert.doesNotMatch(html, /ld-specimen/, `${rel}: no Specimen band on a live page`);
   }
 });
 
-test("v1.5 a player's public page: the name asked for; Identity, Experience and Performance from the first day, a Skill Rating labelled Provisional until 5", () => {
-  const { window } = load(["records.js", "player-page.js"]);
+test("v1.5/v1.6 the pass: every figure from the first day; a Skill Rating Provisional until five, one plate per game in its own field; names stepped by length; the directory's search", () => {
+  const { window } = load(["records.js", "pass.js", "player-page.js"]);
   const P = window.LudumPlayerPage;
+  const L = window.LudumPass;
   assert.equal(P.nameOf("?name=Marlowe"), "Marlowe");
   assert.equal(P.nameOf("?name=%20Ada%20L.%20"), "Ada L.");
   assert.equal(P.nameOf("?name=a%2Fb%3Fc"), "a/b?c", "a name may hold / and ?");
   assert.equal(P.nameOf(""), null);
   assert.equal(P.nameOf("?name=%20%20"), null);
   assert.equal(P.nameOf("?name=" + "x".repeat(65)), null);
-  const rows = (stats) => stats.map((s) => [s.label, s.value, s.small]);
-  const rating = (state, value, games) => ({ domain: "project-18xx", name: "Project 18XX", rating: state === "established" ? { state, value, games } : { state, value, games, needed: 5 } });
-  /* A new account: every figure shown at once. */
-  const fresh = P.profileOf({ name: "Ann", memberSince: "2026-10", completedGames: 0, uniqueOpponents: 0, activityRank: null, credits: { state: "established", value: 500, games: 0 }, lifetimeEarnings: { state: "established", value: 0, games: 0 }, ratings: [rating("provisional", 1500, 0)] });
-  assert.equal(fresh.memberSince, "Oct 2026");
-  eq(rows(fresh.experience), [["Completed Games", "0", null], ["Unique Opponents", "0", null], ["Activity Rank", "—", "Not ranked yet"]]);
-  eq(rows(fresh.performance), [["Credits", "500", null], ["Lifetime Earnings", "0", null], ["Skill Rating · Project 18XX", "1,500", "Provisional · 0 of 5"]]);
-  /* Four rated games: still provisional; the fifth removes the label. */
-  const four = P.profileOf({ name: "Bo", memberSince: "2026-09", completedGames: 4, uniqueOpponents: 3, activityRank: { rank: 12, of: 40 }, credits: { state: "established", value: 1340, games: 4 }, lifetimeEarnings: { state: "established", value: 52, games: 4 }, ratings: [rating("provisional", 1523.4, 4)] });
-  eq(rows(four.experience), [["Completed Games", "4", null], ["Unique Opponents", "3", null], ["Activity Rank", "#12", "of 40"]]);
-  eq(rows(four.performance).slice(2), [["Skill Rating · Project 18XX", "1,523", "Provisional · 4 of 5"]]);
-  const five = P.profileOf({ name: "Bo", completedGames: 5, credits: { state: "established", value: 1340, games: 5 }, lifetimeEarnings: { state: "established", value: 52, games: 5 }, ratings: [rating("established", 1531, 5), { domain: "steel-meridian", name: "Steel Meridian", rating: { state: "provisional", value: 1500, games: 0, needed: 5 } }] });
-  eq(rows(five.performance).slice(2), [["Skill Rating · Project 18XX", "1,531", null], ["Skill Rating · Steel Meridian", "1,500", "Provisional · 0 of 5"]], "each game its own rating; established: no label");
-  /* An older server's answer (no experience, a figure without its value): dashes, never a guess. */
-  const old = P.profileOf({ name: "Cy", credits: { state: "provisional", games: 2, needed: 5 }, lifetimeEarnings: { state: "provisional", games: 2, needed: 5 }, ratings: [] });
-  assert.equal(old.memberSince, null);
-  eq(rows(old.experience), [["Completed Games", "—", null], ["Unique Opponents", "—", null], ["Activity Rank", "—", null]]);
-  eq(rows(old.performance), [["Credits", "—", null], ["Lifetime Earnings", "—", null]]);
-  for (const s of [...fresh.experience, ...fresh.performance]) assert.ok(typeof s.tip === "string" && s.tip.length > 0 && s.tip.length <= 120, `a short tooltip for ${s.label}`);
+  const rating = (domain, state, value, games) => ({ domain, name: domain, rating: state === "established" ? { state, value, games } : { state, value, games, needed: 5 } });
+  /* A first-day account: every figure shown at once; no rank yet. */
+  const fresh = L.figuresOfPlayer({ name: "Ann", memberSince: "2026-10", completedGames: 0, uniqueOpponents: 0, activityRank: null, credits: { state: "established", value: 500, games: 0 }, lifetimeEarnings: { state: "established", value: 0, games: 0 }, ratings: [rating("project-18xx", "provisional", 1500, 0)] });
+  eq(fresh, { name: "Ann", credits: 500, earnings: 0, rank: null, completed: 0, opponents: 0, memberSince: "2026-10", ratings: [{ domain: "project-18xx", name: "project-18xx", value: 1500, established: false, games: 0, needed: 5 }] });
+  /* Four rated games: still provisional; the fifth establishes it -- each game its own rating. */
+  const four = L.figuresOfPlayer({ name: "Bo", activityRank: { rank: 12, of: 40 }, completedGames: 4, credits: { state: "established", value: 1340, games: 4 }, lifetimeEarnings: { state: "established", value: 52, games: 4 }, ratings: [rating("project-18xx", "provisional", 1523.4, 4)] });
+  eq([four.rank, four.ratings[0].established, four.ratings[0].games], [{ rank: 12, of: 40 }, false, 4]);
+  const five = L.figuresOfPlayer({ name: "Bo", credits: { state: "established", value: 1340, games: 5 }, lifetimeEarnings: { state: "established", value: 52, games: 5 }, ratings: [rating("project-18xx", "established", 1531, 5), rating("steel-meridian", "provisional", 1500, 0)] });
+  eq(five.ratings.map((r) => [r.domain, r.established]), [["project-18xx", true], ["steel-meridian", false]]);
+  /* An older server's answer (no experience, a figure without its value): nulls, drawn as dashes, never a guess. */
+  const old = L.figuresOfPlayer({ name: "Cy", credits: { state: "provisional", games: 2, needed: 5 }, lifetimeEarnings: { state: "provisional", games: 2, needed: 5 }, ratings: [] });
+  eq([old.credits, old.earnings, old.completed, old.opponents, old.memberSince, old.rank], [null, null, null, null, null, null]);
+  /* Your own pass reads exactly the public figures of `profile` (never the private breakdown) and its standing. */
+  const own = L.figuresOfProfile({ credits: { holdings: 653, available: 403 }, publicCredits: { state: "established", value: 653, games: 3 }, lifetimeEarnings: -10, publicLifetimeEarnings: { state: "established", value: 0, games: 3 },
+    ratings: [{ domain: "project-18xx", name: "Project 18XX", rating: 1505.3, games: 3, established: false, public: { state: "provisional", value: 1505, games: 3, needed: 5 } }], gamesPlayed: { count: 6, rank: 4, of: 37 },
+    standing: { memberSince: "2026-10", completedGames: 6, uniqueOpponents: 5, activityRank: { rank: 4, of: 37 } } }, { account: { name: "Caspian", memberSince: "2026-10" } });
+  eq([own.name, own.credits, own.earnings, own.completed, own.opponents, own.rank, own.ratings[0].value], ["Caspian", 653, 0, 6, 5, { rank: 4, of: 37 }, 1505], "the signed Lifetime Earnings never appear");
+  /* The design's steps. */
+  eq(["Caspian", "Marlowe Fitzgerald", "Marlowe Fitzgerald-Quill", "x".repeat(64)].map(L.nameSize), ["", "m", "s", "s"]);
+  eq([0, 1, 2, 3, 4, 6].map(L.platesLayout), ["", "", "stack", "stack", "dense", "dense"]);
+  eq(L.plateOf("steel-meridian").modifier, "ld-plate--sm");
+  eq(L.plateOf("20-cosmos").modifier, "ld-plate--c20");
+  eq(L.plateOf("project-18xx").lockup, ["Project ", ["b", "18XX"]]);
+  const seven = [1, 9, 3, 9, 2, 0, 5].map((games, i) => ({ domain: "g" + i, games }));
+  eq(L.platesOrder(seven).map((r) => r.domain), ["g1", "g3", "g6", "g2", "g4", "g0"], "the six most played; ties keep the server's order");
+  /* The directory: the search, the count line, the marked match at the start of a word only. */
+  eq(P.directoryOf("?q=%20Mar%20&page=2"), { query: "Mar", page: 2 });
+  eq(P.directoryOf("?page=0"), { query: "", page: 1 });
+  eq([P.matchOf("Marlowe", "mar"), P.matchOf("Ann Marsh", "mar"), P.matchOf("Hamar", "mar"), P.matchOf("Mary Ann", "ann")], [[0, 3], [4, 7], null, [5, 8]]);
+  assert.equal(P.countLine(1, "Mar"), "1 player matching “Mar”");
+  assert.equal(P.countLine(3, ""), "All 3 players, A to Z");
 });
 
 test("v1.3 the profile pages speak to players: no internal terminology in what they say (moved from Play's M2-E check)", () => {
   /* Comments are stripped: they may name anything. Strings are what a player can be shown. */
   const said = (file) => readFileSync(resolve(JS, file), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
-  for (const file of ["me-record.js", "game-record.js", "player-page.js", "account-page.js"]) {
-    const text = said(file);
-    eq([file, (text.match(/Hybrid|Elo\b|game server|on this server|record_schema|protocol|\bC[123]\b|principal|ledger entr|ratingUnits/i) || [null])[0]], [file, null]);
+  for (const file of ["me-record.js", "game-record.js", "player-page.js", "account-page.js", "pass.js", "auth-page.js", "ticket.js"]) {
+    /* `autocomplete: 'username'` is the approved markup for the Player Name field, never shown. */
+    const text = said(file).replace(/autocomplete: 'username'/g, "");
+    eq([file, (text.match(/Hybrid|Elo\b|game server|on this server|record_schema|protocol|\bC[123]\b|principal|ledger entr|ratingUnits|username/i) || [null])[0]], [file, null]);
     /* §17: no player-facing technical record, escrow ledger, internal game id or repeated notice about the retired escrow. */
-    eq([file, (text.match(/Technical record|Escrow ledger|Escrow game|Escrow state|Game id|JUNOX table|retired real-money|Not readable now|Ante\b/) || [null])[0]], [file, null]);
+    eq([file, (text.match(/Technical record|Escrow ledger|Escrow game|Escrow state|Game id|JUNOX table|retired real-money|Not readable now|Ante\b|escrow/i) || [null])[0]], [file, null]);
   }
-  /* The distinctions that matter are still said (in the tooltips): what others see. Owner policy 2026-10-22: nothing
-     is withheld until a game count, so no page says a figure is private or "not shown yet". */
-  const record = said("me-record.js");
-  assert.match(record, /Other players see this total on your public profile/);
-  assert.match(record, /never below 0/);
-  assert.match(record, /It counts activity, not skill/);
-  for (const file of ["me-record.js", "player-page.js", "account-page.js", "records.js"]) {
+  /* The distinctions that matter are said once, under the pass ("How these figures are counted"). Owner policy
+     2026-10-22: nothing is withheld until a game count, so no page says a figure is private or "not shown yet". */
+  const pass = said("pass.js");
+  assert.match(pass, /Never shown below 0/);
+  assert.match(pass, /It measures activity, not skill/);
+  assert.match(pass, /Provisional until five rated games in that game/);
+  assert.match(pass, /'Unique Opponents'/);
+  assert.match(pass, /Not ranked yet/);
+  for (const file of ["me-record.js", "player-page.js", "account-page.js", "records.js", "pass.js"]) {
     eq([file, (said(file).match(/Not shown yet|Private ·|once you have 5|once a player has 5|Players met/) || [null])[0]], [file, null]);
   }
-  assert.match(said("player-page.js"), /'Unique Opponents'/);
-  assert.match(said("account-page.js"), /'Unique opponents'/);
+  /* In-game dollars are never called credits, and credits never dollars. */
+  const record = said("me-record.js");
+  assert.match(record, /in in-game dollars/);
+  assert.doesNotMatch(record, /\$[^{]*credits|credits[^']*\$/);
 });
 

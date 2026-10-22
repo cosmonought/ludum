@@ -5,13 +5,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Your account — Ludum</title>
-<meta name="description" content="Your Ludum account: your name, password and Authorization Wallet.">
+<meta name="description" content="Your Ludum account: your Player Name, Authorization Wallet, password and sessions.">
 <meta name="robots" content="noindex">
 <link rel="canonical" href="https://ludum.netadao.org/me/account/">
 <meta name="theme-color" content="#0B0B0B">
 <link rel="preload" href="/design-system/fonts/Anton-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/design-system/css/ludum.css">
 <link rel="stylesheet" href="/platform/css/records.css">
+<link rel="stylesheet" href="/platform/css/pass.css">
+<link rel="stylesheet" href="/platform/css/auth.css">
 <script src="https://netadao.org/radio/radio.js" defer></script>
 </head>
 <body class="ld-page">
@@ -24,9 +26,8 @@
     <a class="ld-play" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a>
     <button class="ld-nav__menu" type="button" aria-expanded="false" aria-controls="ld-menu"><span class="ld-nav__menu-word">Menu</span><span class="ld-nav__burger" aria-hidden="true"></span></button>
   </div>
-</header><main id="main" data-ludum-account>
-<div data-rec-frame><header class="ld-wrap ld-rechead"><div class="ld-rechead__kicker"><span class="ld-label">Profile</span></div><div class="ld-rechead__row"><h1 class="ld-rechead__title">Your account</h1><div><p class="ld-rechead__dek" aria-live="polite">Reading…</p></div></div></header></div>
-<div data-rec-body aria-live="polite"></div>
+</header><main id="main" class="ld-profile" data-ludum-account>
+<div class="ld-wrap" data-pass-slot><p class="ld-dirhead" role="status">Reading your account…</p></div>
 <noscript><div class="ld-wrap"><p class="ld-lede">Your account needs JavaScript: it is read from play.netadao.org with your session.</p></div></noscript>
 </main><footer class="ld-footer" data-theme="press">
   <span class="ld-footer__band" aria-hidden="true"></span>
@@ -46,6 +47,8 @@
 <script src="/design-system/js/ludum.js"></script>
 <script src="/platform/js/session.js"></script>
 <script src="/platform/js/records.js"></script>
+<script src="/platform/js/pass.js"></script>
+<script src="/platform/js/ticket.js"></script>
 <script src="/platform/js/gov.js"></script>
 <script src="/platform/js/auth.js"></script>
 <script src="/platform/js/account-menu.js"></script>

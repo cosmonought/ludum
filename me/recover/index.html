@@ -4,15 +4,15 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://netadao.org/radio/radio.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://netadao.org; font-src 'self'; media-src https://s3.radio.co; connect-src 'self' https://play.netadao.org https://juno.api.t.stavr.tech https://d3d68n2c5eingb.cloudfront.net; frame-src https://netadao.org https://www.netadao.org https://academy.netadao.org https://fork.netadao.org https://ludum.netadao.org https://play.netadao.org; object-src 'none'; base-uri 'none'; form-action 'self'; upgrade-insecure-requests">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Forgot password — Ludum</title>
-<meta name="description" content="Recover your Neta DAO player account with its Authorization Wallet.">
+<title>Reset password — Ludum</title>
+<meta name="description" content="Reset a forgotten password with your account's Authorization Wallet in Keplr.">
 <meta name="robots" content="noindex">
 <link rel="canonical" href="https://ludum.netadao.org/me/recover/">
 <meta name="theme-color" content="#0B0B0B">
 <link rel="preload" href="/design-system/fonts/Anton-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/design-system/css/ludum.css">
 <link rel="stylesheet" href="/platform/css/records.css">
-<link rel="stylesheet" href="/platform/css/auth.css">
+<link rel="stylesheet" href="/platform/css/pass.css">
 </head>
 <body class="ld-page">
 <a class="ld-skip" href="#main">Skip to content</a><header class="ld-nav" data-theme="press">
@@ -24,10 +24,9 @@
     <a class="ld-play" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a>
     <button class="ld-nav__menu" type="button" aria-expanded="false" aria-controls="ld-menu"><span class="ld-nav__menu-word">Menu</span><span class="ld-nav__burger" aria-hidden="true"></span></button>
   </div>
-</header><main id="main" data-ludum-auth="recover">
-<div data-rec-frame><header class="ld-wrap ld-rechead"><div class="ld-rechead__kicker"><span class="ld-label">Account</span></div><div class="ld-rechead__row"><h1 class="ld-rechead__title">Forgot password</h1><div><p class="ld-rechead__dek" aria-live="polite">Checking whether you are signed in…</p></div></div></header></div>
-<div data-rec-body></div>
-<noscript><div class="ld-wrap"><p class="ld-lede">Signing in needs JavaScript. You can also sign in on <a href="https://play.netadao.org">play.netadao.org</a>: it is the same account.</p></div></noscript>
+</header><main id="main" class="ld-profile" data-ludum-auth="recover">
+<div class="ld-wrap" data-pass-slot><p class="ld-dirhead" role="status">Checking whether you are signed in…</p></div>
+<noscript><div class="ld-wrap"><p class="ld-lede">Resetting a password needs JavaScript and Keplr.</p></div></noscript>
 </main><footer class="ld-footer" data-theme="press">
   <span class="ld-footer__band" aria-hidden="true"></span>
   <div class="ld-wrap ld-footer__inner">
@@ -46,6 +45,8 @@
 <script src="/design-system/js/ludum.js"></script>
 <script src="/platform/js/session.js"></script>
 <script src="/platform/js/records.js"></script>
+<script src="/platform/js/pass.js"></script>
+<script src="/platform/js/ticket.js"></script>
 <script src="/platform/js/gov.js"></script>
 <script src="/platform/js/auth.js"></script>
 <script src="/platform/js/account-menu.js"></script>

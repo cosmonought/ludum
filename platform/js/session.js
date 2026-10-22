@@ -31,6 +31,8 @@
  *                                     auth("confirm", {password}))
  *
  * v1.1 routes (1830Juno §5.1): "account", "display-name", "moderation-queue", "moderation-case", "moderation-decide".
+ * v1.6 (1830Juno §19): "name-check" and "players" (public); auth actions "keplr-sign-in" (Sign in with Keplr),
+ * "wallet-approve" (Change wallet: the current wallet's approval) and "sign-out-others" (the Account tab).
  * v1.3 (1830Juno §16): "profile" (the account's own Credits, Lifetime Earnings, Skill Ratings and games played) and
  * "player" (anyone's public profile, by display name); auth actions "wallet-challenge" and "wallet-replace" (Change
  * Authorization Wallet, here on Ludum).
@@ -44,9 +46,9 @@
 
   var PLAY_ORIGIN = 'https://play.netadao.org';
   var API_BASE = PLAY_ORIGIN + '/gs/api/ludum/v1/';
-  var ROUTES = ['session', 'games', 'game', 'case', 'account', 'display-name', 'moderation-queue', 'moderation-case', 'moderation-decide', 'profile', 'player'];
+  var ROUTES = ['session', 'games', 'game', 'case', 'account', 'display-name', 'moderation-queue', 'moderation-case', 'moderation-decide', 'profile', 'player', 'name-check', 'players'];
   var RETURN_PATH = /^\/[a-z0-9\/_-]{0,128}$/;
-  var AUTH_ACTIONS = ['start', 'sign-in', 'authorization', 'create', 'recover', 'confirm', 'sign-out', 'password', 'wallet-challenge', 'wallet-replace'];
+  var AUTH_ACTIONS = ['start', 'sign-in', 'authorization', 'create', 'recover', 'confirm', 'sign-out', 'password', 'wallet-challenge', 'wallet-replace', 'keplr-sign-in', 'wallet-approve', 'sign-out-others'];
 
   function ApiError(status, error, detail, extra) {
     this.name = 'LudumApiError';

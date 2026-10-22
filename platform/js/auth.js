@@ -1,29 +1,36 @@
-/* Ludum · LudumAuth — Ludum's own sign-in, account creation, "Forgot password?", "Confirm it's you" and sign-out.
+/* Ludum · LudumAuth -- Ludum's own account actions (1830Juno docs/ludum/LUDUM_PLATFORM_ARCHITECTURE.md §15, §19; the
+ * owner's final authentication policy, 2026-10-22):
+ *   - ONE permanent Player Name, for signing in and for everything other players see;
+ *   - Sign in with Keplr is primary (the Authorization Wallet approves one SIGN-IN signature); the Player Name and
+ *     password are the alternative;
+ *   - a forgotten password is reset with the Authorization Wallet alone (the wallet identifies the account);
+ *   - a password change is confirmed with the current password OR a Keplr signature;
+ *   - Change wallet: the password, then the CURRENT wallet's approval, then the NEW wallet's acceptance.
  *
- * The contract: 1830Juno docs/ludum/LUDUM_PLATFORM_ARCHITECTURE.md §15. ONE account database and ONE session for Ludum
- * and Play: every action here is `LudumSession.auth(...)`, served by Play's own account handlers, which set or clear the
- * same host-only `__Host-gs_session` cookie on play.netadao.org. Signing in here signs Play in; signing out here signs
- * Play out. Nothing here stores a password, a token or a cookie: a password is read from its field once, sent in one
- * request body, and the field is emptied.
+ * ONE account database and ONE session for Ludum and Play: every action here is `LudumSession.auth(...)`, served by
+ * Play's own account handlers, which set or clear the same host-only `__Host-gs_session` cookie. Nothing here stores a
+ * password, a token or a cookie: a password is read from its field, sent in one request body, and forgotten.
  *
- * The Authorization Wallet signs only account actions (creating the account, "Forgot password?", v1.3: its own
- * replacement, with the new wallet), in Keplr (ADR-036:
- * never a transaction). Before Keplr is asked, the server's text is PARSED and checked against exactly what this page
- * asked for -- the purpose, this site, the account, the wallet Keplr is on -- the same check Play makes
+ * The Authorization Wallet signs only account actions, in Keplr (ADR-036: never a transaction, never a fee). Before
+ * Keplr is asked, the server's text is PARSED and checked against exactly what this page asked for -- the purpose,
+ * this site, the wallet Keplr is on (and, where this page knows it, the account) -- the same check Play makes
  * (1830Juno frontend/src/utils/profileAuthorizationV1.ts), so no other kind of action can be signed through this page.
+ * Signing and acting are separate steps: a signature is held (with its expiry) until the player acts.
  *
- *   LudumAuth.parseAuthorization(text)          the text's fields, or null when it is not exactly one
- *   LudumAuth.checkAuthorization(text, expect)  null when it is exactly the expected action; else why nothing is signed
+ *   LudumAuth.parseAuthorization(text) / checkAuthorization(text, expect)    the text check
  *   LudumAuth.sentence(error, context)          a refusal in the account's words
- *   LudumAuth.signIn(S, {username, password})   start a session if needed, then sign in
- *   LudumAuth.createAccount(S, G, {...}, step)  start, mint CREATE, check, Keplr signs, create
- *   LudumAuth.recover(S, G, {...}, step)        start, mint RECOVER, check, Keplr signs, recover
- *   LudumAuth.confirm(S, password)              "Confirm it's you" (the five-minute window sensitive actions need)
- *   LudumAuth.acceptNewWallet(S, G, {...}, step)     v1.3: Change Authorization Wallet, step 1: mint, check, the NEW
- *                                                    wallet signs ACCEPT
- *   LudumAuth.approveWithCurrent(S, G, {...}, p, step) step 2: check, the CURRENT wallet signs APPROVE, replace
- *   LudumAuth.signOut(S)                        ends the shared session (both sites), and forgets this account's
- *                                               remembered DAO membership
+ *   LudumAuth.keplrProblem(error, G)            "no-keplr" | "declined" | "switched" | "failed" | null
+ *   LudumAuth.nameCheck(S, name)                the server's availability answer
+ *   LudumAuth.signIn(S, {name, password})       start a session if needed, then sign in with the password
+ *   LudumAuth.signInWithKeplr(S, G, step)       connect, SIGN-IN text, check, sign, sign in
+ *   LudumAuth.authorizeCreate(S, G, {name}, step) / finishCreate(S, {name, password, proof})
+ *   LudumAuth.authorizeReset(S, G, step) / finishReset(S, {proof, newPassword})          (signed out, by the wallet)
+ *   LudumAuth.confirm(S, password)              "Confirm it's you" (the password checked; the five-minute window)
+ *   LudumAuth.changePassword(S, {currentPassword, newPassword})
+ *   LudumAuth.authorizeChange(S, G, {account, authorizationWallet}, step) / finishChange(S, {proof, newPassword})
+ *   LudumAuth.approveRelease(S, G, {account, current}, step)                Change wallet, step 2
+ *   LudumAuth.acceptWallet(S, G, {account, current, operation}, step)       Change wallet, step 3
+ *   LudumAuth.signOutOthers(S) / signOut(S)
  *   LudumAuth.confirmPanel(S, {onDone, onCancel})  the "Confirm it's you" panel (moderation decisions use it)
  */
 (function (root) {
@@ -35,13 +42,14 @@
     CREATE: 'make this wallet the Authorization Wallet of a new account.',
     RECOVER: 'recover this account and set a new password.',
     'REPLACE-APPROVE': "approve replacing this account's Authorization Wallet.",
-    'REPLACE-ACCEPT': "make this wallet this account's new Authorization Wallet."
+    'REPLACE-ACCEPT': "make this wallet this account's new Authorization Wallet.",
+    'SIGN-IN': 'sign in to this account.',
+    'REPLACE-RELEASE': "approve replacing this account's Authorization Wallet with the wallet that accepts next."
   };
   var JUNO = /^juno1[02-9ac-hj-np-z]{38}$/;
   var HEX_32 = /^[0-9a-f]{32}$/;
   var ASCII_LINE = /^[\x20-\x7e]{1,200}$/;
   var PASSWORD_MIN = 12;
-  var USERNAME_MAX = 64;
   var NAME_MAX = 24;
 
   function accountLine(v) {
@@ -51,7 +59,7 @@
     return points.every(function (p) { var c = p.codePointAt(0); return !(c <= 0x1f || (c >= 0x7f && c <= 0x9f) || c === 0x2028 || c === 0x2029); });
   }
   function signerFor(f) {
-    if (f.purpose === 'CREATE' || f.purpose === 'RECOVER') return f.replaces === null ? f.authorizationWallet : null;
+    if (f.purpose === 'CREATE' || f.purpose === 'RECOVER' || f.purpose === 'SIGN-IN' || f.purpose === 'REPLACE-RELEASE') return f.replaces === null ? f.authorizationWallet : null;
     if (f.replaces === null || f.replaces === f.authorizationWallet) return null;
     return f.purpose === 'REPLACE-APPROVE' ? f.replaces : f.purpose === 'REPLACE-ACCEPT' ? f.authorizationWallet : null;
   }
@@ -89,40 +97,39 @@
     return compose(f) === text ? f : null;
   }
 
-  /** Null when `text` is exactly the expected action ({purpose, site, account, signer, authorizationWallet, now}). */
+  /** Null when `text` is exactly the expected action ({purpose, site, account, signer, authorizationWallet, now; replaces?,
+   *  operation?}). `account` null: the WALLET identifies the account (Sign in with Keplr, a reset) -- any one account. */
   function checkAuthorization(text, e) {
     var f = parseAuthorization(text);
     if (f === null) return 'The server’s authorization message wasn’t in the expected form, so nothing was signed.';
     if (f.purpose !== e.purpose) return 'The server asked Keplr to sign for a different account action, so nothing was signed.';
     if (f.site !== e.site) return 'The authorization message names another site, so nothing was signed.';
-    if (f.account.normalize('NFKC').toLowerCase() !== String(e.account).trim().normalize('NFKC').toLowerCase()) return 'The authorization message names another account, so nothing was signed.';
+    if (e.account !== null && f.account.normalize('NFKC').toLowerCase().replace(/\s+/g, ' ') !== String(e.account).trim().normalize('NFKC').toLowerCase().replace(/\s+/g, ' ')) return 'The authorization message names another account, so nothing was signed.';
     if (f.signer !== e.signer) return 'The authorization message is for another wallet than the one Keplr is on, so nothing was signed.';
     if (f.authorizationWallet !== e.authorizationWallet) return 'The authorization message names another Authorization Wallet, so nothing was signed.';
-    /* v1.3: a replacement names the wallet it replaces and its own operation; both must be exactly the expected ones. */
     if (e.replaces !== undefined && f.replaces !== e.replaces) return 'The authorization message replaces another wallet than your current one, so nothing was signed.';
     if (e.operation !== undefined && f.operation !== e.operation) return 'The authorization message belongs to another request, so nothing was signed.';
     if (f.expiresAt <= e.now) return 'The authorization message has expired. Start again.';
     return null;
   }
 
-  /** A refusal in the account's words (Play's sentences). `context`: "sign-in" | "create" | "recover" | "confirm". */
+  /** A refusal in the account's words. `context`: "sign-in" | "create" | "reset" | "change" | "confirm" | "wallet". */
   function sentence(err, context) {
     var code = err && typeof err.error === 'string' ? err.error : 'unavailable';
     switch (code) {
       case 'invalid-credential':
-        if (context === 'sign-in') return 'That username and password don’t match an account. Check them and try again.';
-        if (context === 'confirm') return 'That password doesn’t match this account. Check it and try again.';
-        if (context === 'change') return 'That current password doesn’t match this account. Check it and try again.';
-        if (context === 'reset') return 'That didn’t reset the password. Check that Keplr is on this account’s Authorization Wallet.';
-        if (context === 'recover') return 'That didn’t recover an account. Check the username, and that Keplr is on the account’s Authorization Wallet.';
+        if (context === 'sign-in') return 'That Player Name and password don’t match an account.';
+        if (context === 'confirm' || context === 'change') return 'That password isn’t right. Try again, or approve with Keplr.';
+        if (context === 'reset' || context === 'keplr') return 'The signature didn’t check out, or it took too long. Nothing was changed. Approve a new one.';
         return 'That didn’t work. Check it and try again.';
-      case 'username-taken': return 'That username is taken. Choose another.';
-      case 'display-name-taken': return 'Another player already has that display name. Choose another.';
-      case 'bad-username': return 'A username is 1 to ' + USERNAME_MAX + ' characters, with no spaces.';
+      case 'name-taken': case 'display-name-taken': return 'Another player already has that name. Choose another.';
+      case 'name-not-allowed': return 'That name isn’t allowed. Choose another.';
+      case 'bad-name': return 'A player name is 1 to ' + NAME_MAX + ' characters, with a letter or a number.';
       case 'bad-password': return err.problem === 'too-long' ? 'That password is too long.' : 'A password is at least ' + PASSWORD_MIN + ' characters.';
-      case 'bad-name': return 'A display name is 1 to ' + NAME_MAX + ' characters.';
-      case 'authorization-invalid': return 'The wallet’s signature didn’t check out (or it took too long). Nothing was changed — try again and sign the new message.';
-      case 'authorization-used': return 'That signature was already used. Try again and sign the new message.';
+      case 'wallet-not-authorized': return 'No Ludum account signs in with this wallet.';
+      case 'wallet-unavailable': return 'Another account holds this wallet, or released it less than 24 hours ago. Nothing was changed.';
+      case 'authorization-invalid': return 'The signature didn’t check out, or it took too long. Nothing was changed. Approve a new one.';
+      case 'authorization-used': return 'That signature was already used. Approve a new one.';
       case 'bad-wallet': return 'That isn’t a Juno wallet address.';
       case 'legacy-account': return 'That account was made before Authorization Wallets and is retired. Create a new account to keep playing.';
       case 'busy': return 'The game server is busy checking sign-ins. Try again in a moment.';
@@ -135,16 +142,33 @@
       case 'not-authenticated': case 'session-ended': return 'This browser’s session was reset. Try again.';
       case 'profile-required': return 'Sign in or create an account first.';
       case 'not-found': return 'The game server doesn’t offer this here yet.';
-      case 'reauth-required': return 'Confirm it’s you first, then try again.';
+      case 'reauth-required': return 'Confirm your password again: the confirmation lasts five minutes.';
       case 'same-wallet': return 'That is already your Authorization Wallet. In Keplr, switch to the wallet you want to use.';
-      case 'wallet-unavailable': return 'That wallet can’t be used: another account holds it, or it was released less than 24 hours ago. Nothing was changed.';
-      case 'stale': return 'Your Authorization Wallet changed in the meantime. Nothing was changed — start again.';
+      case 'stale': return 'Your Authorization Wallet changed in the meantime. Nothing was changed. Start again.';
       case 'bad-request':
-        if (context === 'sign-in' || context === 'confirm' || context === 'recover') return sentence({ error: 'invalid-credential' }, context);
+        if (context === 'sign-in') return sentence({ error: 'invalid-credential' }, context);
         return 'The game server did not accept that request. Try again.';
       default: return 'The game server could not be reached. Try again in a moment.';
     }
   }
+
+  /** What went wrong in Keplr, for the page's states: no Keplr here, a declined connection or signature, Keplr moved to
+   *  another account, or anything else. Null: not a Keplr problem. */
+  function keplrProblem(e, G) {
+    if (!G || typeof G.keplr !== 'function' || !G.keplr()) return 'no-keplr';
+    if (!e || e.error || e.local) return null;
+    var m = String(e.message || '');
+    if (/declined|didn.t connect/i.test(m)) return 'declined';
+    if (/another account than the one shown/i.test(m)) return 'switched';
+    return 'failed';
+  }
+
+  function local(message, why) { var e = new Error(message); e.local = true; if (why) e.why = why; return e; }
+  function short(address) { return String(address).slice(0, 9) + '…' + String(address).slice(-5); }
+  function site() { return root.location ? root.location.origin : ''; }
+  function texts(minted) { return minted && Array.isArray(minted.texts) ? minted.texts : []; }
+  function checked(text, expect) { var refusal = checkAuthorization(text, expect); if (refusal !== null) throw local(refusal, 'text'); return parseAuthorization(text); }
+  function keplrCall(promise) { return promise.then(null, function (e) { if (e && !e.error) e.keplr = true; throw e; }); }
 
   /** This browser's session: the current one, or a new signed-out one (a reset, ended one is replaced only here, on the
    *  player's own press). */
@@ -155,55 +179,104 @@
     });
   }
 
-  function usernameProblem(u) {
-    var t = String(u || '').trim();
-    return t === '' || Array.from(t).length > USERNAME_MAX || /\s/.test(t) ? { error: 'bad-username' } : null;
-  }
   function passwordProblem(p) { return Array.from(String(p || '')).length < PASSWORD_MIN ? { error: 'bad-password', problem: 'too-short' } : null; }
+  /** A Player Name as the page can tell before asking (pure): null, or the problem ("bad-name"). The server decides
+   *  availability and what is allowed. */
+  function nameProblem(n) {
+    var t = String(n || '').trim();
+    var points = Array.from(t);
+    return points.length < 1 || points.length > NAME_MAX || !/[\p{L}\p{N}]/u.test(t) ? { error: 'bad-name' } : null;
+  }
+
+  function nameCheck(S, name) { return S.api('name-check', { name: String(name) }); }
 
   function signIn(S, input) {
-    return start(S).then(function () { return S.auth('sign-in', { username: input.username, password: input.password }); });
+    return start(S).then(function () { return S.auth('sign-in', { name: input.name, password: input.password }); });
   }
 
-  function site() { return root.location ? root.location.origin : ''; }
+  /** The proof of one checked, signed text, held until the player acts: {operation, pubKey, signature, wallet, account,
+   *  expiresAt}. */
+  function proofOf(minted, text, signed, wallet) {
+    var f = parseAuthorization(text);
+    return { operation: minted.operation, pubKey: signed.pubKey, signature: signed.signature, wallet: wallet, account: f.account, expiresAt: f.expiresAt };
+  }
+  /** Whether a held proof has run out (the page says "Signature expired" without sending it). */
+  function expired(proof, now) { return !proof || proof.expiresAt <= (now === undefined ? Date.now() : now); }
 
-  /** Mint, check, and have Keplr sign one CREATE / RECOVER text. `step(name)` reports progress ("keplr", "sign"). */
-  function signedProof(S, G, purpose, username, step) {
+  /** Sign in with Keplr: connect; the server looks the wallet up (a wallet that authorizes no account is told so before
+   *  anything is signed: 409 wallet-not-authorized); the SIGN-IN text is checked (this site, this wallet); Keplr signs;
+   *  the signature signs this browser in. `step(name, info)`: "keplr", "sign" ({account, wallet}), "session". */
+  function signInWithKeplr(S, G, step) {
+    step = step || function () {};
     step('keplr');
-    return G.connect().then(function (w) {
-      return S.auth('authorization', { purpose: purpose === 'CREATE' ? 'create' : 'recover', username: username, wallet: w.address }).then(function (minted) {
-        var text = minted && minted.texts && minted.texts[0] && minted.texts[0].text;
-        var refusal = checkAuthorization(text, { purpose: purpose, site: site(), account: username, signer: w.address, authorizationWallet: w.address, now: Date.now() });
-        if (refusal !== null) { var e = new Error(refusal); e.local = true; throw e; }
-        step('sign');
-        return G.signArbitrary(w.address, text).then(function (signed) { return { operation: minted.operation, pubKey: signed.pubKey, signature: signed.signature, wallet: w.address }; });
+    return start(S).then(function () { return keplrCall(G.connect()); }).then(function (w) {
+      step('wallet', { wallet: w.address });
+      return S.auth('authorization', { purpose: 'sign-in', wallet: w.address }).then(function (minted) {
+        var text = texts(minted)[0] && texts(minted)[0].text;
+        var f = checked(text, { purpose: 'SIGN-IN', site: site(), account: null, signer: w.address, authorizationWallet: w.address, now: Date.now() });
+        step('sign', { account: f.account, wallet: w.address });
+        return keplrCall(G.signArbitrary(w.address, text)).then(function (signed) {
+          step('session', { account: f.account, wallet: w.address });
+          return S.auth('keplr-sign-in', { operation: minted.operation, pubKey: signed.pubKey, signature: signed.signature }).then(function (r) { return { account: f.account, wallet: w.address, answer: r }; });
+        });
       });
     });
   }
 
-  function createAccount(S, G, input, step) {
-    var p = usernameProblem(input.username) || passwordProblem(input.password) || (String(input.name || '').trim() === '' || Array.from(String(input.name).trim()).length > NAME_MAX ? { error: 'bad-name' } : null);
-    if (p) return Promise.reject(p);
+  /** Create account, step 3: connect; the CREATE text for this Player Name (checked: this site, this name, this wallet);
+   *  Keplr signs. Nothing is created: the proof is held for step 4. `step`: "keplr", "wallet" ({wallet}), "sign". */
+  function authorizeCreate(S, G, input, step) {
     step = step || function () {};
-    return start(S).then(function () { return signedProof(S, G, 'CREATE', input.username.trim(), step); }).then(function (proof) {
-      step('create');
-      return S.auth('create', { username: input.username.trim(), password: input.password, name: String(input.name).trim(), operation: proof.operation, pubKey: proof.pubKey, signature: proof.signature });
+    var name = String(input.name || '').trim();
+    var problem = nameProblem(name);
+    if (problem) return Promise.reject(problem);
+    step('keplr');
+    return start(S).then(function () { return keplrCall(G.connect()); }).then(function (w) {
+      step('wallet', { wallet: w.address });
+      return S.auth('authorization', { purpose: 'create', name: name, wallet: w.address }).then(function (minted) {
+        var text = texts(minted)[0] && texts(minted)[0].text;
+        checked(text, { purpose: 'CREATE', site: site(), account: name, signer: w.address, authorizationWallet: w.address, now: Date.now() });
+        step('sign', { account: name, wallet: w.address });
+        return keplrCall(G.signArbitrary(w.address, text)).then(function (signed) { return proofOf(minted, text, signed, w.address); });
+      });
     });
   }
-
-  function recover(S, G, input, step) {
-    var p = usernameProblem(input.username) || passwordProblem(input.newPassword);
-    if (p) return Promise.reject(p);
-    step = step || function () {};
-    return start(S).then(function () { return signedProof(S, G, 'RECOVER', input.username.trim(), step); }).then(function (proof) {
-      step('recover');
-      return S.auth('recover', { operation: proof.operation, pubKey: proof.pubKey, signature: proof.signature, newPassword: input.newPassword });
-    });
+  /** Create account, step 4: the account, with the held proof. */
+  function finishCreate(S, input) {
+    var problem = nameProblem(input.name) || passwordProblem(input.password);
+    if (problem) return Promise.reject(problem);
+    if (expired(input.proof)) return Promise.reject(local('Signature expired', 'expired'));
+    var p = input.proof;
+    return S.auth('create', { name: String(input.name).trim(), password: input.password, operation: p.operation, pubKey: p.pubKey, signature: p.signature });
   }
 
-  /** PHASE 4: "Change password" (signed in) -- the current password and the new one, in one request to the game server's
-   *  own handler (`auth/password`): this browser keeps its session (a fresh cookie), every other device is signed out --
-   *  on Ludum and on play.netadao.org alike. Nothing is kept. */
+  /** Reset password, step 1 (signed out): connect; the server looks the wallet up (409 wallet-not-authorized before
+   *  anything is signed); the RECOVER text names the account it found (checked: this site, this wallet); Keplr signs; the
+   *  proof is held for step 3. */
+  function authorizeReset(S, G, step) {
+    step = step || function () {};
+    step('keplr');
+    return start(S).then(function () { return keplrCall(G.connect()); }).then(function (w) {
+      step('wallet', { wallet: w.address });
+      return S.auth('authorization', { purpose: 'recover', wallet: w.address }).then(function (minted) {
+        var text = texts(minted)[0] && texts(minted)[0].text;
+        var f = checked(text, { purpose: 'RECOVER', site: site(), account: null, signer: w.address, authorizationWallet: w.address, now: Date.now() });
+        step('sign', { account: f.account, wallet: w.address });
+        return keplrCall(G.signArbitrary(w.address, text)).then(function (signed) { return proofOf(minted, text, signed, w.address); });
+      });
+    });
+  }
+  /** Reset password, step 3 (and Change password with Keplr, step 3): the new password with the held proof. */
+  function finishReset(S, input) {
+    var problem = passwordProblem(input.newPassword);
+    if (problem) return Promise.reject(problem);
+    if (expired(input.proof)) return Promise.reject(local('Signature expired', 'expired'));
+    var p = input.proof;
+    return S.auth('recover', { operation: p.operation, pubKey: p.pubKey, signature: p.signature, newPassword: input.newPassword });
+  }
+
+  /** "Change password" with the current password: one request, the current and the new (this browser keeps a fresh
+   *  session; every other one is signed out). */
   function changePassword(S, input) {
     var p = passwordProblem(input.newPassword);
     if (p) return Promise.reject(p);
@@ -211,82 +284,67 @@
     return S.auth('password', { currentPassword: input.currentPassword, newPassword: input.newPassword });
   }
 
-  /** PHASE 4: "Forgot current password?" while SIGNED IN -- this account's own RECOVER text, signed in Keplr by its
-   *  Authorization Wallet (checked first: this site, this account, that wallet), then the new password. No old password,
-   *  no sign-out first; the game server applies it like a password change (this browser stays signed in, every other
-   *  device is signed out). `input.authorizationWallet`: the account's, when this page knows it -- Keplr on another
-   *  wallet is refused before anything is signed. */
-  function resetSignedIn(S, G, input, step) {
-    var p = usernameProblem(input.username) || passwordProblem(input.newPassword);
-    if (p) return Promise.reject(p);
+  /** "Change password", step 1 with Keplr (signed in): Keplr must be on this account's Authorization Wallet (refused
+   *  before anything is signed otherwise); the RECOVER text names this account; Keplr signs; the proof is held. */
+  function authorizeChange(S, G, input, step) {
     step = step || function () {};
-    var username = String(input.username).trim();
     step('keplr');
-    return G.connect().then(function (w) {
-      var expected = input.authorizationWallet || w.address;
-      if (w.address !== expected) {
-        var wrong = new Error('Keplr is on ' + w.address + '. Switch Keplr to this account’s Authorization Wallet (' + expected + ') and try again. Nothing was signed.');
-        wrong.local = true;
-        throw wrong;
-      }
-      return S.auth('authorization', { purpose: 'recover', username: username, wallet: w.address }).then(function (minted) {
-        var text = minted && minted.texts && minted.texts[0] && minted.texts[0].text;
-        var refusal = checkAuthorization(text, { purpose: 'RECOVER', site: site(), account: username, signer: w.address, authorizationWallet: expected, now: Date.now() });
-        if (refusal !== null) { var e = new Error(refusal); e.local = true; throw e; }
-        step('sign');
-        return G.signArbitrary(w.address, text).then(function (signed) {
-          step('reset');
-          return S.auth('recover', { operation: minted.operation, pubKey: signed.pubKey, signature: signed.signature, newPassword: input.newPassword });
+    return keplrCall(G.connect()).then(function (w) {
+      if (input.authorizationWallet && w.address !== input.authorizationWallet) throw local('Keplr is on ' + short(w.address) + '. Switch Keplr to your Authorization Wallet (' + short(input.authorizationWallet) + ') and try again. Nothing was signed.', 'wrong-wallet');
+      step('wallet', { wallet: w.address });
+      return S.auth('authorization', { purpose: 'recover', wallet: w.address }).then(function (minted) {
+        var text = texts(minted)[0] && texts(minted)[0].text;
+        checked(text, { purpose: 'RECOVER', site: site(), account: input.account, signer: w.address, authorizationWallet: w.address, now: Date.now() });
+        step('sign', { account: input.account, wallet: w.address });
+        return keplrCall(G.signArbitrary(w.address, text)).then(function (signed) { return proofOf(minted, text, signed, w.address); });
+      });
+    });
+  }
+  var finishChange = finishReset;
+
+  /** "Change wallet", step 2 (after "Confirm it's you"): Keplr on the CURRENT wallet; the REPLACE-RELEASE text (this site,
+   *  this account, the current wallet signing for itself) checked, signed and sent: the server verifies it now. Resolves
+   *  {operation}. */
+  function approveRelease(S, G, input, step) {
+    step = step || function () {};
+    step('keplr');
+    return keplrCall(G.connect()).then(function (w) {
+      if (w.address !== input.current) throw local('Keplr is on ' + short(w.address) + '. Switch Keplr to your current Authorization Wallet (' + short(input.current) + ') to approve. Nothing was signed.', 'wrong-wallet');
+      return S.auth('wallet-challenge', {}).then(function (minted) {
+        var text = texts(minted)[0] && texts(minted)[0].text;
+        checked(text, { purpose: 'REPLACE-RELEASE', site: site(), account: input.account, signer: input.current, authorizationWallet: input.current, now: Date.now() });
+        step('sign', { account: input.account, wallet: w.address });
+        return keplrCall(G.signArbitrary(w.address, text)).then(function (signed) {
+          step('send');
+          return S.auth('wallet-approve', { operation: minted.operation, pubKey: signed.pubKey, signature: signed.signature }).then(function () { return { operation: minted.operation }; });
         });
       });
     });
   }
 
-  /* ---------- v1.3: "Change Authorization Wallet", here on Ludum (1830Juno §16) ---------- */
-
-  function local(message) { var e = new Error(message); e.local = true; return e; }
-  function short(address) { return String(address).slice(0, 10) + '…' + String(address).slice(-4); }
-
-  /** Step 1, Keplr on the NEW wallet: the game server mints the two texts for THIS site (it needs a live "Confirm it's
-   *  you": otherwise 403 reauth-required); the ACCEPT text is checked -- this site, this account, the new wallet as
-   *  signer and as the Authorization Wallet, replacing exactly the current one -- and only then signed in Keplr.
-   *  Resolves the pending change {operation, approveText, next, accept}. `input`: {username, current}. */
-  function acceptNewWallet(S, G, input, step) {
+  /** "Change wallet", step 3: Keplr on the NEW wallet; its REPLACE-ACCEPT text (this site, this account, the new wallet,
+   *  replacing exactly the current one, the same operation) checked and signed; the replacement is made. Resolves the
+   *  server's {authorizationWallet}. */
+  function acceptWallet(S, G, input, step) {
     step = step || function () {};
     step('keplr');
-    return G.connect().then(function (w) {
-      if (w.address === input.current) throw local('Keplr is on your current Authorization Wallet (' + short(input.current) + '). Switch Keplr to the wallet you want to use, then try again. Nothing was signed.');
-      return S.auth('wallet-challenge', { newWallet: w.address }).then(function (minted) {
-        var texts = minted && Array.isArray(minted.texts) ? minted.texts : [];
-        var approve = texts[0] && texts[0].text;
-        var accept = texts[1] && texts[1].text;
-        var refusal = checkAuthorization(accept, { purpose: 'REPLACE-ACCEPT', site: site(), account: input.username, signer: w.address, authorizationWallet: w.address, replaces: input.current, operation: minted && minted.operation, now: Date.now() });
-        if (refusal !== null) throw local(refusal);
-        step('sign');
-        return G.signArbitrary(w.address, accept).then(function (signed) { return { operation: minted.operation, approveText: approve, next: w.address, accept: signed }; });
-      });
-    });
-  }
-
-  /** Step 2, Keplr back on the CURRENT Authorization Wallet: the APPROVE text is checked the same way (the current wallet
-   *  signs, naming the new one), signed, and the replacement is sent with both signatures. Resolves the server's
-   *  {authorizationWallet}. */
-  function approveWithCurrent(S, G, input, pending, step) {
-    step = step || function () {};
-    step('keplr');
-    return G.connect().then(function (w) {
-      if (w.address !== input.current) throw local('Keplr is on ' + short(w.address) + '. Switch Keplr back to your current Authorization Wallet (' + short(input.current) + ') to approve. Nothing was signed.');
-      var refusal = checkAuthorization(pending.approveText, { purpose: 'REPLACE-APPROVE', site: site(), account: input.username, signer: input.current, authorizationWallet: pending.next, replaces: input.current, operation: pending.operation, now: Date.now() });
-      if (refusal !== null) throw local(refusal);
-      step('sign');
-      return G.signArbitrary(input.current, pending.approveText).then(function (signed) {
-        step('replace');
-        return S.auth('wallet-replace', { operation: pending.operation, approvePubKey: signed.pubKey, approveSignature: signed.signature, acceptPubKey: pending.accept.pubKey, acceptSignature: pending.accept.signature });
+    return keplrCall(G.connect()).then(function (w) {
+      if (w.address === input.current) throw local('Keplr is still on your current Authorization Wallet. In Keplr, switch to the wallet you want to use, then connect again. Nothing was signed.', 'same-wallet');
+      step('wallet', { wallet: w.address });
+      return S.auth('wallet-challenge', { operation: input.operation, newWallet: w.address }).then(function (minted) {
+        var text = texts(minted)[0] && texts(minted)[0].text;
+        checked(text, { purpose: 'REPLACE-ACCEPT', site: site(), account: input.account, signer: w.address, authorizationWallet: w.address, replaces: input.current, operation: input.operation, now: Date.now() });
+        step('sign', { account: input.account, wallet: w.address });
+        return keplrCall(G.signArbitrary(w.address, text)).then(function (signed) {
+          step('send');
+          return S.auth('wallet-replace', { operation: input.operation, acceptPubKey: signed.pubKey, acceptSignature: signed.signature }).then(function (r) { return { wallet: w.address, answer: r }; });
+        });
       });
     });
   }
 
   function confirm(S, password) { return S.auth('confirm', { password: password }); }
+  function signOutOthers(S) { return S.auth('sign-out-others', {}); }
 
   function signOut(S) {
     var R = root.LudumRecords;
@@ -298,7 +356,7 @@
     });
   }
 
-  /* ---------- the "Confirm it's you" panel (records layer: field, input, button, error) ---------- */
+  /* ---------- the "Confirm it's you" panel (moderation decisions; records layer: field, input, button, error) ---------- */
   function confirmPanel(S, opts) {
     var R = root.LudumRecords;
     var el = R.el;
@@ -320,7 +378,6 @@
       confirm(S, typed).then(function () { if (opts && opts.onDone) opts.onDone(); }, function (e) {
         go.disabled = false;
         error.textContent = sentence(e, 'confirm'); error.hidden = false; field.classList.add('is-error'); input.focus();
-        /* An older game server without Ludum's own confirmation: Play's "Confirm it's you" is the way. */
         if (e && e.status === 404 && S.confirmUrl) { error.appendChild(document.createTextNode(' ')); error.appendChild(el('a', { class: 'ld-link', href: S.confirmUrl(), text: 'Confirm it’s you on play.netadao.org' })); }
       });
     });
@@ -329,10 +386,12 @@
   }
 
   var api = {
-    parseAuthorization: parseAuthorization, checkAuthorization: checkAuthorization, sentence: sentence, start: start,
-    usernameProblem: usernameProblem, passwordProblem: passwordProblem, signIn: signIn, createAccount: createAccount, recover: recover,
-    changePassword: changePassword, resetSignedIn: resetSignedIn, acceptNewWallet: acceptNewWallet, approveWithCurrent: approveWithCurrent,
-    confirm: confirm, signOut: signOut, confirmPanel: confirmPanel, PASSWORD_MIN: PASSWORD_MIN, NAME_MAX: NAME_MAX, USERNAME_MAX: USERNAME_MAX
+    parseAuthorization: parseAuthorization, checkAuthorization: checkAuthorization, sentence: sentence, keplrProblem: keplrProblem, start: start,
+    passwordProblem: passwordProblem, nameProblem: nameProblem, nameCheck: nameCheck, expired: expired, short: short,
+    signIn: signIn, signInWithKeplr: signInWithKeplr, authorizeCreate: authorizeCreate, finishCreate: finishCreate,
+    authorizeReset: authorizeReset, finishReset: finishReset, changePassword: changePassword, authorizeChange: authorizeChange, finishChange: finishChange,
+    approveRelease: approveRelease, acceptWallet: acceptWallet, confirm: confirm, signOutOthers: signOutOthers, signOut: signOut, confirmPanel: confirmPanel,
+    PASSWORD_MIN: PASSWORD_MIN, NAME_MAX: NAME_MAX
   };
   root.LudumAuth = api;
   if (typeof module === 'object' && module.exports) module.exports = api;

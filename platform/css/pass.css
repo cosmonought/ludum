@@ -1,0 +1,588 @@
+/* Ludum · pass.css -- the approved player profile and account pages: Direction A, "the pass" (Ludum Profile design
+   system, owner 2026-10-22). Ported from the design's reference stylesheet (components/bundle.css) with Ludum's ld-
+   prefix; Ludum's own nav, footer, frame, icons, links, buttons and PLAY are reused, not restated. Names that would
+   collide with the records layer are distinct: ld-places (standings), ld-games__result / __facts / __finish, ld-steplist,
+   ld-tfield, ld-pinput, ld-ptabs. The layout answers its container (.ld-profile is `container: ldp / inline-size`).
+   Loaded after records.css on /me/, /me/account/, /players/ and the account pages. */
+
+/* ---------- 0. The profile root ---------- */
+.ld-profile { container: ldp / inline-size; display: block; padding-block: var(--space-7, 48px) var(--space-9, 96px); background: var(--paper); color: var(--ink); }
+.ld-profile *, .ld-profile *::before, .ld-profile *::after { box-sizing: border-box; }
+.ld-profile :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+
+/* The pass's tokens (Ludum Profile tokens.json): the pass is cut from the stock; the plate is the game's own field. */
+:root, [data-theme="stock"] { --pass-main: var(--sheet); --pass-stub: var(--paper-2); --pass-edge: var(--ink); --perf-from: var(--neta-pink); --perf-to: var(--neta-cyan);
+  --plate-ground: var(--p18-ground); --plate-ink: var(--p18-paper); --plate-label: var(--p18-text-muted); --plate-figure: var(--p18-gold); --punch: var(--p18-gold); --you: var(--yellow); }
+
+/* ---------- 6. Controls, at the profile's control size (Ludum's ld-btn / ld-link / ld-input, restated only in size) ---------- */
+.ld-profile .ld-btn { min-height: 52px; font-size: 16px; line-height: 18px; }
+.ld-profile .ld-btn .ld-icon { width: 18px; height: 18px; }
+.ld-profile .ld-btn--s { min-height: 48px; padding: 0 14px 0 16px; }
+.ld-profile .ld-btn--l { min-height: 64px; padding: 0 24px 0 28px; font-size: 18px; line-height: 20px; }
+.ld-profile .ld-link { min-height: 32px; font-size: 16px; line-height: 18px; }
+.ld-profile .ld-link .ld-icon { width: 18px; height: 18px; }
+.ld-pinput { width: 100%; min-width: 0; min-height: 52px; padding: 10px 14px; font: 400 19px/28px var(--font-sans); color: var(--ink); background: var(--sheet); border: 2px solid var(--rule-strong); border-radius: 0; }
+.ld-pinput::placeholder { color: var(--ink-3); opacity: 1; }
+.ld-pinput:disabled { background: var(--paper-2); color: var(--ink-3); }
+.ld-name-link { color: inherit; text-decoration: none; border-bottom: 2px solid var(--red); }
+.ld-name-link:hover { color: var(--red-ink); }
+.ld-step__note--mono { font-family: var(--font-mono); color: var(--ink); }
+
+/* ---------- 2. The pass ----------
+
+   Three bands: the main part (name and Performance), a perforation in the Neta colours, the stub (Experience).
+   The game's rating plate is set into the main part's right side, full height. */
+.ld-pass { --stub-w: clamp(280px, 22cqi, 340px); --perf-w: 24px; --plate-w: clamp(400px, 31cqi, 460px); --notch: 26px; --notch-ground: var(--paper);
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr) var(--perf-w) var(--stub-w);
+  background: var(--pass-main); color: var(--ink); border: 2px solid var(--pass-edge); }
+
+.ld-pass__main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--plate-w); grid-template-rows: auto 1fr auto;
+  grid-template-areas: "name name plate" "credits credits plate" "earn rank plate"; min-width: 0; }
+.ld-pass__head { grid-area: name; display: flex; align-items: center; min-width: 0; padding: 30px 32px 24px; border-bottom: 2px solid var(--pass-edge); }
+.ld-pass__name { margin: 0; min-width: 0; font: 400 88px/.88 var(--font-display); letter-spacing: 0; text-transform: uppercase; overflow-wrap: anywhere; padding-top: .04em; }
+.ld-pass__name--m { font-size: 56px; line-height: .9; }   /* 11–18 characters */
+.ld-pass__name--s { font-size: 36px; line-height: .94; }  /* 19–64 characters: wraps, at spaces where it has them */
+
+/* Performance. Credits and the plate lead; Lifetime Earnings and Activity Rank follow one step down. */
+.ld-perf { display: contents; }
+.ld-fig { margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.ld-fig dt { margin: 0; font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.ld-fig dt small { display: block; margin-top: 4px; font: 400 15px/18px var(--font-mono); letter-spacing: 0; text-transform: none; color: var(--ink-3); }
+.ld-fig dd { margin: 0; font-family: var(--font-display); font-weight: 400; text-transform: uppercase; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ld-fig--credits { grid-area: credits; justify-content: space-between; padding: 26px 32px 30px; }
+.ld-fig--credits dd { font-size: 144px; line-height: .84; letter-spacing: -.005em; }
+.ld-fig--earn { grid-area: earn; padding: 20px 24px 28px 32px; border-top: 1px solid var(--rule); }
+.ld-fig--rank { grid-area: rank; padding: 20px 24px 28px; border-top: 1px solid var(--rule); border-left: 1px solid var(--rule); }
+.ld-fig--earn dd, .ld-fig--rank dd { font-size: 56px; line-height: .9; }
+.ld-fig__hash { font-size: .55em; vertical-align: .62em; margin-right: 2px; }
+.ld-fig__of { margin-left: 10px; font: 400 19px/1 var(--font-mono); letter-spacing: 0; text-transform: none; color: var(--ink-2); }
+.ld-fig dd.is-none { font: 400 19px/28px var(--font-mono); text-transform: none; color: var(--ink-3); white-space: normal; }
+
+/* ---------- 3. The rating plates ----------
+
+   One plate per rated game, each in that game's own field. One game: the plate fills the corner, numeral at 120px.
+   Two or three: the plates stack in the same column as compact rows (ld-plates--stack, numerals 72px), sharing its
+   height. Four to six: dense rows (ld-plates--dense, numerals 56px; the label shows on the first only). Either way the
+   column's natural height stays close to the main part's, so neither side stretches into an empty field. */
+.ld-plates { grid-area: plate; display: grid; grid-auto-rows: 1fr; margin: 0; min-width: 0; background: var(--plate-ground); }
+.ld-plate { --pl-ground: var(--plate-ground); --pl-ink: var(--plate-ink); --pl-label: var(--plate-label); --pl-figure: var(--plate-figure); --pl-dim: var(--p18-text-dim); --pl-ring: var(--p18-gold-deep); --pl-punch: var(--punch); --pl-rule: var(--p18-gold-deep); --pl-accent: var(--p18-gold);
+  position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; min-width: 0; padding: 26px 32px 28px; background: var(--pl-ground); color: var(--pl-ink); }
+.ld-plate + .ld-plate { box-shadow: inset 0 1px 0 var(--pl-rule); }
+.ld-plate__head { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 0; min-width: 0; }
+.ld-plate__label { font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--pl-label); }
+.ld-plate__game { font: 400 28px/.9 var(--font-display); text-transform: uppercase; letter-spacing: .01em; color: var(--pl-ink); }
+.ld-plate__game b { font-weight: 400; color: var(--pl-accent); }
+/* Restrained: one flat gold, no gradient, no frame. */
+.ld-plate__num { margin: 0; font: 400 120px/.84 var(--font-display); letter-spacing: -.005em; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--pl-figure); }
+.ld-plate__state { display: grid; justify-items: start; gap: 10px; margin: 0; font: 400 19px/26px var(--font-mono); color: var(--pl-dim); }
+.ld-plate__word { font: 500 19px/22px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--pl-ink); }
+.ld-plate__count { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+/* The punches: five holes, one punched per rated game. They repeat the words beside them ("0 of 5 rated games"),
+   so they are hidden from assistive tech; punched and open differ in shape (filled disc, ring), not colour alone. */
+.ld-punches { display: inline-flex; gap: 8px; }
+.ld-punches i { width: 18px; height: 18px; border-radius: var(--radius-token); border: 2px solid var(--pl-ring); }
+.ld-punches i.is-punched { background: var(--pl-punch); border-color: var(--pl-punch); }
+
+/* Each game's field. Project 18XX is the default (gold on its warm black). */
+.ld-plate--sm { --pl-ground: var(--sm-steel); --pl-ink: var(--sm-plat); --pl-label: var(--sm-text-muted); --pl-figure: var(--sm-plat); --pl-dim: var(--sm-plat); --pl-ring: var(--sm-text-muted); --pl-punch: var(--sm-plat); --pl-rule: var(--sm-rule); --pl-accent: var(--sm-red); }
+.ld-plate--c20 { --pl-ground: var(--p20c-night); --pl-ink: var(--p20c-cream); --pl-label: var(--p20c-mist); --pl-figure: var(--p20c-yellow); --pl-dim: var(--p20c-mist); --pl-ring: var(--p20c-mist); --pl-punch: var(--p20c-yellow); --pl-rule: var(--p20c-line); --pl-accent: var(--p20c-yellow); }
+
+/* Two or three games: compact rows. */
+.ld-plates--stack .ld-plate { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "head num" "state state"; align-content: space-between; align-items: end; gap: 14px 16px; padding: 20px 28px 22px; }
+.ld-plates--stack .ld-plate__head { grid-area: head; }
+.ld-plates--stack .ld-plate__num { grid-area: num; font-size: 72px; }
+.ld-plates--stack .ld-plate__state { grid-area: state; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
+.ld-plates--stack .ld-punches i { width: 14px; height: 14px; }
+/* Four to six games: dense rows; the label once, at the top of the column. */
+.ld-plates--dense .ld-plate { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "head num" "state num"; align-content: center; align-items: center; gap: 4px 16px; padding: 12px 28px 13px; }
+.ld-plates--dense .ld-plate:first-child { padding-top: 18px; }
+.ld-plates--dense .ld-plate__head { grid-area: head; gap: 6px; }
+.ld-plates--dense .ld-plate:not(:first-child) .ld-plate__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.ld-plates--dense .ld-plate__game { font-size: 24px; }
+.ld-plates--dense .ld-plate__num { grid-area: num; font-size: 56px; }
+.ld-plates--dense .ld-plate__state { grid-area: state; display: flex; flex-wrap: nowrap; align-items: baseline; gap: 10px; font-size: 16px; line-height: 22px; white-space: nowrap; }
+.ld-plates--dense .ld-plate__word { font-size: 16px; line-height: 22px; }
+/* One line each: the punches give way to the count, and the count's unit (and an established rating's count) is read
+   to screen readers only. "Provisional 3 of 5" · "Established". */
+.ld-plates--dense .ld-punches { display: none; }
+.ld-plates--dense .ld-plate__unit, .ld-plates--dense .ld-plate.is-established .ld-plate__count { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- 4. The perforation and the stub ---------- */
+
+/* The holes run on the seam in the Neta line's colours; the two notches are bitten out of the pass's edge where the
+   perforation meets it (the perforation's own ::before and ::after, so they follow it at every width). */
+.ld-pass__perf { position: relative; background: var(--pass-stub); }
+.ld-pass__perf > i { position: absolute; top: 18px; bottom: 18px; left: calc(50% - 3px); width: 6px; background: linear-gradient(180deg, var(--perf-from), var(--perf-to));
+  -webkit-mask: radial-gradient(circle 3px at 50% 3px, #000 96%, transparent) 0 0 / 6px 13px repeat-y; mask: radial-gradient(circle 3px at 50% 3px, #000 96%, transparent) 0 0 / 6px 13px repeat-y; }
+.ld-pass__perf::before, .ld-pass__perf::after { content: ''; position: absolute; z-index: 2; left: calc(50% - var(--notch) / 2); width: var(--notch); height: var(--notch);
+  border: 2px solid var(--pass-edge); border-radius: var(--radius-token); background: var(--notch-ground); pointer-events: none; }
+.ld-pass__perf::before { top: calc(-2px - var(--notch) / 2); clip-path: inset(50% -2px -2px -2px); }
+.ld-pass__perf::after { bottom: calc(-2px - var(--notch) / 2); clip-path: inset(-2px -2px 50% -2px); }
+
+.ld-pass__stub { display: grid; grid-template-rows: repeat(3, 1fr); margin: 0; padding: 4px 28px; background: var(--pass-stub); min-width: 0; }
+.ld-pass__stub > div { display: flex; flex-direction: column; justify-content: flex-end; gap: 12px; padding: 22px 0 24px; border-top: 1px solid var(--rule); min-width: 0; }
+.ld-pass__stub > div:first-child { border-top: 0; }
+.ld-pass__stub dt { font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.ld-pass__stub dd { margin: 0; font: 400 40px/.92 var(--font-display); text-transform: uppercase; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---------- 5. Under the pass: how the figures are counted; the way to the players page ---------- */
+
+.ld-passfoot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px 48px; padding-top: 16px; }
+.ld-how { flex: 1 1 420px; min-width: 0; }
+.ld-how > summary { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0; cursor: pointer; list-style: none;
+  font: 600 16px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.ld-how > summary::-webkit-details-marker { display: none; }
+.ld-how > summary span { background: linear-gradient(currentColor, currentColor) 0 100% / 100% 2px no-repeat; padding-bottom: 4px; }
+.ld-how > summary:hover { color: var(--red-ink); }
+.ld-how > summary .ld-icon { width: 18px; height: 18px; }
+.ld-how[open] > summary .ld-plus-v { display: none; }
+.ld-how dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 48px; max-width: 1040px; margin: 8px 0 8px; }
+.ld-how dl > div { padding: 16px 0 18px; border-top: 1px solid var(--rule); }
+.ld-how dt { font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.ld-how dd { margin: 8px 0 0; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-passfoot > .ld-link { margin-top: 10px; }
+
+/* ---------- 7. Your profile: the tabs ----------
+
+   Links to their own pages (/me/, /me/account/; /moderation/ and /disputes/ for those who hold them), current one
+   aria-current="page". The row sits 48px under the pass; its 2px rule is the panel's top. The words "Only you see
+   these" say once that everything below the row is private. */
+.ld-tabsrow { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-top: var(--space-7); border-bottom: 2px solid var(--rule-strong); }
+.ld-ptabs { display: flex; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.ld-ptabs > a { position: relative; flex: none; display: inline-flex; align-items: center; gap: 10px; min-height: 56px; padding: 0 24px;
+  font: 600 16px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; text-decoration: none; white-space: nowrap; color: var(--ink-3); }
+.ld-ptabs > a:first-child { padding-left: 0; }
+.ld-ptabs > a::after { content: ''; position: absolute; left: 24px; right: 24px; bottom: -2px; height: 6px; background: var(--red); transform: scaleX(0); transform-origin: 0 50%; transition: transform var(--dur-wipe) var(--ease-press); }
+.ld-ptabs > a:first-child::after { left: 0; }
+.ld-ptabs > a:hover { color: var(--ink); }
+.ld-ptabs > a:hover::after { transform: scaleX(1); }
+.ld-ptabs > a[aria-current] { color: var(--ink); }
+.ld-ptabs > a[aria-current]::after { transform: scaleX(1); background: var(--ink); }
+.ld-ptabs > a:focus-visible { outline-offset: -3px; }
+.ld-ptabs__count { font-weight: 400; color: var(--ink-3); }
+.ld-private { display: inline-flex; align-items: center; gap: 8px; padding-bottom: 19px; font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
+.ld-private::before { content: ''; width: 10px; height: 10px; background: var(--you); }
+.ld-panel { padding-top: var(--space-6); }
+.ld-panel[hidden] { display: none; }
+
+/* ---------- 8. Games: the ledger; a result opens in place ---------- */
+
+.ld-games { width: 100%; border-collapse: collapse; font: 400 19px/28px var(--font-mono); font-variant-numeric: tabular-nums; }
+.ld-games thead th { padding: 12px 16px 11px; text-align: left; vertical-align: bottom; white-space: nowrap; background: var(--frame); color: var(--on-frame);
+  font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.ld-games thead th:first-child { padding-left: 20px; }
+.ld-games td { padding: 18px 16px 16px; border-bottom: 1px solid var(--rule); vertical-align: top; color: var(--ink); }
+.ld-games td:first-child { padding-left: 20px; }
+.ld-games .is-num { text-align: right; }
+.ld-games tbody > tr:last-child > td { border-bottom: 0; }
+.ld-games__row { cursor: pointer; transition: background-color var(--dur-wipe) var(--ease-out); }
+.ld-games__row:hover { background: var(--paper-2); }
+.ld-games__row.is-open, .ld-games__more { background: var(--paper-2); }
+.ld-games__row.is-open > td { border-bottom-color: transparent; }
+.ld-games__date { white-space: nowrap; color: var(--ink-2); }
+.ld-games__game { display: block; font: 400 28px/.95 var(--font-display); text-transform: uppercase; letter-spacing: .01em; }
+.ld-games__muted { color: var(--ink-3); }
+.ld-games__finish { display: inline-flex; align-items: baseline; gap: 10px; min-height: 44px; margin: -6px 0; padding: 6px 0; font: inherit; color: inherit; background: none; border: 0; cursor: pointer; text-align: left; white-space: nowrap; }
+.ld-games__finish b { font: 400 36px/.9 var(--font-display); text-transform: uppercase; }
+.ld-games__finish .ld-icon { width: 18px; height: 18px; align-self: center; transition: transform var(--dur-wipe) var(--ease-press); }
+.ld-games__finish[aria-expanded="true"] .ld-icon { transform: rotate(180deg); }
+.ld-games__finish:hover b { color: var(--red-ink); }
+.ld-games__more[hidden] { display: none; }
+.ld-games__more > td { padding: 0 20px 28px; }
+.ld-games__result { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 24px 56px; padding-top: 4px; }
+.ld-places { margin: 0; padding: 0; list-style: none; }
+.ld-places__head, .ld-places > li { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; column-gap: 16px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+.ld-places__head { padding: 0 0 8px; border-bottom: 2px solid var(--rule-strong); font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.ld-places > li:last-child { border-bottom: 0; }
+.ld-places > li > span { min-width: 0; overflow-wrap: anywhere; }
+.ld-places .is-num { text-align: right; }
+.ld-places__place { font: 400 28px/.9 var(--font-display); text-transform: uppercase; }
+.ld-places > li.is-you { font-weight: 600; box-shadow: inset 6px 0 0 var(--you); margin-left: -20px; padding-left: 20px; }
+.ld-places__you { font-weight: 400; color: var(--ink-3); }
+.ld-games__facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 24px; margin: 0; align-content: start; }
+.ld-games__facts > div { display: contents; }
+.ld-games__facts dt { padding: 12px 0 10px; border-bottom: 1px solid var(--rule); font: 500 15px/28px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
+.ld-games__facts dd { margin: 0; padding: 12px 0 10px; border-bottom: 1px solid var(--rule); font: 400 19px/28px var(--font-mono); }
+.ld-games__facts > div:last-child > * { border-bottom: 0; }
+
+/* ---------- 9. Account: private facts, each with its one action ---------- */
+
+.ld-account { margin: 0; max-width: 1180px; }
+.ld-account > div { display: grid; grid-template-columns: 300px minmax(0, 1fr) auto; gap: 8px 32px; align-items: start; padding: 24px 0 26px; border-top: 1px solid var(--rule); }
+.ld-account > div:first-child { border-top: 0; padding-top: 4px; }
+.ld-account dt { padding-top: 6px; font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.ld-account dd { margin: 0; min-width: 0; }
+.ld-account__value { display: block; font: 400 28px/1 var(--font-display); text-transform: uppercase; letter-spacing: .01em; overflow-wrap: anywhere; }
+.ld-account__value--mono { font: 500 19px/28px var(--font-mono); text-transform: none; letter-spacing: 0; }
+.ld-account__note { display: block; margin-top: 8px; font: 400 19px/28px var(--font-sans); color: var(--ink-2); max-width: 56ch; }
+.ld-account__act { justify-self: end; }
+
+/* ---------- 10. The players page (/players/): search and the directory ---------- */
+
+.ld-phead { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 520px); align-items: end; gap: 24px 48px; padding-bottom: 12px; }
+.ld-phead h1 { margin: 0; font: 400 88px/.88 var(--font-display); text-transform: uppercase; }
+.ld-search { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; align-items: end; margin: 0; }
+.ld-search label { grid-column: 1 / -1; font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.ld-dirhead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 24px; padding: 16px 0 12px; }
+.ld-dirhead p { margin: 0; font: 400 19px/28px var(--font-mono); color: var(--ink-2); }
+.ld-dir { margin: 0; padding: 0; list-style: none; border-top: 2px solid var(--rule-strong); }
+.ld-dir > li { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto 24px; align-items: center; gap: 4px 32px; padding: 16px 4px 14px; border-bottom: 1px solid var(--rule); transition: background-color var(--dur-wipe) var(--ease-out); }
+.ld-dir > li:last-child { border-bottom: 0; }
+.ld-dir > li:hover { background: var(--paper-2); }
+.ld-dir a { font: 400 36px/.94 var(--font-display); text-transform: uppercase; color: var(--ink); text-decoration: none; min-width: 0; overflow-wrap: anywhere; padding-top: 2px; }
+.ld-dir a::after { content: ''; position: absolute; inset: 0; }   /* the whole row is the link */
+.ld-dir a:focus-visible { outline: 0; }
+.ld-dir > li:has(a:focus-visible) { outline: 3px solid var(--focus); outline-offset: -3px; }
+.ld-dir a mark { background: none; color: inherit; box-shadow: inset 0 -.12em 0 var(--yellow); }
+.ld-dir__since { font: 400 19px/28px var(--font-mono); color: var(--ink-2); white-space: nowrap; }
+.ld-dir .ld-icon { width: 20px; height: 20px; color: var(--ink-3); }
+.ld-none { margin-top: 16px; padding: 22px 0 6px; border-top: 2px solid var(--rule-strong); }
+.ld-none b { display: block; margin-bottom: 8px; font: 400 36px/.94 var(--font-display); text-transform: uppercase; color: var(--ink); overflow-wrap: anywhere; }
+.ld-none p { margin: 0; max-width: 64ch; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-pager { display: flex; justify-content: space-between; gap: 12px; padding-top: 20px; }
+
+/* ---------- 12. Sign in and create account: the ticket ----------
+
+   The account pages are printed on the pass's stock: a ticket with a main part, the Neta perforation and a stub
+   (.ld-pass .ld-ticket — the pass's frame, notches and perforation, its own inside). What you type sits on the main
+   part. Anything that happens in Keplr sits in a black key field (data-theme="press"), so the security-sensitive step
+   never looks like the rest of the form. Each page has one red action. */
+.ld-ticket { --stub-w: clamp(360px, 30cqi, 440px); max-width: 1180px; margin-inline: auto; }
+.ld-ticket__main { display: flex; flex-direction: column; min-width: 0; }
+.ld-ticket__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px 32px; padding: 30px 32px 24px; border-bottom: 2px solid var(--pass-edge); }
+.ld-ticket__head h1 { margin: 0; min-width: 0; font: 400 88px/.88 var(--font-display); text-transform: uppercase; overflow-wrap: anywhere; padding-top: .04em; }
+.ld-ticket__head h1:focus { outline: 0; }
+.ld-ticket__alt { margin: 0 0 4px; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-ticket__alt .ld-link { margin-left: 6px; vertical-align: baseline; }
+.ld-ticket__stub { display: flex; flex-direction: column; min-width: 0; background: var(--pass-stub); }
+.ld-ticket__after { max-width: 1180px; margin: 18px auto 0; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-ticket .ld-pass__perf { background: var(--pass-stub); }
+
+/* Steps: a numbered row for each thing you do, in order. The mark is a punch: an open ring to do, inked when done,
+   red when it needs attention. The words beside it always say the same. */
+.ld-steplist { margin: 0; padding: 0; border: 0; min-width: 0; }
+.ld-step { display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: 20px; padding: 26px 32px 30px; border-top: 1px solid var(--rule); min-width: 0; }
+.ld-steplist > .ld-step:first-child { border-top: 0; }
+.ld-step__mark { width: 40px; height: 40px; display: grid; place-items: center; border: 2px solid var(--ink-3); border-radius: var(--radius-token); font: 400 22px/1 var(--font-display); color: var(--ink-3); padding-top: 2px; }
+.ld-step.is-active .ld-step__mark { border-color: var(--ink); color: var(--ink); }
+.ld-step.is-done .ld-step__mark { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+.ld-step.is-error .ld-step__mark { border-color: var(--red); color: var(--red-ink); }
+.ld-step__body { min-width: 0; }
+.ld-step__top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px 16px; min-height: 40px; }
+.ld-step__label { font: 600 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+/* A step's status: a ring while pending, a disc when good, a square when there is a problem (shape, not only colour). */
+.ld-step__status { display: inline-flex; align-items: center; gap: 10px; font: 400 19px/24px var(--font-mono); color: var(--ink-2); }
+.ld-step__status::before { content: ''; flex: none; width: 12px; height: 12px; border: 2px solid currentColor; border-radius: var(--radius-token); }
+.ld-step__status.is-ok { color: var(--ink); }
+.ld-step__status.is-ok::before { background: currentColor; }
+.ld-step__status.is-bad { color: var(--red-ink); }
+.ld-step__status.is-bad::before { border-radius: 0; background: currentColor; }
+.ld-step__status:empty { display: none; }
+.ld-step__row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.ld-step__row .ld-pinput { flex: 1 1 180px; }
+.ld-tfield .ld-step__row { margin-top: 0; }
+.ld-step__body > .ld-tfield { margin-top: 12px; }
+.ld-pinput--name { min-height: 60px; font-size: 24px; font-weight: 500; }
+.ld-step__note { margin: 12px 0 0; max-width: 54ch; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-step__note b { font-weight: 600; color: var(--ink); }
+.ld-step__error { margin: 10px 0 0; max-width: 54ch; font: 500 19px/28px var(--font-sans); color: var(--red-ink); }
+.ld-step__error[hidden] { display: none; }
+.ld-step.is-error .ld-pinput { border-color: var(--red); box-shadow: inset 6px 0 0 var(--red); }
+
+/* The key field: everything that happens in Keplr. */
+.ld-key { flex: 1 1 auto; background: var(--paper); color: var(--ink); }
+.ld-key .ld-step { border-top: 0; padding: 26px 28px 30px; }
+.ld-key__lede { margin: 12px 0 0; max-width: 46ch; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-key__lede b { font-weight: 600; color: var(--ink); }
+.ld-key__acts { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 22px; }
+.ld-key__wallet { display: grid; gap: 4px; margin: 20px 0 0; padding: 14px 16px 16px; border: 2px solid var(--rule-strong); }
+.ld-key__wallet dt { font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.ld-key__wallet dd { margin: 0; font: 500 19px/28px var(--font-mono); overflow-wrap: anywhere; }
+.ld-key__wallet dd + dd { font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+/* What Keplr will show: the three things to check before approving. */
+.ld-key__check { margin: 20px 0 0; padding: 16px 18px 18px; border: 2px dashed var(--rule-strong); }
+.ld-key__check p { margin: 0; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-key__check ul { margin: 10px 0 12px; padding: 0; list-style: none; display: grid; gap: 4px; }
+.ld-key__check li { display: grid; grid-template-columns: 7.2em minmax(0, 1fr); gap: 12px; font: 400 19px/28px var(--font-mono); color: var(--ink); overflow-wrap: anywhere; }
+.ld-key__check li span { font-size: 15px; letter-spacing: .04em; text-transform: uppercase; }
+.ld-key__check li span { color: var(--ink-3); }
+.ld-key__msg { margin: 20px 0 0; }
+.ld-key__msg b { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; font: 400 28px/.94 var(--font-display); text-transform: uppercase; color: var(--ink); }
+.ld-key__msg b::before { content: ''; flex: none; width: 14px; height: 14px; background: var(--red-ink); }
+.ld-key__msg p { margin: 0; max-width: 46ch; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-say { margin: 14px 0 0; font: 400 19px/28px var(--font-mono); color: var(--ink-2); }
+.ld-say:empty { display: none; }
+
+/* Step 4, Create account: under the key field, on the stub's tint, so creating the account is a separate act. */
+.ld-go { padding: 26px 28px 30px; }
+.ld-go .ld-step { padding: 0; border: 0; }
+.ld-go .ld-btn { margin-top: 14px; }
+.ld-go__why { margin: 12px 0 0; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+
+/* Buttons the account pages add to Ludum's set. */
+.ld-btn--red { --b-bg: var(--red); --b-fg: var(--on-red); --b-edge: var(--red); --b-wipe: var(--ink); --b-wipe-fg: var(--paper); }
+.ld-btn--yellow { --b-bg: var(--yellow); --b-fg: var(--on-yellow); --b-edge: var(--yellow); --b-wipe: var(--ink); --b-wipe-fg: var(--paper); }
+.ld-btn--l { min-height: 64px; padding: 0 24px 0 28px; font-size: 18px; line-height: 20px; }
+.ld-btn--block { display: flex; width: 100%; }
+.ld-btn--block, .ld-btn[aria-busy="true"] { white-space: normal; text-align: left; padding-block: 10px; }
+.ld-btn[aria-disabled="true"] { --b-bg: transparent; --b-fg: var(--ink-3); --b-edge: var(--ink-3); cursor: not-allowed; background-image: repeating-linear-gradient(135deg, var(--rule) 0 2px, transparent 2px 9px); }
+.ld-btn[aria-disabled="true"]::before { display: none; }
+.ld-btn[aria-disabled="true"]:hover { color: var(--ink-3); }
+.ld-btn[aria-busy="true"] { --b-bg: transparent; --b-fg: var(--ink); --b-edge: var(--rule-strong); background-image: none; cursor: progress; }
+.ld-btn[aria-busy="true"]:hover { color: var(--ink); }
+/* Waiting: three holes punched in turn (still under reduced motion). */
+.ld-wait { display: inline-flex; gap: 5px; }
+.ld-wait i { width: 9px; height: 9px; border: 2px solid currentColor; border-radius: var(--radius-token); animation: ld-punch 1.2s steps(1, end) infinite; }
+.ld-wait i:nth-child(2) { animation-delay: .4s; }
+.ld-wait i:nth-child(3) { animation-delay: .8s; }
+@keyframes ld-punch { 0% { background: currentColor; } 34% { background: transparent; } 100% { background: transparent; } }
+.ld-play--s { height: 64px; padding: 4px 22px 0 24px; font-size: 32px; border: 2px solid var(--frame); }
+
+/* Success: the ticket is issued. The head carries the new name; the stub lists what was made. */
+.ld-welcome { padding: 28px 32px 32px; }
+.ld-welcome__lede { margin: 0; max-width: 40ch; font: 400 22px/32px var(--font-sans); color: var(--ink); }
+.ld-welcome__acts { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 24px; }
+.ld-welcome__next { margin: 24px 0 0; max-width: 52ch; padding-top: 18px; border-top: 1px solid var(--rule); font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-issued { margin: 0; padding: 22px 28px 26px; }
+.ld-issued > div { padding: 12px 0 14px; border-top: 1px solid var(--rule); }
+.ld-issued > div:first-child { border-top: 0; padding-top: 0; }
+.ld-issued dt { font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.ld-issued dd { margin: 6px 0 0; font: 500 19px/28px var(--font-mono); overflow-wrap: anywhere; }
+.ld-issued dd.is-name { font: 400 36px/.94 var(--font-display); text-transform: uppercase; }
+
+/* Sign in: Keplr first, in a black band across the main part; the password a press away under it. */
+.ld-signin__key { background: var(--paper); color: var(--ink); padding: 28px 32px 32px; }
+.ld-signin__key .ld-key__lede { margin-top: 0; }
+.ld-alt { padding: 18px 32px 30px; }
+.ld-alt__toggle { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; margin: 0; padding: 0; font: 600 16px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); background: none; border: 0; cursor: pointer; }
+.ld-alt__toggle span { background: linear-gradient(currentColor, currentColor) 0 100% / 100% 2px no-repeat; padding-bottom: 4px; }
+.ld-alt__toggle:hover { color: var(--red-ink); }
+.ld-alt__toggle .ld-icon { width: 18px; height: 18px; }
+.ld-alt__toggle[aria-expanded="true"] .ld-plus-v { display: none; }
+.ld-alt__panel { display: grid; gap: 22px; max-width: 600px; margin-top: 14px; }
+.ld-alt__panel[hidden] { display: none; }
+.ld-tfield { display: grid; gap: 8px; min-width: 0; }
+.ld-tfield label { font: 600 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.ld-tfield.is-error .ld-pinput { border-color: var(--red); box-shadow: inset 6px 0 0 var(--red); }
+.ld-alt__acts { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.ld-alt__note { margin: 0; max-width: 54ch; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-formerror { margin: 0; font: 500 19px/28px var(--font-sans); color: var(--red-ink); }
+.ld-formerror[hidden] { display: none; }
+.ld-stubcopy { justify-content: flex-start; gap: 24px; padding: 28px 28px 30px; }
+.ld-stubcopy > div { display: grid; gap: 12px; justify-items: start; align-content: start; }
+.ld-stubcopy > div + div { padding-top: 22px; border-top: 1px solid var(--rule); }
+.ld-stubcopy__label { margin: 0; font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.ld-stubcopy__note { margin: 0; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+
+/* Reset password: the key field is a band in the main part, steps 2 and 3 under it on cream. */
+.ld-ticket__main > .ld-key { flex: none; }
+/* "or" between two ways to do one step; an inline key field for the Keplr way. */
+.ld-or { display: flex; align-items: center; gap: 14px; margin: 18px 0; font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.ld-or::before, .ld-or::after { content: ''; flex: 1 1 auto; height: 1px; background: var(--rule); }
+.ld-keyin { padding: 16px 18px 18px; background: var(--paper); color: var(--ink); }
+.ld-keyin .ld-key__lede { margin: 0; }
+.ld-keyin .ld-key__acts { margin-top: 14px; }
+
+/* ---------- 13. Changing the Authorization Wallet (Account tab) ----------
+
+   Three steps, in order, each gated by the one before: your password; the current wallet's approval; the new wallet's
+   acceptance. The two Keplr steps sit in key fields. Nothing changes until the new wallet accepts. */
+.ld-account__more { grid-column: 1 / -1; }
+.ld-change { margin-top: 18px; border: 2px solid var(--rule-strong); background: var(--sheet); }
+.ld-change__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 24px; padding: 16px 24px 14px; border-bottom: 2px solid var(--rule-strong); }
+.ld-change__head h3 { margin: 0; font: 400 28px/1 var(--font-display); text-transform: uppercase; }
+.ld-change__head p { margin: 0; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-change .ld-step { padding: 22px 24px 24px; }
+.ld-change .ld-key { flex: none; }
+.ld-change .ld-key + .ld-key .ld-step { box-shadow: inset 0 1px 0 var(--rule); }
+.ld-change__foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px 24px; padding: 16px 24px 18px; border-top: 2px solid var(--rule-strong); }
+.ld-change__foot p { margin: 0; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+
+/* ---------- 14. Responsive: recomposed, not stacked ---------- */
+
+/* Laptop: the stub moves under the main part; the perforation turns across, notched at both ends. */
+@container ldp (max-width: 1279px) {
+  .ld-pass { --plate-w: 400px; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto var(--perf-w) auto; }
+  .ld-pass__perf > i { top: calc(50% - 3px); bottom: auto; left: 18px; right: 18px; width: auto; height: 6px; background: linear-gradient(90deg, var(--perf-from), var(--perf-to));
+    -webkit-mask: radial-gradient(circle 3px at 3px 50%, #000 96%, transparent) 0 0 / 13px 6px repeat-x; mask: radial-gradient(circle 3px at 3px 50%, #000 96%, transparent) 0 0 / 13px 6px repeat-x; }
+  .ld-pass__perf::before, .ld-pass__perf::after { top: calc(50% - var(--notch) / 2); bottom: auto; }
+  .ld-pass__perf::before { left: calc(-2px - var(--notch) / 2); clip-path: inset(-2px -2px -2px 50%); }
+  .ld-pass__perf::after { left: auto; right: calc(-2px - var(--notch) / 2); clip-path: inset(-2px 50% -2px -2px); }
+  .ld-pass__stub { grid-template-rows: none; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 0 32px; }
+  .ld-pass__stub > div { justify-content: center; padding: 16px 20px 18px; border-top: 0; border-left: 1px solid var(--rule); }
+  .ld-pass__stub > div:first-child { border-left: 0; padding-left: 0; }
+  .ld-pass__stub dd { font-size: 36px; }
+  .ld-pass__name { font-size: 76px; }
+  .ld-fig--credits dd { font-size: 120px; }
+  .ld-plate__num { font-size: 104px; }
+  .ld-plates--stack .ld-plate__num { font-size: 64px; }
+  .ld-fig--earn dd, .ld-fig--rank dd { font-size: 48px; }
+  .ld-phead h1 { font-size: 76px; }
+}
+@container ldp (max-width: 1023px) {
+  .ld-pass { --plate-w: 320px; }
+  .ld-pass__head, .ld-fig--credits { padding-inline: 24px; }
+  .ld-fig--earn { padding-left: 24px; }
+  .ld-fig--earn, .ld-fig--rank { padding-right: 16px; }
+  .ld-plate { padding: 22px 24px 24px; }
+  .ld-plates--stack .ld-plate, .ld-plates--dense .ld-plate { padding-inline: 24px; }
+  .ld-pass__stub { padding: 0 24px; }
+  .ld-pass__name { font-size: 64px; }
+  .ld-fig--credits dd { font-size: 96px; }
+  .ld-plate__num { font-size: 88px; }
+  .ld-plates--stack .ld-plate__num { font-size: 56px; }
+  .ld-plates--dense .ld-plate__num { font-size: 48px; }
+  .ld-fig--earn dd, .ld-fig--rank dd { font-size: 44px; }
+  .ld-pass__stub dd { font-size: 32px; }
+  .ld-games__result { grid-template-columns: minmax(0, 1fr); }
+  .ld-account > div { grid-template-columns: minmax(0, 1fr) auto; }
+  .ld-account dt { grid-column: 1 / -1; }
+  .ld-how dl { grid-template-columns: minmax(0, 1fr); }
+  .ld-games .c-players { display: none; }
+  .ld-phead { grid-template-columns: minmax(0, 1fr); }
+  .ld-phead h1 { font-size: 64px; }
+}
+/* Phone: Credits takes the full width under the name; Lifetime Earnings and Activity Rank share the next row; every
+   plate becomes a band (name and state at left, numeral at right); the stub is a strip of three. No cell is taller
+   than its content. */
+@container ldp (max-width: 599px) {
+  .ld-profile { padding-block: var(--space-5) var(--space-7); }
+  .ld-pass { --notch: 22px; --plate-w: auto; --perf-w: 22px; }
+  .ld-pass__main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "name name" "credits credits" "earn rank" "plate plate"; }
+  .ld-pass__head { padding: 20px 18px 16px; }
+  .ld-pass__name { font-size: 52px; }
+  .ld-pass__name--m { font-size: 36px; }
+  .ld-pass__name--s { font-size: 28px; }
+  .ld-fig { gap: 8px; }
+  .ld-fig dt, .ld-pass__stub dt, .ld-plate__label { font-size: 13px; line-height: 16px; }
+  .ld-fig dt small { font-size: 13px; line-height: 16px; }
+  .ld-fig--credits { justify-content: flex-start; padding: 18px 18px 20px; }
+  .ld-fig--credits dd { font-size: 72px; }
+  .ld-fig--earn { padding: 16px 12px 18px 18px; }
+  .ld-fig--rank { padding: 16px 12px 18px 16px; }
+  .ld-fig--earn dd, .ld-fig--rank dd { font-size: 36px; }
+  .ld-fig__of { font-size: 16px; margin-left: 6px; }
+  .ld-plates { grid-auto-rows: auto; }
+  .ld-plate, .ld-plates--stack .ld-plate, .ld-plates--dense .ld-plate { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "head num" "state state"; align-items: end; gap: 12px 16px; padding: 18px; }
+  .ld-plates--dense .ld-plate:not(:first-child) .ld-plate__label, .ld-plates--dense .ld-plate__unit, .ld-plates--dense .ld-plate.is-established .ld-plate__count { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+  .ld-plates--dense .ld-punches { display: inline-flex; }
+  .ld-plate__head { grid-area: head; gap: 6px; }
+  .ld-plate__game, .ld-plates--dense .ld-plate__game { font-size: 24px; }
+  .ld-plate__num { grid-area: num; font-size: 64px; }
+  .ld-plates--stack .ld-plate__num, .ld-plates--dense .ld-plate__num { font-size: 48px; }
+  .ld-plate__state, .ld-plates--stack .ld-plate__state, .ld-plates--dense .ld-plate__state { grid-area: state; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 16px; line-height: 22px; }
+  .ld-plate__word, .ld-plates--dense .ld-plate__word { font-size: 16px; line-height: 22px; }
+  .ld-punches i, .ld-plates--stack .ld-punches i, .ld-plates--dense .ld-punches i { width: 14px; height: 14px; }
+  .ld-pass__stub { padding: 0 18px; }
+  .ld-pass__stub > div { justify-content: flex-start; gap: 8px; padding: 14px 10px 16px 12px; }
+  .ld-pass__stub > div:first-child { padding-left: 0; }
+  .ld-pass__stub dt { font-size: 12px; letter-spacing: .06em; }
+  .ld-pass__stub dd { font-size: 26px; }
+  .ld-passfoot { flex-direction: column; gap: 0; padding-top: 8px; }
+  .ld-how { flex: none; width: 100%; }
+  .ld-passfoot > .ld-link { margin-top: 4px; }
+  .ld-tabsrow { flex-wrap: wrap; margin-top: var(--space-6); }
+  .ld-ptabs > a { padding: 0 18px; }
+  .ld-private { order: -1; flex-basis: 100%; padding-bottom: 0; font-size: 13px; }
+  /* Games: each row a block — game and date beside the finish, then table, credits and rating; the result reads straight down. */
+  .ld-games thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .ld-games, .ld-games tbody, .ld-games tr, .ld-games td { display: block; }
+  .ld-games__row { display: grid !important; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "game game finish" "date date finish" "tbl credits rating"; gap: 4px 16px; padding: 16px 0 14px; border-bottom: 1px solid var(--rule); }
+  .ld-games__row > td { padding: 0; border: 0; }
+  .ld-games__row > td:first-child { padding-left: 0; }
+  .ld-games__row > .c-date { grid-area: date; }
+  .ld-games__row > .c-game { grid-area: game; }
+  .ld-games__row > .c-finish { grid-area: finish; align-self: center; }
+  .ld-games__row > .c-table { grid-area: tbl; margin-top: 6px; }
+  .ld-games__row > .c-credits { grid-area: credits; margin-top: 6px; }
+  .ld-games__row > .c-rating { grid-area: rating; margin-top: 6px; text-align: right; }
+  .ld-games__row.is-open { border-bottom: 0; padding-left: 12px; padding-right: 12px; margin-inline: -12px; }
+  .ld-games__more { margin-inline: -12px; padding: 0 12px; border-bottom: 1px solid var(--rule); }
+  .ld-games__more > td { padding: 4px 0 20px; }
+  .ld-games__game { font-size: 24px; }
+  .ld-games__finish b { font-size: 32px; }
+  .ld-places__head, .ld-places > li { grid-template-columns: 56px minmax(0, 1fr) auto; column-gap: 10px; }
+  .ld-places > li.is-you { margin-left: -12px; padding-left: 12px; }
+  .ld-games__facts { grid-template-columns: minmax(0, 1fr); }
+  .ld-games__facts dt { padding: 12px 0 0; border-bottom: 0; line-height: 18px; }
+  .ld-games__facts dd { padding: 4px 0 12px; }
+  .ld-account > div { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 20px 0; }
+  .ld-account__act { justify-self: start; }
+  .ld-account__value { font-size: 24px; }
+  .ld-phead { padding-bottom: 8px; }
+  .ld-phead h1 { font-size: 52px; }
+  .ld-dir > li { grid-template-columns: minmax(0, 1fr) 20px; gap: 6px 16px; padding: 14px 0 12px; }
+  .ld-dir a { font-size: 28px; }
+  .ld-dir__since { grid-row: 2; }
+  .ld-dir .ld-icon { grid-row: 1 / 3; grid-column: 2; }
+  .ld-none b { font-size: 28px; }
+}
+/* Small phones (under 380): the plate's numeral drops under its name; the stub's figures step down. */
+@container ldp (max-width: 379px) {
+  .ld-plate, .ld-plates--stack .ld-plate, .ld-plates--dense .ld-plate { grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "num" "state"; gap: 10px; }
+  .ld-plate__num { font-size: 56px; }
+  .ld-pass__head { padding-inline: 16px; }
+  .ld-fig--credits { padding-inline: 16px; }
+  .ld-fig--earn { padding-left: 16px; }
+  .ld-fig--earn, .ld-fig--rank { padding-right: 8px; }
+  .ld-fig--rank { padding-left: 12px; }
+  .ld-fig--earn dd, .ld-fig--rank dd { font-size: 32px; }
+  .ld-pass__stub { padding: 0 16px; }
+  .ld-pass__stub > div { padding-inline: 8px 4px; }
+  .ld-pass__stub dd { font-size: 22px; }
+  .ld-ptabs > a { padding: 0 14px; }
+}
+
+/* ---------- 15. The account pages at smaller widths ---------- */
+
+@container ldp (max-width: 1279px) {
+  .ld-ticket { --stub-w: auto; }
+  .ld-ticket__head h1 { font-size: 76px; }
+  .ld-ticket__stub { flex-direction: column; }
+  .ld-stubcopy { flex-direction: row; flex-wrap: wrap; }
+  .ld-stubcopy > div { flex: 1 1 280px; }
+  .ld-stubcopy > div + div { padding-top: 0; border-top: 0; padding-left: 28px; border-left: 1px solid var(--rule); }
+}
+@container ldp (max-width: 1023px) {
+  .ld-ticket__head { padding-inline: 24px; }
+  .ld-ticket__head h1 { font-size: 64px; }
+  .ld-step { padding-inline: 24px; }
+  .ld-key .ld-step, .ld-go, .ld-issued, .ld-stubcopy { padding-inline: 24px; }
+  .ld-signin__key, .ld-alt, .ld-welcome { padding-inline: 24px; }
+}
+@container ldp (max-width: 599px) {
+  .ld-ticket__head { padding: 20px 18px 16px; gap: 8px; }
+  .ld-ticket__head h1 { font-size: 52px; }
+  .ld-ticket__alt { margin: 0; }
+  .ld-step { grid-template-columns: 32px minmax(0, 1fr); column-gap: 14px; padding: 20px 18px 22px; }
+  .ld-step__mark { width: 32px; height: 32px; font-size: 18px; }
+  .ld-step__top { min-height: 32px; }
+  .ld-pinput--name { font-size: 22px; min-height: 56px; }
+  .ld-key .ld-step, .ld-go, .ld-issued, .ld-stubcopy { padding: 20px 18px 22px; }
+  .ld-change .ld-step { padding: 20px 16px 22px; }
+  .ld-key__acts > .ld-btn, .ld-go .ld-btn, .ld-welcome__acts > *, .ld-alt__acts > .ld-btn, .ld-stubcopy .ld-btn { width: 100%; }
+  .ld-key__check li { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .ld-signin__key, .ld-alt, .ld-welcome { padding: 20px 18px 24px; }
+  .ld-stubcopy { flex-direction: column; }
+  .ld-stubcopy > div { flex: none; }
+  .ld-stubcopy > div + div { padding: 20px 0 0; border-left: 0; border-top: 1px solid var(--rule); }
+  .ld-welcome__lede { font-size: 19px; line-height: 28px; }
+  .ld-change__head, .ld-change__foot { padding-inline: 16px; }
+}
+@container ldp (max-width: 379px) {
+  .ld-ticket__head h1 { font-size: 44px; }
+  .ld-step { grid-template-columns: minmax(0, 1fr); row-gap: 10px; }
+  .ld-step__mark { grid-row: 1; }
+}
+
+/* ---------- 16. Motion and forced colours ---------- */
+
+@media (prefers-reduced-motion: reduce) { .ld-profile *, .ld-profile *::before, .ld-profile *::after { transition: none !important; } .ld-wait i { animation: none; background: currentColor; } }
+@media (forced-colors: active) {
+  .ld-pass__perf > i { background: CanvasText; }
+  .ld-punches i { forced-color-adjust: none; border-color: CanvasText; }
+  .ld-punches i.is-punched { background: CanvasText; }
+  .ld-step__mark, .ld-step__status::before, .ld-wait i { forced-color-adjust: none; border-color: CanvasText; }
+  .ld-step.is-done .ld-step__mark, .ld-step__status.is-ok::before, .ld-step__status.is-bad::before { background: CanvasText; color: Canvas; }
+  .ld-btn[aria-disabled="true"] { border-color: GrayText; color: GrayText; }
+}

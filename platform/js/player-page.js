@@ -1,113 +1,145 @@
-/* Ludum · /players/?name=<display name> — a player's PUBLIC profile (1830Juno §18, owner policy 2026-10-22: all of it
- * from the account's first day). Identity: the name every table shows and the month they joined. Experience: completed
- * games, unique opponents, activity rank. Performance: Credits, Lifetime Earnings (never below 0) and each game's own
- * Skill Rating, labelled Provisional until 5 rated games in that game. Every figure is the server's (`player`), never
- * counted here. Anyone may read it, signed in or not. Nothing private is ever here: no username, wallet, advance, entry
- * or signed figure -- the server never sends one. Needs session.js and records.js. */
+/* Ludum · /players/ -- a player's PUBLIC profile (`?name=`), or the PLAYERS page: find a player by name, or browse everyone
+ * A to Z (Ludum Profile "the pass", owner 2026-10-22; 1830Juno §19).
+ *
+ * `?name=<Player Name>`: the pass -- exactly what the server's public `player` answer says (§18: every figure from the
+ * account's first day; a Skill Rating Provisional until five rated games in its game), then one line under it ("How these
+ * figures are counted", "Find a player"). No username, wallet, id, advance or signed figure ever reaches this page. An
+ * unknown name: "No player is called ...", with the search.
+ *
+ * No `name`: the Players page (`players`): the search (the start of any word in a name, case-insensitive; the match
+ * underlined), then whole-row links -- the name, the month the player joined, an arrow -- 50 a page, A to Z. No ranks, no
+ * figures, no leaderboard. `?q=` and `?page=` keep the page addressable. Needs session.js and pass.js.
+ */
 (function () {
   'use strict';
-  var R = window.LudumRecords;
+  var P = window.LudumPass;
   var NAME_MAX = 64;
+  var QUERY_MAX = 64;
 
-  /** The name asked for (pure): the `name` query value, trimmed, or null. */
+  /** The profile asked for (pure): the `name` query value, trimmed, or null. */
   function nameOf(search) {
     var raw = new URLSearchParams(String(search || '')).get('name');
     if (raw === null) return null;
     var name = raw.trim();
     return name === '' || name.length > NAME_MAX ? null : name;
   }
+  /** The directory asked for (pure): {query, page}. */
+  function directoryOf(search) {
+    var params = new URLSearchParams(String(search || ''));
+    var query = (params.get('q') || '').trim().slice(0, QUERY_MAX);
+    var page = parseInt(params.get('page') || '1', 10);
+    return { query: query, page: isFinite(page) && page >= 1 && page <= 1000 ? page : 1 };
+  }
+  /** Where the query matches the start of a word in `name`, case-insensitively (pure): [start, end] or null. The server
+   *  decides who matches; this only marks it. */
+  function matchOf(name, query) {
+    var q = String(query || '').normalize('NFKC').toLocaleLowerCase('en-US').replace(/\s+/g, ' ').trim();
+    if (!q) return null;
+    var lower = String(name).normalize('NFKC').toLocaleLowerCase('en-US');
+    if (lower.length !== String(name).length) return null;
+    for (var at = 0; at < lower.length; at += 1) {
+      var start = at === 0 || !/[\p{L}\p{N}]/u.test(lower.charAt(at - 1));
+      if (start && lower.slice(at, at + q.length) === q) return [at, at + q.length];
+    }
+    return null;
+  }
+  /** The count line (pure). */
+  function countLine(total, query) {
+    if (query) return total + ' player' + (total === 1 ? '' : 's') + ' matching “' + query + '”';
+    return 'All ' + total + ' player' + (total === 1 ? '' : 's') + ', A to Z';
+  }
 
-  var TIPS = {
-    completed: 'Games played to the end. Cancelled games and games still in play do not count.',
-    opponents: 'Different players met in completed games. Each counts once.',
-    rank: 'Place among all players by completed games; ties share a place. It counts activity, not skill.',
-    credits: 'Credits held now, including any in play at unfinished tables.',
-    earnings: 'Payouts minus wagers, over settled games. Never shown below 0.',
-    rating: 'Each game has its own Skill Rating, starting at 1,500. It is provisional until 5 rated games in that game.'
-  };
+  var el = P.el;
 
-  var count = function (n) { return typeof n === 'number' && isFinite(n) ? String(n) : '—'; };
-  /** A figure's value as the server gives it ("—" when it gives none). */
-  var valueOf = function (figure, format) { return figure && typeof figure.value === 'number' ? format(figure.value) : '—'; };
+  function search(initial) {
+    var input = el('input', { class: 'ld-pinput', id: 'pl-q', name: 'q', value: initial || '', maxlength: String(QUERY_MAX), autocomplete: 'off', spellcheck: 'false', placeholder: 'Player Name' });
+    return el('form', { class: 'ld-search', role: 'search', action: '/players/', 'aria-label': 'Find a player' }, [
+      el('label', { for: 'pl-q', text: 'Find a player' }), input,
+      el('button', { class: 'ld-btn ld-btn--secondary', type: 'submit' }, ['Find ', P.svg(P.ARROW_RIGHT)])
+    ]);
+  }
 
-  /** What the page shows (pure; pinned by platform/tests/records.test.mjs): the month joined, and the two groups of
-   *  stats, each {label, value, small, tip}. */
-  function profileOf(p) {
-    var rank = p.activityRank && typeof p.activityRank.rank === 'number' ? p.activityRank : null;
-    var experience = [
-      { label: 'Completed Games', value: count(p.completedGames), small: null, tip: TIPS.completed },
-      { label: 'Unique Opponents', value: count(p.uniqueOpponents), small: null, tip: TIPS.opponents },
-      { label: 'Activity Rank', value: rank ? '#' + rank.rank : '—', small: rank ? 'of ' + rank.of : p.completedGames === 0 ? 'Not ranked yet' : null, tip: TIPS.rank }
-    ];
-    var performance = [
-      { label: 'Credits', value: valueOf(p.credits, function (v) { return R.credits(v); }), small: null, tip: TIPS.credits },
-      { label: 'Lifetime Earnings', value: valueOf(p.lifetimeEarnings, function (v) { return R.credits(v); }), small: null, tip: TIPS.earnings }
-    ];
-    (p.ratings || []).forEach(function (r) {
-      var f = r.rating || {};
-      var provisional = f.state === 'provisional';
-      performance.push({ label: 'Skill Rating · ' + r.name, value: valueOf(f, R.rating), small: provisional ? 'Provisional · ' + (f.games || 0) + ' of ' + (f.needed || 5) : null, tip: TIPS.rating });
+  function none(name, extra) {
+    return el('div', { class: 'ld-none' }, [el('b', { text: 'No player is called “' + name + '”' }), el('p', { text: 'Check the spelling: names are the ones shown at the tables. ' + (extra || 'Search matches the start of any word in a name.') })]);
+  }
+
+  function row(player, query) {
+    var m = matchOf(player.name, query);
+    var label = m ? [player.name.slice(0, m[0]), el('mark', { text: player.name.slice(m[0], m[1]) }), player.name.slice(m[1])] : [player.name];
+    return el('li', null, [
+      el('a', { href: '/players/?name=' + encodeURIComponent(player.name) }, label),
+      el('span', { class: 'ld-dir__since', text: 'Member since ' + P.month(player.memberSince) }),
+      P.svg(P.ARROW_RIGHT)
+    ]);
+  }
+
+  function pageHref(query, page) {
+    var params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (page > 1) params.set('page', String(page));
+    var text = params.toString();
+    return '/players/' + (text ? '?' + text : '');
+  }
+
+  /** The Players page. */
+  function directory(slot, session, asked) {
+    slot.textContent = '';
+    var results = el('div', { 'aria-live': 'polite' }, [el('p', { class: 'ld-dirhead', text: 'Reading the players…' })]);
+    slot.appendChild(el('header', { class: 'ld-phead' }, [el('h1', { text: 'Players' }), search(asked.query)]));
+    slot.appendChild(results);
+    document.title = (asked.query ? '“' + asked.query + '” — ' : '') + 'Players — Ludum';
+    return session.api('players', asked.query ? { query: asked.query, page: asked.page } : { page: asked.page }).then(function (answer) {
+      results.textContent = '';
+      if (!answer.players.length) {
+        results.appendChild(asked.query ? none(asked.query) : el('div', { class: 'ld-none' }, [el('b', { text: 'No players yet' }), el('p', { text: 'Players appear here once they create an account.' })]));
+        return;
+      }
+      results.appendChild(el('div', { class: 'ld-dirhead' }, [el('p', { text: countLine(answer.total, asked.query) }), answer.pages > 1 ? el('p', { text: 'Page ' + answer.page + ' of ' + answer.pages }) : null]));
+      results.appendChild(el('ol', { class: 'ld-dir' }, answer.players.map(function (p) { return row(p, asked.query); })));
+      if (answer.pages > 1) {
+        results.appendChild(el('nav', { class: 'ld-pager', 'aria-label': 'Pages' }, [
+          answer.page > 1 ? el('a', { class: 'ld-link', href: pageHref(asked.query, answer.page - 1), text: '← Previous' }) : el('span'),
+          answer.page < answer.pages ? el('a', { class: 'ld-link', href: pageHref(asked.query, answer.page + 1) }, ['Next ', P.svg(P.ARROW_RIGHT)]) : el('span')
+        ]));
+      }
+    }, function (e) {
+      results.textContent = '';
+      /* An older game server without the directory: the exact name still opens its profile. */
+      if (e && e.status === 404 && asked.query) { window.location.replace('/players/?name=' + encodeURIComponent(asked.query)); return; }
+      results.appendChild(el('div', { class: 'ld-none' }, [el('b', { text: 'Players can’t be read right now' }), el('p', { text: e && e.error === 'rate-limited' ? 'Too many searches. Try again in a minute.' : 'Try again in a moment.' })]));
     });
-    return { memberSince: typeof p.memberSince === 'string' ? R.month(p.memberSince) : null, experience: experience, performance: performance };
   }
 
-  function strip(stats) {
-    return R.el('dl', { class: 'ld-sum ld-sum--figures ld-sum--' + Math.min(5, stats.length) }, stats.map(function (s) {
-      return R.el('div', null, [R.el('dt', null, [s.label, ' ', R.tip(s.label, s.tip)]), R.el('dd', null, [s.value, s.small ? R.el('small', { text: s.small }) : null])]);
-    }));
-  }
-
-  function finder(initial) {
-    var input = R.el('input', { class: 'ld-input', id: 'pl-find', maxlength: String(NAME_MAX), autocomplete: 'off', spellcheck: 'false', value: initial || '' });
-    var go = R.el('button', { class: 'ld-btn ld-btn--secondary', type: 'submit', text: 'Find' });
-    var f = R.el('form', { class: 'ld-findplayer', role: 'search', 'aria-label': 'Find a player' }, [R.el('label', { class: 'ld-field__label', for: 'pl-find', text: 'Find a player' }), R.el('div', { class: 'au-actions' }, [input, go])]);
-    f.addEventListener('submit', function (ev) {
-      ev.preventDefault();
-      var name = input.value.trim();
-      if (name) window.location.assign('/players/?name=' + encodeURIComponent(name));
+  /** A player's public profile. */
+  function profile(slot, session, name) {
+    slot.textContent = '';
+    var shell = P.pass(null, { name: name, id: 'pass-name' });
+    slot.appendChild(shell);
+    document.title = name + ' — Ludum';
+    return session.api('player', { name: name }).then(function (answer) {
+      var figures = P.figuresOfPlayer(answer.player);
+      document.title = figures.name + ' — Ludum';
+      slot.replaceChild(P.pass(figures, { id: 'pass-name' }), shell);
+      slot.appendChild(P.passFoot());
+    }, function (e) {
+      slot.textContent = '';
+      document.title = 'Players — Ludum';
+      slot.appendChild(el('header', { class: 'ld-phead' }, [el('h1', { text: 'Players' }), search(name)]));
+      if (e && e.error === 'not-found') slot.appendChild(none(name));
+      else slot.appendChild(el('div', { class: 'ld-none', role: 'alert' }, [el('b', { text: 'This profile can’t be read right now' }), el('p', { text: 'Try again in a moment.' })]));
     });
-    return f;
-  }
-
-  function render(frame, body, p, who) {
-    var own = who && who.signedIn === true && who.account && typeof who.account.name === 'string' && who.account.name.toLowerCase() === p.name.toLowerCase();
-    var shown = profileOf(p);
-    var meta = [];
-    if (shown.memberSince) meta.push(['Member Since', shown.memberSince]);
-    if (own) meta.push(['Your record', R.el('a', { class: 'ld-link', href: '/me/', text: 'Everything, privately' })]);
-    frame.textContent = '';
-    frame.appendChild(R.rechead({ kicker: null, muted: own ? 'This is how other players see you' : null, title: p.name, meta: meta }));
-    body.textContent = '';
-    body.appendChild(R.section(null, 'pl-experience', 'Experience', null, [strip(shown.experience)]));
-    body.appendChild(R.section(null, 'pl-performance', 'Performance', null, [strip(shown.performance), R.el('div', { class: 'ld-findrow' }, [finder('')])]));
-  }
-
-  function stop(frame, body, title, label, text, kind, initial) {
-    frame.textContent = '';
-    frame.appendChild(R.rechead({ kicker: null, title: title }));
-    body.textContent = '';
-    body.appendChild(R.el('div', { class: 'ld-wrap ld-stack' }, [label ? R.notice(label, text, kind) : null, finder(initial)]));
   }
 
   function mount(root, session) {
-    var frame = root.querySelector('[data-rec-frame]');
-    var body = root.querySelector('[data-rec-body]');
+    var slot = root.querySelector('[data-pass-slot]');
     var name = nameOf(window.location.search);
-    if (name === null) { stop(frame, body, 'Players', null, null, null, ''); return Promise.resolve(); }
-    var who = session.whoami().catch(function () { return null; });
-    return session.api('player', { name: name }).then(function (answer) {
-      document.title = answer.player.name + ' — Ludum';
-      return who.then(function (w) { render(frame, body, answer.player, w); });
-    }, function (e) {
-      if (e && e.error === 'not-found') stop(frame, body, 'Players', 'No player by that name', 'Check the spelling: names are the ones shown at the tables.', 'wait', name);
-      else stop(frame, body, 'Players', 'Unavailable', 'Player profiles can’t be read right now. Try again in a moment.', 'stop', name);
-    });
+    return name === null ? directory(slot, session, directoryOf(window.location.search)) : profile(slot, session, name);
   }
 
-  window.LudumPlayerPage = { nameOf: nameOf, profileOf: profileOf, mount: mount };
+  window.LudumPlayerPage = { nameOf: nameOf, directoryOf: directoryOf, matchOf: matchOf, countLine: countLine, mount: mount };
   function start() {
     var root = document.querySelector('[data-ludum-player]');
-    if (root && window.LudumSession && R) mount(root, window.LudumSession);
+    if (root && window.LudumSession && P) mount(root, window.LudumSession);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();

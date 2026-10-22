@@ -10,60 +10,62 @@
    an existing component. Sections 40–49.
    ========================================================================== */
 
-/* ---------- 40. Account slot in SiteNav: SIGN IN, or the player's name and a short menu ---------- */
-.ld-nav__acct { position: relative; display: flex; align-items: stretch; }
-.ld-nav__signin, .ld-nav__who {
-  position: relative; display: flex; align-items: center; gap: 10px; padding: 2px 22px 0; margin: 0;
-  font: 600 13px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap;
-  color: var(--on-frame); background: none; border: 0; border-left: 1px solid var(--rule); text-decoration: none; cursor: pointer;
-}
+/* ---------- 40. Account slot in SiteNav (Ludum Profile, the pass, owner 2026-10-22) ----------
+   Signed out: SIGN IN. Signed in: the Player Name is a LINK to /me/ (with the yellow square that marks you), and a
+   separate arrow button opens a menu whose one item is Sign out. Two tab stops; nothing opens on hover. A long name is
+   cut with an ellipsis; the link's label carries it whole. Phone: the name and Sign out sit in the Menu sheet. */
+.ld-nav__acct { position: relative; display: flex; align-items: stretch; border-left: 1px solid var(--rule); }
+.ld-nav__signin { position: relative; display: flex; align-items: center; padding: 2px 22px 0; margin: 0;
+  font: 600 16px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
+  color: var(--on-frame); background: none; border: 0; text-decoration: none; cursor: pointer; }
+.ld-nav__who { position: relative; display: flex; align-items: center; gap: 12px; min-width: 0; padding: 4px 16px 0 22px;
+  font: 400 24px/1 var(--font-display); letter-spacing: .02em; text-transform: uppercase; white-space: nowrap; color: var(--on-frame); text-decoration: none; }
+.ld-nav__who-name { max-width: 12em; overflow: hidden; text-overflow: ellipsis; padding-top: 2px; }
 .ld-nav__signin::after, .ld-nav__who::after {
-  content: ''; position: absolute; left: 22px; right: 22px; bottom: 0; height: 6px; background: var(--red);
+  content: ''; position: absolute; left: 22px; right: 10px; bottom: 0; height: 6px; background: var(--red);
   transform: scaleX(0); transform-origin: 0 50%; transition: transform var(--ld-wipe);
 }
-.ld-nav__signin:hover::after, .ld-nav__who:hover::after, .ld-nav__who.is-hover::after { transform: scaleX(1); }
-.ld-nav__who[aria-expanded="true"]::after, .ld-nav__acct.is-current .ld-nav__who::after { transform: scaleX(1); background: var(--yellow); }
-.ld-nav__signin:focus-visible, .ld-nav__who:focus-visible { outline-offset: -6px; }
-.ld-nav__who-mark { width: 10px; height: 10px; background: var(--yellow); flex: none; }   /* signed in: a yellow square, the board's mark */
-.ld-nav__who .ld-icon { width: 16px; height: 16px; transition: transform var(--ld-wipe); }
-.ld-nav__who[aria-expanded="true"] .ld-icon { transform: rotate(180deg); }
-.ld-acct {
-  position: absolute; top: 100%; right: 0; z-index: 45; width: 300px; padding: 8px 0 12px;
-  background: var(--frame); color: var(--on-frame); border-top: 4px solid; border-image: linear-gradient(90deg, var(--neta-pink), var(--neta-cyan)) 1;
-}
-.ld-acct[hidden] { display: none; }
-.ld-acct__who { margin: 0; padding: 12px 20px 14px; border-bottom: 1px solid var(--rule); }
-.ld-acct__name { display: block; font: 400 28px/1 var(--font-display); text-transform: uppercase; }
-.ld-acct__user { display: block; margin-top: 6px; font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
-.ld-acct__group { margin: 0; padding: 14px 20px 4px; font: 500 11px/14px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
-.ld-acct__list { margin: 0; padding: 0; list-style: none; }
-.ld-acct__list a {
-  position: relative; isolation: isolate; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 20px;
-  font: 600 13px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--on-frame); text-decoration: none;
-}
-.ld-acct__list a::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--yellow); transform: scaleY(0); transform-origin: 50% 0; transition: transform var(--ld-wipe); }
-.ld-acct__list a:hover, .ld-acct__list a.is-hover { color: var(--on-yellow); }
-.ld-acct__list a:hover::before, .ld-acct__list a.is-hover::before { transform: scaleY(1); }   /* the board's flap */
-.ld-acct__list a[aria-current] { box-shadow: inset 6px 0 0 var(--yellow); }
-.ld-acct__list a:focus-visible { outline-offset: -3px; }
-.ld-acct__list .ld-acct__tag { font-weight: 500; color: var(--ink-3); }
-.ld-acct__list a:hover .ld-acct__tag { color: var(--on-yellow); }
-.ld-acct__out { margin: 10px 20px 0; padding-top: 10px; border-top: 1px solid var(--rule); }
-.ld-acct__out button { padding: 6px 0; font: 600 12px/16px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); background: none; border: 0; cursor: pointer; }
-.ld-acct__out button:hover { color: var(--yellow); }
+.ld-nav__signin::after { right: 22px; }
+.ld-nav__signin:hover::after, .ld-nav__who:hover::after { transform: scaleX(1); }
+.ld-nav__who[aria-current]::after, .ld-nav__signin[aria-current]::after { transform: scaleX(1); background: var(--yellow); }
+.ld-nav__signin:focus-visible, .ld-nav__who:focus-visible, .ld-nav__more:focus-visible { outline: 3px solid var(--yellow); outline-offset: -6px; }
+.ld-nav__who-mark { width: 10px; height: 10px; margin-top: -4px; background: var(--yellow); flex: none; }   /* you: a yellow square */
+.ld-nav__more { position: relative; display: grid; place-items: center; width: 48px; margin: 0; padding: 0; color: var(--on-frame); background: none; border: 0; border-left: 1px solid var(--rule); cursor: pointer; }
+.ld-nav__more .ld-icon { width: 16px; height: 16px; transition: transform var(--ld-wipe); }
+.ld-nav__more[aria-expanded="true"] { background: var(--paper-2); }
+.ld-nav__more[aria-expanded="true"] .ld-icon { transform: rotate(180deg); }
+.ld-nav__out { position: absolute; top: 100%; right: 0; z-index: 45; width: 240px; padding: 8px 0; background: var(--frame); color: var(--on-frame);
+  border-top: 4px solid; border-image: linear-gradient(90deg, var(--neta-pink), var(--neta-cyan)) 1; box-shadow: 1px 0 0 var(--rule), -1px 0 0 var(--rule), 0 1px 0 var(--rule); }
+.ld-nav__out[hidden] { display: none; }
+.ld-nav__out button { position: relative; isolation: isolate; display: flex; align-items: center; width: 100%; min-height: 48px; margin: 0; padding: 0 20px;
+  font: 600 16px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--on-frame); background: none; border: 0; cursor: pointer; text-align: left; }
+.ld-nav__out button::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--yellow); transform: scaleY(0); transform-origin: 50% 0; transition: transform var(--ld-wipe); }
+.ld-nav__out button:hover, .ld-nav__out button:focus-visible { color: var(--on-yellow); }
+.ld-nav__out button:hover::before, .ld-nav__out button:focus-visible::before { transform: scaleY(1); }
+.ld-nav__out button:focus-visible { outline: 0; }
+.ld-acct__note { margin: 8px 20px 4px; font: 400 14px/20px var(--font-sans); color: var(--yellow); }
+.ld-acct__note a { color: inherit; }
 .ld-nav__sheet-acct { display: none; }
-.ld-nav__menu .ld-nav__who-mark { width: 8px; height: 8px; margin-right: 2px; }
-@media (max-width: 1023px) { .ld-nav__signin, .ld-nav__who { padding: 2px 16px 0; } .ld-nav__signin::after, .ld-nav__who::after { left: 16px; right: 16px; } }
-/* Phone: the slot leaves the bar; its entries join the menu sheet as one group above PLAY. */
+.ld-nav__menu .ld-nav__who-mark { width: 8px; height: 8px; margin: 0 2px 0 0; }
+@media (max-width: 1023px) {
+  .ld-nav__signin { padding: 2px 16px 0; }
+  .ld-nav__signin::after { left: 16px; right: 16px; }
+  .ld-nav__who { padding-left: 16px; font-size: 22px; }
+  .ld-nav__who::after { left: 16px; }
+  .ld-nav__who-name { max-width: 8em; }
+}
+/* Phone: the slot leaves the bar; your name (a link to your profile) and Sign out join the menu sheet, above PLAY. */
 @media (max-width: 599px) {
   .ld-nav__acct { display: none; }
-  .ld-nav__sheet-acct { display: block; margin-top: 28px; }
-  .ld-nav__sheet-acct .ld-acct__who { padding: 0 0 12px; }
-  .ld-nav__sheet-acct .ld-acct__group { padding: 14px 0 4px; }
-  .ld-nav__sheet-acct .ld-acct__list a { padding: 12px 0; font-size: 15px; border-bottom: 1px solid var(--rule); }
-  .ld-nav__sheet-acct .ld-acct__list a::before { left: -16px; right: -16px; }
-  .ld-nav__sheet-acct .ld-acct__out { margin: 8px 0 0; border-top: 0; }
-  .ld-nav__sheet-acct .ld-nav__signin { padding: 16px 0 12px; border: 0; border-bottom: 2px solid var(--rule); font-size: 15px; justify-content: space-between; }
+  .ld-nav__sheet-acct { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; margin-top: 28px; padding: 0 0 14px; border-bottom: 2px solid var(--rule); }
+  .ld-sheet__who { display: flex; align-items: center; gap: 12px; min-height: 56px; min-width: 0; font: 400 40px/.9 var(--font-display); text-transform: uppercase; color: var(--on-frame); text-decoration: none; }
+  .ld-sheet__who > span:nth-child(2) { min-width: 0; overflow-wrap: anywhere; padding-top: 4px; }
+  .ld-sheet__who .ld-icon { width: 24px; height: 24px; margin-left: auto; flex: none; }
+  .ld-sheet__who--long { font-size: 28px; line-height: .94; }
+  .ld-sheet__out { justify-self: start; min-height: 48px; margin: 0; padding: 0; font: 600 16px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); background: none; border: 0; cursor: pointer; }
+  .ld-nav__sheet-acct .ld-nav__signin { display: flex; justify-content: space-between; min-height: 56px; padding: 0 0 12px; border: 0; }
+  .ld-nav__sheet-acct .ld-nav__signin::after { display: none; }
+  .ld-nav__sheet-acct .ld-acct__note { margin: 4px 0 0; }
 }
 
 /* ---------- 41. Specimen band: marks every preview built on mock data. Never on a live page. ---------- */
