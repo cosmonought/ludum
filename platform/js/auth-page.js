@@ -126,7 +126,7 @@
       say.textContent = 'Approve the connection in Keplr.';
       A.signInWithKeplr(S, G, function (stage, info) {
         if (stage === 'wallet') { extra.textContent = ''; extra.appendChild(T.wallet(info.wallet)); }
-        if (stage === 'sign') { extra.appendChild(T.check([['Site', T.siteName()], ['Signing in as', info.account], ['Wallet', A.short(info.wallet)]])); say.textContent = 'Approve the signature in Keplr.'; }
+        if (stage === 'sign') { extra.appendChild(T.check([['Site', T.siteName()], ['Account', 'The one this wallet authorizes'], ['Wallet', A.short(info.wallet)]])); say.textContent = 'Approve the signature in Keplr.'; }
         if (stage === 'session') say.textContent = 'Signing you in.';
       }).then(function () {
         say.textContent = 'Signed in.';
@@ -457,7 +457,7 @@
       alt: el('p', { class: 'ld-ticket__alt' }, ['Remembered it?', el('a', { class: 'ld-link', href: '/me/sign-in/' + carried(search) }, ['Sign in ', ARROW()])]),
       main: [el('div', { class: 'ld-key', 'data-theme': 'press' }, [s1.node]), el('div', { class: 'ld-steplist' }, [s2.node, s3.node])],
       stubCopy: true,
-      stub: [stubCopy('Which account?', [note('The wallet decides: Keplr’s message names the Player Name whose password you’re resetting.')]),
+      stub: [stubCopy('Which account?', [note('The wallet decides. The account’s name appears once the new password is set.')]),
         stubCopy('Afterwards', [note('You’re signed in here, and other browsers signed in to the account are signed out.')])]
     });
     mountTicket(slot, made, null);
@@ -477,7 +477,7 @@
       s1Say.textContent = 'Approve the connection in Keplr.';
       A.authorizeReset(S, G, function (stage, info) {
         if (stage === 'wallet') { s1Wallet.textContent = ''; s1Wallet.appendChild(T.wallet(info.wallet)); }
-        if (stage === 'sign') { s1.set('active', { text: 'Approve in Keplr' }); s1Say.textContent = ''; s1Extra.appendChild(T.check([['Site', T.siteName()], ['Password for', info.account], ['Wallet', A.short(info.wallet)]])); }
+        if (stage === 'sign') { s1.set('active', { text: 'Approve in Keplr' }); s1Say.textContent = ''; s1Extra.appendChild(T.check([['Site', T.siteName()], ['Password for', 'The account this wallet authorizes'], ['Wallet', A.short(info.wallet)]])); }
       }).then(function (proof) {
         held = proof;
         T.idle(keyBtn);
@@ -485,7 +485,7 @@
         s1Acts.textContent = '';
         s1.set('done', { text: 'Approved', kind: 'ok' });
         s1Lede.textContent = '';
-        [document.createTextNode('Approved: you’re resetting the password for '), el('b', { text: proof.account }), document.createTextNode('. Set the new one below within a few minutes.')].forEach(function (n) { s1Lede.appendChild(n); });
+        s1Lede.textContent = 'Approved. Set the new password below within a few minutes.';
         set.removeAttribute('aria-disabled');
         why.textContent = '';
         s2.set('active'); s3.set('active');
@@ -511,9 +511,10 @@
       passIn.removeAttribute('aria-invalid'); s2.error('');
       if (A.expired(held)) { held = null; set.setAttribute('aria-disabled', 'true'); trouble('Sign again', 'Signature expired', 'The approval is single-use and lasts a few minutes. Approve a new one, then set the password.', [button('Reset with Keplr', approve)]); s2.set('todo'); s3.set('todo'); return; }
       T.busy(set, 'Setting password');
-      A.finishReset(S, { proof: held, newPassword: chosen }).then(function () {
+      A.finishReset(S, { proof: held, newPassword: chosen }).then(function (r) {
         passIn.value = '';
-        var name = held.account;
+        /* The account the wallet authorizes, named by the server now that the wallet has signed. */
+        var name = r && r.profile && typeof r.profile.name === 'string' ? r.profile.name : 'your account';
         held = null;
         issued(slot, {
           name: name, status: 'Password reset', lede: 'Your new password is set and you’re signed in. Other browsers signed in to ' + name + ' were signed out.',
@@ -527,6 +528,12 @@
         if (e && (e.why === 'expired' || e.error === 'invalid-credential' || e.error === 'authorization-used')) {
           held = null; set.setAttribute('aria-disabled', 'true'); why.textContent = 'Approve with your wallet first (step 1).';
           trouble('Sign again', 'Signature expired', 'The approval is single-use and lasts a few minutes. Approve a new one, then set the password.', [button('Reset with Keplr', approve)]);
+          s2.set('todo'); s3.set('todo');
+          return;
+        }
+        if (e && e.error === 'wallet-not-authorized') {
+          held = null; set.setAttribute('aria-disabled', 'true'); why.textContent = 'Approve with your wallet first (step 1).';
+          trouble('Not authorized', 'This wallet isn’t authorized', 'No Ludum account signs in with this wallet. In Keplr, switch to the account’s Authorization Wallet and try again.', [button('Reset with Keplr', approve)]);
           s2.set('todo'); s3.set('todo');
           return;
         }

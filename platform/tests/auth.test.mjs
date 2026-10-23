@@ -24,10 +24,13 @@ const RECOVER_TEXT = "18COSMOS/PROFILE-AUTHORIZATION/v1\nProject 18XX: recover t
 const BEFORE = Date.UTC(2026, 9, 10, 11, 58);
 /* ---------------- LUDUM v1.6 (1830Juno §19): texts the server mints for the new account actions ---------------- */
 /* Produced by Play's own `profileAuthorizationText` (1830Juno frontend/src/utils/profileAuthorizationV1.ts), byte for byte. */
-const SIGN_IN_TEXT = "18COSMOS/PROFILE-AUTHORIZATION/v1\nProject 18XX: sign in to this account.\nThis is not a transaction: it moves no funds and grants no permission to spend.\nPurpose: SIGN-IN\nSite: https://ludum.netadao.org\nAccount: Ann Player\nAuthorization wallet: juno1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\nReplaces: none\nSigner: juno1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\nOperation: 11111111111111111111111111111111\nNonce: 11111111111111111111111111111111\nExpires: 2026-10-10T12:00:00.000Z";
+/* 1830Juno section 19 (owner review 2026-10-22): a SIGN-IN and a signed-out RECOVER are minted for the wallet alone and
+   name no account -- never a Player Name before the wallet has signed. */
+const SIGN_IN_TEXT = "18COSMOS/PROFILE-AUTHORIZATION/v1\nProject 18XX: sign in to this account.\nThis is not a transaction: it moves no funds and grants no permission to spend.\nPurpose: SIGN-IN\nSite: https://ludum.netadao.org\nAccount: the account this wallet authorizes\nAuthorization wallet: juno1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\nReplaces: none\nSigner: juno1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\nOperation: 11111111111111111111111111111111\nNonce: 11111111111111111111111111111111\nExpires: 2026-10-10T12:00:00.000Z";
 const RELEASE_TEXT = "18COSMOS/PROFILE-AUTHORIZATION/v1\nProject 18XX: approve replacing this account's Authorization Wallet with the wallet that accepts next.\nThis is not a transaction: it moves no funds and grants no permission to spend.\nPurpose: REPLACE-RELEASE\nSite: https://ludum.netadao.org\nAccount: Ann Player\nAuthorization wallet: juno1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\nReplaces: none\nSigner: juno1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\nOperation: 22222222222222222222222222222222\nNonce: 33333333333333333333333333333333\nExpires: 2026-10-10T12:00:00.000Z";
 const ACCEPT_TEXT = "18COSMOS/PROFILE-AUTHORIZATION/v1\nProject 18XX: make this wallet this account's new Authorization Wallet.\nThis is not a transaction: it moves no funds and grants no permission to spend.\nPurpose: REPLACE-ACCEPT\nSite: https://ludum.netadao.org\nAccount: Ann Player\nAuthorization wallet: juno1zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\nReplaces: juno1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\nSigner: juno1zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\nOperation: 22222222222222222222222222222222\nNonce: 44444444444444444444444444444444\nExpires: 2026-10-10T12:00:00.000Z";
 const RECOVER_NAME_TEXT = "18COSMOS/PROFILE-AUTHORIZATION/v1\nProject 18XX: recover this account and set a new password.\nThis is not a transaction: it moves no funds and grants no permission to spend.\nPurpose: RECOVER\nSite: https://ludum.netadao.org\nAccount: Ann Player\nAuthorization wallet: juno1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\nReplaces: none\nSigner: juno1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\nOperation: 55555555555555555555555555555555\nNonce: 55555555555555555555555555555555\nExpires: 2026-10-10T12:00:00.000Z";
+const RECOVER_WALLET_TEXT = RECOVER_NAME_TEXT.replace("Account: Ann Player", "Account: the account this wallet authorizes");
 const CREATE_NAME_TEXT = "18COSMOS/PROFILE-AUTHORIZATION/v1\nProject 18XX: make this wallet the Authorization Wallet of a new account.\nThis is not a transaction: it moves no funds and grants no permission to spend.\nPurpose: CREATE\nSite: https://ludum.netadao.org\nAccount: Ann Player\nAuthorization wallet: juno1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\nReplaces: none\nSigner: juno1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\nOperation: 66666666666666666666666666666666\nNonce: 66666666666666666666666666666666\nExpires: 2026-10-10T12:00:00.000Z";
 const at = (fn) => async () => { const realNow = Date.now; Date.now = () => BEFORE; try { await fn(); } finally { Date.now = realNow; } };
 const EXPECT = { purpose: "CREATE", site: SITE, account: "ann.player", signer: WALLET, authorizationWallet: WALLET, now: BEFORE };
@@ -135,23 +138,24 @@ test("sign-in with the password: a reset (ended) session is replaced only on the
   await assert.rejects(A.signIn(refused, { name: "Ann Player", password: "x" }), (e) => e.error === "invalid-credential");
 });
 
-test("v1.6 Sign in with Keplr: the wallet identifies the account; the SIGN-IN text is checked (this site, this wallet) BEFORE Keplr signs; one signature signs in", at(async () => {
+test("v1.6 Sign in with Keplr: the wallet identifies the account, but only once it has signed; the SIGN-IN text is checked (this site, this wallet, no account named) BEFORE Keplr signs; one signature signs in", at(async () => {
   const A = load(["auth.js"]).window.LudumAuth;
   const S = fakeSession({ start: {}, authorization: { operation: "11111111111111111111111111111111", texts: [{ text: SIGN_IN_TEXT }] }, "keplr-sign-in": { ok: true, profile: { name: "Ann Player" } } });
   const keplr = fakeKeplr();
   const steps = [];
   const r = await A.signInWithKeplr(S, keplr, (s, info) => steps.push([s, info && info.account]));
-  assert.equal(r.account, "Ann Player", "the text names the account the wallet authorizes");
+  assert.equal(r.account, "Ann Player", "the name comes from the answer, once the wallet has signed");
+  eq(steps.map((x) => x[1]).filter(Boolean), [], "no name is shown before the signature");
   eq(S.calls, [["start", {}], ["authorization", { purpose: "sign-in", wallet: WALLET }], ["keplr-sign-in", { operation: "11111111111111111111111111111111", pubKey: "PK", signature: "SIG" }]]);
   eq(keplr.signed, [[WALLET, SIGN_IN_TEXT]]);
   eq(steps.map((x) => x[0]), ["keplr", "wallet", "sign", "session"]);
-  /* A wallet that authorizes no account: told so before anything is signed. */
-  const none = fakeSession({ start: {}, authorization: { reject: { status: 409, error: "wallet-not-authorized" } } });
+  /* A wallet that authorizes no account: told so once it has signed (never to someone who only names it). */
+  const none = fakeSession({ start: {}, authorization: { operation: "11111111111111111111111111111111", texts: [{ text: SIGN_IN_TEXT }] }, "keplr-sign-in": { reject: { status: 409, error: "wallet-not-authorized" } } });
   const k1 = fakeKeplr();
   await assert.rejects(A.signInWithKeplr(none, k1), (e) => e.error === "wallet-not-authorized");
-  eq(k1.signed, []);
-  /* Another site, another signer, another action: never signed. */
-  for (const [label, text, wallet] of [["another site", SIGN_IN_TEXT.replace("https://ludum.netadao.org", "https://evil.example"), WALLET], ["another wallet", SIGN_IN_TEXT, OTHER], ["another action", RECOVER_NAME_TEXT, WALLET]]) {
+  eq(k1.signed, [[WALLET, SIGN_IN_TEXT]]);
+  /* Another site, another signer, another action, or a text naming a Player Name: never signed. */
+  for (const [label, text, wallet] of [["another site", SIGN_IN_TEXT.replace("https://ludum.netadao.org", "https://evil.example"), WALLET], ["another wallet", SIGN_IN_TEXT, OTHER], ["another action", RECOVER_WALLET_TEXT, WALLET], ["a named account", SIGN_IN_TEXT.replace("Account: the account this wallet authorizes", "Account: Ann Player"), WALLET]]) {
     const bad = fakeSession({ start: {}, authorization: { operation: "x", texts: [{ text }] } });
     const k = fakeKeplr(wallet);
     await assert.rejects(A.signInWithKeplr(bad, k), (e) => e.local === true, label);
@@ -185,29 +189,35 @@ test("v1.6 Create account: the CREATE text for the PLAYER NAME is checked BEFORE
   eq(none.calls, []);
 }));
 
-test("v1.6 Reset password: no name typed -- the wallet decides; the RECOVER text names the account it found, signed by the wallet Keplr is on; a CREATE text offered instead is refused", at(async () => {
+test("v1.6 Reset password: no name typed or told -- the wallet decides once it has signed; the RECOVER text names no account, signed by the wallet Keplr is on; a CREATE text, or one naming a Player Name, is refused", at(async () => {
   const A = load(["auth.js"]).window.LudumAuth;
-  const S = fakeSession({ start: {}, authorization: { operation: "55555555555555555555555555555555", texts: [{ text: RECOVER_NAME_TEXT }] }, recover: { ok: true, signedOut: 2 } });
+  const S = fakeSession({ start: {}, authorization: { operation: "55555555555555555555555555555555", texts: [{ text: RECOVER_WALLET_TEXT }] }, recover: { ok: true, profile: { name: "Ann Player" }, signedOut: 2 } });
   const keplr = fakeKeplr();
   const proof = await A.authorizeReset(S, keplr);
-  assert.equal(proof.account, "Ann Player");
+  assert.equal(proof.account, null, "nothing names the account before the reset");
   eq(S.calls[1], ["authorization", { purpose: "recover", wallet: WALLET }], "no username, no name");
   await assert.rejects(A.finishReset(S, { proof, newPassword: "short" }), (e) => e.error === "bad-password");
   const r = await A.finishReset(S, { proof, newPassword: "a brand new passphrase" });
   assert.equal(r.signedOut, 2);
+  assert.equal(r.profile.name, "Ann Player", "the name, from the answer");
   eq(S.calls.at(-1), ["recover", { operation: "55555555555555555555555555555555", pubKey: "PK", signature: "SIG", newPassword: "a brand new passphrase" }]);
   const swapped = fakeSession({ start: {}, authorization: { operation: "x", texts: [{ text: CREATE_NAME_TEXT }] } });
   const k2 = fakeKeplr();
   await assert.rejects(A.authorizeReset(swapped, k2), (e) => /different account action/.test(e.message));
   eq(k2.signed, []);
-  const otherWallet = fakeSession({ start: {}, authorization: { operation: "x", texts: [{ text: RECOVER_NAME_TEXT }] } });
+  const otherWallet = fakeSession({ start: {}, authorization: { operation: "x", texts: [{ text: RECOVER_WALLET_TEXT }] } });
   const k3 = fakeKeplr(OTHER);
   await assert.rejects(A.authorizeReset(otherWallet, k3), (e) => /another wallet/.test(e.message));
   eq(k3.signed, []);
-  const none = fakeSession({ start: {}, authorization: { reject: { status: 409, error: "wallet-not-authorized" } } });
+  const named = fakeSession({ start: {}, authorization: { operation: "x", texts: [{ text: RECOVER_NAME_TEXT }] } });
+  const k5 = fakeKeplr();
+  await assert.rejects(A.authorizeReset(named, k5), (e) => /another account/.test(e.message));
+  eq(k5.signed, [], "a text naming a Player Name before the signature is never signed");
+  /* A wallet that authorizes no account: told so once it has signed, when the new password is sent. */
+  const none = fakeSession({ start: {}, authorization: { operation: "55555555555555555555555555555555", texts: [{ text: RECOVER_WALLET_TEXT }] }, recover: { reject: { status: 409, error: "wallet-not-authorized" } } });
   const k4 = fakeKeplr();
-  await assert.rejects(A.authorizeReset(none, k4), (e) => e.error === "wallet-not-authorized");
-  eq(k4.signed, [], "a wallet that authorizes no account is told so before anything is signed");
+  const lost = await A.authorizeReset(none, k4);
+  await assert.rejects(A.finishReset(none, { proof: lost, newPassword: "a brand new passphrase" }), (e) => e.error === "wallet-not-authorized");
 }));
 
 test("Change password with the current password: the current and the new in ONE auth/password request; a short new one is refused before anything is sent", async () => {

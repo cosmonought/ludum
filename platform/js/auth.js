@@ -194,18 +194,24 @@
     return start(S).then(function () { return S.auth('sign-in', { name: input.name, password: input.password }); });
   }
 
+  /** What a wallet-identified SIGN-IN or signed-out RECOVER text says for its account (1830Juno section 19, owner review
+   *  2026-10-22): the server mints it for the wallet alone and names no account, so a wallet address never leads to a
+   *  Player Name before the wallet has signed. The account is known from the server's answer once it has. */
+  var WALLET_ACCOUNT = 'the account this wallet authorizes';
+
   /** The proof of one checked, signed text, held until the player acts: {operation, pubKey, signature, wallet, account,
-   *  expiresAt}. */
+   *  expiresAt} -- `account` null for a wallet-identified text (it names none). */
   function proofOf(minted, text, signed, wallet) {
     var f = parseAuthorization(text);
-    return { operation: minted.operation, pubKey: signed.pubKey, signature: signed.signature, wallet: wallet, account: f.account, expiresAt: f.expiresAt };
+    return { operation: minted.operation, pubKey: signed.pubKey, signature: signed.signature, wallet: wallet, account: f.account === WALLET_ACCOUNT ? null : f.account, expiresAt: f.expiresAt };
   }
   /** Whether a held proof has run out (the page says "Signature expired" without sending it). */
   function expired(proof, now) { return !proof || proof.expiresAt <= (now === undefined ? Date.now() : now); }
 
-  /** Sign in with Keplr: connect; the server looks the wallet up (a wallet that authorizes no account is told so before
-   *  anything is signed: 409 wallet-not-authorized); the SIGN-IN text is checked (this site, this wallet); Keplr signs;
-   *  the signature signs this browser in. `step(name, info)`: "keplr", "sign" ({account, wallet}), "session". */
+  /** Sign in with Keplr: connect; the SIGN-IN text for this wallet -- naming no account -- is checked (this site, this
+   *  wallet); Keplr signs; the signature signs this browser in to the account the wallet authorizes (409
+   *  wallet-not-authorized, told only now, when it authorizes none). `step(name, info)`: "keplr", "wallet" ({wallet}),
+   *  "sign" ({wallet}), "session". Resolves {account: the Player Name, from the answer; wallet; answer}. */
   function signInWithKeplr(S, G, step) {
     step = step || function () {};
     step('keplr');
@@ -213,11 +219,11 @@
       step('wallet', { wallet: w.address });
       return S.auth('authorization', { purpose: 'sign-in', wallet: w.address }).then(function (minted) {
         var text = texts(minted)[0] && texts(minted)[0].text;
-        var f = checked(text, { purpose: 'SIGN-IN', site: site(), account: null, signer: w.address, authorizationWallet: w.address, now: Date.now() });
-        step('sign', { account: f.account, wallet: w.address });
+        checked(text, { purpose: 'SIGN-IN', site: site(), account: WALLET_ACCOUNT, signer: w.address, authorizationWallet: w.address, now: Date.now() });
+        step('sign', { wallet: w.address });
         return keplrCall(G.signArbitrary(w.address, text)).then(function (signed) {
-          step('session', { account: f.account, wallet: w.address });
-          return S.auth('keplr-sign-in', { operation: minted.operation, pubKey: signed.pubKey, signature: signed.signature }).then(function (r) { return { account: f.account, wallet: w.address, answer: r }; });
+          step('session', { wallet: w.address });
+          return S.auth('keplr-sign-in', { operation: minted.operation, pubKey: signed.pubKey, signature: signed.signature }).then(function (r) { return { account: r && r.profile ? r.profile.name : null, wallet: w.address, answer: r }; });
         });
       });
     });
@@ -250,9 +256,9 @@
     return S.auth('create', { name: String(input.name).trim(), password: input.password, operation: p.operation, pubKey: p.pubKey, signature: p.signature });
   }
 
-  /** Reset password, step 1 (signed out): connect; the server looks the wallet up (409 wallet-not-authorized before
-   *  anything is signed); the RECOVER text names the account it found (checked: this site, this wallet); Keplr signs; the
-   *  proof is held for step 3. */
+  /** Reset password, step 1 (signed out): connect; the RECOVER text for this wallet -- naming no account -- is checked
+   *  (this site, this wallet); Keplr signs; the proof is held for step 3, which learns the account (or, 409
+   *  wallet-not-authorized, that the wallet authorizes none). */
   function authorizeReset(S, G, step) {
     step = step || function () {};
     step('keplr');
@@ -260,8 +266,8 @@
       step('wallet', { wallet: w.address });
       return S.auth('authorization', { purpose: 'recover', wallet: w.address }).then(function (minted) {
         var text = texts(minted)[0] && texts(minted)[0].text;
-        var f = checked(text, { purpose: 'RECOVER', site: site(), account: null, signer: w.address, authorizationWallet: w.address, now: Date.now() });
-        step('sign', { account: f.account, wallet: w.address });
+        checked(text, { purpose: 'RECOVER', site: site(), account: WALLET_ACCOUNT, signer: w.address, authorizationWallet: w.address, now: Date.now() });
+        step('sign', { wallet: w.address });
         return keplrCall(G.signArbitrary(w.address, text)).then(function (signed) { return proofOf(minted, text, signed, w.address); });
       });
     });
