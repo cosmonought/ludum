@@ -186,13 +186,16 @@
   }
 
   /** The private tabs under your own pass: links to their pages (`aria-current` on this one), Moderation for a conduct
-   *  reviewer (the server's `roles.reviewer`), Disputes for a Ludum DAO member (the chain's answer, as before); "Only you
-   *  see these" once, on the row. `opts.games`: the count shown beside Games, when known. */
+   *  reviewer (the server's `roles.reviewer`: v1.7, a Moderator in the staff log too), Disputes for a Ludum DAO member (the
+   *  chain's answer, as before) or on the Disputes page itself; "Only you see these" once, on the row. `opts.games`: the
+   *  count beside Games, when known. v1.7 (owner, 2026-10-23): `opts.moderation` (active cases) and `opts.disputes`
+   *  (unresolved disputed tables) beside the work tabs -- only when read and above 0; nothing ever counts escrow games. */
   function tabsRow(session, current, opts) {
     opts = opts || {};
+    var positive = function (n) { return typeof n === 'number' && n > 0 ? n : undefined; };
     var tabs = [{ key: 'games', href: '/me/', text: 'Games', count: opts.games }, { key: 'account', href: '/me/account/', text: 'Account' }];
-    if (session && session.roles && session.roles.reviewer === true) tabs.push({ key: 'moderation', href: '/moderation/', text: 'Moderation' });
-    if (opts.daoMember) tabs.push({ key: 'disputes', href: '/disputes/', text: 'Disputes' });
+    if (session && session.roles && session.roles.reviewer === true) tabs.push({ key: 'moderation', href: '/moderation/', text: 'Moderation', count: positive(opts.moderation) });
+    if (opts.daoMember || current === 'disputes') tabs.push({ key: 'disputes', href: '/disputes/', text: 'Disputes', count: positive(opts.disputes) });
     return el('div', { class: 'ld-tabsrow' }, [
       el('nav', { class: 'ld-ptabs', 'aria-label': 'Your profile' }, tabs.map(function (t) {
         return el('a', { href: t.href, 'aria-current': t.key === current ? 'page' : null }, [t.text, typeof t.count === 'number' ? el('span', { class: 'ld-ptabs__count', text: ' ' + t.count }) : null]);

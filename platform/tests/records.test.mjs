@@ -71,17 +71,36 @@ test("v1.3 formatting: credits, ratings, rating changes, the game's name from it
   ], ["Voided", "Forfeited", "Won by forfeit", "Completed", "In play", "Cancelled"], "a clock-ended credit game is never shown as still in play");
 });
 
-test("profile tabs: Moderation only for a Play reviewer, Appeals & Disputes only for a remembered DAO wallet -- never merged", () => {
-  const { window: { LudumRecords: R } } = load(["records.js"]);
-  const keys = (session, member) => R.profileTabs(session, member, "record").map((t) => t.key);
+test("profile tabs: Moderation only for a Play reviewer, Disputes only for a DAO member (or while on it) -- never merged", () => {
+  /* pass.js draws the row: a small DOM is enough to read its links. */
+  class N {
+    constructor(tag) { this.tagName = tag; this.children = []; this.attributes = {}; this.className = ""; this._text = null; }
+    get firstChild() { return this.children[0] || null; }
+    appendChild(c) { this.children.push(c); return c; }
+    setAttribute(k, v) { this.attributes[k] = String(v); }
+    getAttribute(k) { return Object.prototype.hasOwnProperty.call(this.attributes, k) ? this.attributes[k] : null; }
+    set textContent(v) { this.children = []; this._text = String(v); }
+    get textContent() { return (this._text ?? "") + this.children.map((c) => c.textContent).join(""); }
+    set innerHTML(_) { this.children = []; }
+  }
+  const document = { createElement: (tag) => new N(tag), createTextNode: (v) => ({ textContent: String(v) }) };
+  const context = vm.createContext({ window: {}, document, Date, JSON, Object, Array, String, Number, Math, Intl, isFinite, globalThis: undefined });
+  context.globalThis = context;
+  vm.runInContext(readFileSync(resolve(JS, "pass.js"), "utf8"), context, { filename: "pass.js" });
+  const P = context.window.LudumPass || context.LudumPass;
+  const links = (session, current, opts) => P.tabsRow(session, current, opts).children[0].children;
+  const tabs = (session, current, opts) => links(session, current, opts).map((a) => a.textContent.trim());
   const player = { signedIn: true, roles: { reviewer: false } };
   const reviewer = { signedIn: true, roles: { reviewer: true } };
-  eq(keys(player, null), ["record", "account"]);
-  eq(keys(reviewer, null), ["record", "account", "moderation"]);
-  eq(keys(player, { address: "juno1x" }), ["record", "account", "appeals"]);
-  eq(keys(reviewer, { address: "juno1x" }), ["record", "account", "moderation", "appeals"]);
-  eq(keys({ signedIn: true }, null), ["record", "account"], "an older server's session (no roles) draws no Moderation");
-  assert.equal(R.profileTabs(player, null, "account").find((t) => t.current).key, "account");
+  eq(tabs(player, "games", {}), ["Games", "Account"]);
+  eq(tabs(reviewer, "games", {}), ["Games", "Account", "Moderation"]);
+  eq(tabs(player, "games", { daoMember: { checkedAt: 1 } }), ["Games", "Account", "Disputes"]);
+  eq(tabs(reviewer, "games", { daoMember: { checkedAt: 1 } }), ["Games", "Account", "Moderation", "Disputes"]);
+  eq(tabs({ signedIn: true }, "games", {}), ["Games", "Account"], "an older server's session (no roles) draws no Moderation");
+  eq(tabs(player, "disputes", {}), ["Games", "Account", "Disputes"], "the tab you are on is drawn while the chain is asked");
+  eq(tabs(reviewer, "moderation", { moderation: 3, disputes: 0 }), ["Games", "Account", "Moderation 3"], "a count only when there is something to do");
+  const current = links(reviewer, "moderation", {}).filter((a) => a.getAttribute("aria-current") === "page");
+  eq(current.map((a) => a.getAttribute("href")), ["/moderation/"]);
 });
 
 test("the remembered DAO member: per ACCOUNT, ten minutes, malformed / expired / another account's / v1's ignored", () => {
@@ -190,7 +209,7 @@ test("Phase 4: the Finish cell -- your rank from the recorded result, ties share
   eq(M.finishOf({ playerCount: 2 }), { text: "—", sub: null });
 });
 
-test("Your account (v1.6): four rows -- the Player Name permanent (no change anywhere), the wallet, the password's date, the sessions", () => {
+test("Your account (v1.6): four rows -- the Player Name (no change by the player: v1.7, staff may), the wallet, the password's date, the sessions", () => {
   const { window } = load(["records.js", "pass.js", "ticket.js", "account-page.js"]);
   const A = window.LudumAccountPage;
   const rows = A.rowsOf({ account: { name: "Caspian", authorizationWallet: { address: "juno1q8dk3lmn2p4r6t8v0x2z4b6d8f0h2j4lx7q2k", since: "2026-10-14T09:00:00.000Z" }, passwordSetAt: "2026-10-15T09:00:00.000Z" } });
@@ -200,7 +219,7 @@ test("Your account (v1.6): four rows -- the Player Name permanent (no change any
   assert.equal(A.sessionsText(2), "Signed out 2 other sessions.");
   const src = readFileSync(resolve(JS, "account-page.js"), "utf8");
   assert.doesNotMatch(src, /display-name|Change name|change it once|Sign-in username/, "no ordinary name change and no separate username");
-  assert.match(src, /It is permanent\./);
+  assert.match(src, /Your Player Name cannot be changed by you after registration\. Ludum staff may change it when necessary\./);
   assert.match(src, /Confirm with your current password, or with Keplr\./);
   assert.match(src, /Nothing changes until the new wallet accepts\./);
   assert.match(src, /released it less than 24 hours ago/, "wallet exclusivity's cooldown, named");
@@ -262,7 +281,7 @@ test("§17 the players by place; a game opened by its address; the old game-reco
 });
 
 test("Moderation: Play's transitions, and the filter counts", () => {
-  const { window } = load(["records.js", "moderation-page.js"]);
+  const { window } = load(["records.js", "pass.js", "work.js", "moderation-page.js"]);
   const M = window.LudumModeration;
   eq(M.TRANSITIONS["no-violation"], ["under-review"]);
   eq(M.TRANSITIONS.open, ["under-review", "no-violation", "conduct-confirmed", "escalated"]);
@@ -277,9 +296,9 @@ test("the new pages load their scripts in order, with the §2.4 CSP first and th
     ["me/index.html", pass, "me-record.js"],
     ["me/account/index.html", [...pass, "/platform/js/ticket.js", "/platform/js/gov.js"], "account-page.js"],
     ["me/game/index.html", [], "game-record.js"],
-    ["moderation/index.html", [], "moderation-page.js"],
-    ["moderation/case/index.html", [], "moderation-page.js"],
-    ["players/index.html", pass, "player-page.js"],
+    ["moderation/index.html", [...pass, "/platform/js/work.js"], "moderation-page.js"],
+    ["moderation/case/index.html", [...pass, "/platform/js/work.js"], "moderation-page.js"],
+    ["players/index.html", [...pass, "/platform/js/work.js", "/platform/js/staff-manage.js"], "player-page.js"],
   ]) {
     /* Read as the site serves it, line ends normalised (a Windows checkout writes CRLF; the published file is LF). */
     const html = readFileSync(resolve(ROOT, rel), "utf8").replace(/\r\n/g, "\n");

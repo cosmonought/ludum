@@ -1,0 +1,205 @@
+// v1.7 website staff on Ludum: Manage under another player's pass (staff-manage.js) and the renamed player's notice
+// (account-menu.js), run for real in a small fake DOM. Pinned: Manage only for `staff.view` and never on your own
+// profile; every control follows the server's `can` (a Moderator sees them aria-disabled, "Admins only for now"); a
+// rename needs an available name and a reason, is sent once with exactly what was chosen, and after "Confirm it's you"
+// the SAME request is sent again; the notice says only the names and the day.
+// Run from the repository root: node --test platform/tests/staff-manage.test.mjs
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import vm from "node:vm";
+
+const JS = resolve(dirname(fileURLToPath(import.meta.url)), "..", "js");
+const eq = (actual, expected, message) => assert.deepEqual(JSON.parse(JSON.stringify(actual)), expected, message);
+
+class Node {
+  constructor(tag) { this.tagName = tag; this.children = []; this.parentNode = null; this.attributes = {}; this.listeners = {}; this.className = ""; this._text = null; this.hidden = false; this.disabled = false; }
+  get firstChild() { return this.children[0] || null; }
+  appendChild(c) { if (c == null) return c; if (c.parentNode) c.parentNode.removeChild(c); c.parentNode = this; this.children.push(c); return c; }
+  insertBefore(c, ref) { if (c.parentNode) c.parentNode.removeChild(c); c.parentNode = this; const i = this.children.indexOf(ref); if (i < 0) this.children.push(c); else this.children.splice(i, 0, c); return c; }
+  removeChild(c) { this.children = this.children.filter((x) => x !== c); c.parentNode = null; return c; }
+  replaceChild(n, old) { const i = this.children.indexOf(old); if (n.parentNode) n.parentNode.removeChild(n); n.parentNode = this; this.children[i] = n; old.parentNode = null; return old; }
+  setAttribute(k, v) { this.attributes[k] = String(v); if (k === "hidden") this.hidden = true; }
+  getAttribute(k) { return Object.prototype.hasOwnProperty.call(this.attributes, k) ? this.attributes[k] : null; }
+  hasAttribute(k) { return Object.prototype.hasOwnProperty.call(this.attributes, k); }
+  removeAttribute(k) { delete this.attributes[k]; }
+  addEventListener(t, f) { (this.listeners[t] = this.listeners[t] || []).push(f); }
+  fire(t) { (this.listeners[t] || []).forEach((f) => f({ currentTarget: this, target: this, preventDefault() {} })); }
+  click() { this.fire("click"); }
+  focus() { Node.focused = this; }
+  set textContent(t) { this.children = []; this._text = String(t); }
+  get textContent() { return (this._text ?? "") + this.children.map((c) => c.textContent).join(""); }
+  set innerHTML(_) { this.children = []; }
+  find(pred) { for (const c of this.children) { if (c instanceof Node) { if (pred(c)) return c; const f = c.find(pred); if (f) return f; } } return null; }
+  findAll(pred, out = []) { for (const c of this.children) if (c instanceof Node) { if (pred(c)) out.push(c); c.findAll(pred, out); } return out; }
+  /** Enough of querySelector for these scripts: "tag", "tag:not([disabled])", comma lists. */
+  querySelector(sel) {
+    const tags = sel.split(",").map((s) => s.trim().match(/^[a-z]+/i)[0]);
+    return this.find((n) => tags.includes(n.tagName) && !n.disabled && n.getAttribute("aria-disabled") !== "true");
+  }
+}
+class Text { constructor(t) { this.text = String(t); this.parentNode = null; } get textContent() { return this.text; } }
+
+function load(files) {
+  const body = new Node("body");
+  const document = { createElement: (t) => new Node(t), createTextNode: (t) => new Text(t), querySelector: (s) => body.querySelector(s), getElementById: (id) => body.find((n) => n.getAttribute("id") === id), body };
+  const ctx = { document, Date, JSON, Math, Number, String, Object, Array, Error, RegExp, Boolean, Promise, isNaN, isFinite, Intl, URLSearchParams, setTimeout: (f) => setTimeout(f, 0), clearTimeout,
+    location: { pathname: "/players/", search: "" }, history: { replaceState() {} }, localStorage: { getItem: () => null, setItem() {}, removeItem() {} } };
+  ctx.window = ctx;
+  vm.createContext(ctx);
+  for (const f of files) vm.runInContext(readFileSync(resolve(JS, f), "utf8"), ctx, { filename: f });
+  return { ctx, body, document };
+}
+const settle = async () => { for (let i = 0; i < 30; i++) await new Promise((r) => setImmediate(r)); };
+const text = (n) => n.textContent.replace(/\s+/g, " ");
+const button = (root, re) => root.find((n) => n.tagName === "button" && re.test(n.textContent));
+
+const ADMIN = { signedIn: true, account: { name: "Caspian" }, staff: { roles: ["admin", "moderator"], permissions: ["case.review", "staff.view", "moderator.manage", "player.rename", "name.reserve"] } };
+const MOD = { signedIn: true, account: { name: "Ivo" }, staff: { roles: ["moderator"], permissions: ["case.review", "staff.view"] } };
+function view(over = {}) {
+  return { name: "Kestral", memberSince: "2026-10", active: true, roles: [], formerNames: [], audit: [], can: { rename: true, reserve: true, moderator: true }, you: false, ...over };
+}
+
+function world(who, answers) {
+  const w = load(["records.js", "pass.js", "work.js", "auth.js", "staff-manage.js"]);
+  const calls = [];
+  const session = { api: (route, body) => { calls.push([route, JSON.parse(JSON.stringify(body))]); const a = answers[route]; return typeof a === "function" ? a(body, calls) : a === undefined ? Promise.reject({ status: 404, error: "not-found" }) : Promise.resolve(a); } };
+  const confirms = [];
+  w.ctx.LudumAuth.confirmPanel = (S, opts) => { confirms.push(opts); return w.document.createElement("form"); };
+  const host = w.document.createElement("div");
+  w.body.appendChild(host);
+  const renamed = [];
+  return { ...w, host, calls, session, confirms, renamed, M: w.ctx.LudumManage, mount: () => w.ctx.LudumManage.mount(host, session, who, "Kestral", (to) => renamed.push(to)) };
+}
+
+test("who sees Manage: staff.view, never on your own profile, never a player", () => {
+  const { ctx } = load(["records.js", "pass.js", "work.js", "staff-manage.js"]);
+  const M = ctx.LudumManage;
+  assert.equal(M.seesManage(ADMIN, "Kestral"), true);
+  assert.equal(M.seesManage(MOD, "Kestral"), true, "a Moderator reads Manage (and the audit history)");
+  assert.equal(M.seesManage(ADMIN, "Caspian"), false, "never on your own profile");
+  assert.equal(M.seesManage({ signedIn: true, account: { name: "Bo" } }, "Kestral"), false, "a player: no staff answer, no Manage");
+  assert.equal(M.seesManage({ signedIn: true, account: { name: "Bo" }, staff: { roles: [], permissions: ["case.review"] } }, "Kestral"), false);
+  assert.equal(M.seesManage({ signedIn: false }, "Kestral"), false);
+});
+
+test("the audit history in words: renames with the former name's fate, reserves, releases, roles; by name and role", () => {
+  const { ctx } = load(["records.js", "pass.js", "work.js", "staff-manage.js"]);
+  const M = ctx.LudumManage;
+  const by = { name: "Caspian", role: "admin" };
+  assert.equal(M.auditChange({ kind: "player-renamed", from: "Kestral", to: "Kestrel", former: "released", outcome: "committed", by }), "Player Name: Kestral → Kestrel · former name released");
+  assert.equal(M.auditChange({ kind: "player-renamed", from: "Kestral", to: "Kestrel", former: "reserved", outcome: "refused", by }), "Player Name: Kestral → Kestrel · former name reserved · refused: nothing changed");
+  assert.equal(M.auditChange({ kind: "name-reserved", name: "Kestral", by }), "Former name reserved: Kestral");
+  assert.equal(M.auditChange({ kind: "role-granted", role: "moderator", by }), "Role given: Moderator");
+  assert.equal(M.auditBy({ by }), "Caspian · Admin");
+  assert.equal(M.auditBy({ by: { name: null, role: "operator", operator: "host" } }), "Server operator", "the operator's own label is not shown");
+  eq(M.newestFormer([{ name: "A", until: "2026-10-01T00:00:00Z" }, { name: "B", until: "2026-10-20T00:00:00Z" }]), { name: "B", until: "2026-10-20T00:00:00Z" });
+  assert.equal(M.newestFormer([]), null);
+  assert.match(M.refusal({ error: "conflict", detail: "taken" }, "rename", "Kestrel"), /Another player took Kestrel a moment ago\. Nothing was changed/);
+  assert.equal(M.refusal({ error: "forbidden" }, "rename"), "Changing it is for Admins only for now.");
+  assert.match(M.refusal({ error: "unavailable", detail: "outcome-unknown" }, "rename"), /read the audit history before trying again/);
+});
+
+test("an Admin's Manage: the three rows, the empty audit history, live controls, Appoint Moderator", async () => {
+  const w = world(ADMIN, { "staff-player": { player: view() } });
+  await w.mount();
+  const t = text(w.host);
+  for (const want of ["Manage", "Only staff see this", "Player Name", "Kestral", "Former names", "None", "Staff roles", "Audit history", "No staff changes to this player yet.", "Admin and Moderator are roles on one account"]) assert.ok(t.includes(want), want);
+  const change = button(w.host, /^Change Player Name/);
+  assert.equal(change.getAttribute("aria-disabled"), null);
+  assert.ok(button(w.host, /^Appoint Moderator/), "an Admin appoints Moderators here");
+  assert.doesNotMatch(t, /Admins only for now/);
+  eq(w.calls, [["staff-player", { name: "Kestral" }]]);
+});
+
+test("a Moderator's Manage: the same rows, the controls aria-disabled and tied to 'Admins only for now'; no role control", async () => {
+  const w = world(MOD, { "staff-player": { player: view({ formerNames: [{ name: "Kestrall", until: "2026-10-20T10:00:00Z", state: "released" }], can: { rename: false, reserve: false, moderator: false } }) } });
+  await w.mount();
+  const change = button(w.host, /^Change Player Name/);
+  const reserve = button(w.host, /^Reserve Kestrall/);
+  for (const b of [change, reserve]) {
+    assert.equal(b.getAttribute("aria-disabled"), "true");
+    const why = w.body.find((n) => n.getAttribute("id") === b.getAttribute("aria-describedby"));
+    assert.equal(why.textContent, "Changing it is for Admins only for now.");
+  }
+  change.click();
+  assert.equal(change.getAttribute("aria-expanded"), "false", "a disabled control opens nothing");
+  assert.equal(button(w.host, /Moderator$/), null, "no Appoint or Remove for a Moderator");
+  assert.match(text(w.host), /Released/);
+});
+
+test("Change Player Name: an available name and a reason, sent once as chosen; Confirm it's you sends the SAME request again", async () => {
+  let renames = 0;
+  const after = view({ name: "Kestrel", formerNames: [{ name: "Kestral", until: "2026-10-23T14:52:00Z", state: "reserved" }],
+    audit: [{ at: "2026-10-23T14:52:00Z", kind: "player-renamed", from: "Kestral", to: "Kestrel", former: "reserved", outcome: "committed", by: { name: "Caspian", role: "admin" }, reason: "Impersonation report" }] });
+  const w = world(ADMIN, {
+    "staff-player": { player: view() },
+    "name-check": (b) => Promise.resolve({ name: b.name, available: b.name === "Kestrel", problem: b.name === "Kestrel" ? null : "taken" }),
+    "staff-rename": () => (++renames === 1 ? Promise.reject({ status: 403, error: "reauth-required" }) : Promise.resolve({ player: after })),
+  });
+  await w.mount();
+  button(w.host, /^Change Player Name/).click();
+  const input = w.host.find((n) => n.tagName === "input" && /ld-pinput--name/.test(n.className));
+  assert.ok(input, "the new name's field");
+  const go = button(w.host, /^Change (name|to )/);
+  assert.equal(go.getAttribute("aria-disabled"), "true", "nothing to change yet");
+
+  input.value = "Bo"; input.fire("blur"); await settle();
+  assert.match(text(w.host), /Another player has that name\. Choose another\./);
+  input.value = "Kestrel"; input.fire("blur"); await settle();
+  assert.match(text(w.host), /Available/);
+  const form = w.host.find((n) => n.tagName === "form");
+  form.fire("submit");
+  assert.match(text(w.host), /Give a reason\. It’s kept in the audit history\./, "no reason: nothing is sent");
+  assert.equal(w.calls.filter(([r]) => r === "staff-rename").length, 0);
+
+  w.host.find((n) => n.tagName === "input" && n.getAttribute("value") === "reserve").fire("change");
+  const reason = w.host.find((n) => n.tagName === "textarea");
+  reason.value = "Impersonation report"; reason.fire("input");
+  assert.match(text(w.host), /Change to Kestrel/);
+  assert.match(text(w.host), /Kestral is reserved:/);
+  form.fire("submit");
+  await settle();
+  assert.equal(w.confirms.length, 1, "Confirm it's you opens in step 4");
+  w.confirms[0].onDone();
+  await settle();
+  const sent = w.calls.filter(([r]) => r === "staff-rename").map(([, b]) => b);
+  eq(sent, [{ name: "Kestral", to: "Kestrel", former: "reserve", reason: "Impersonation report" }, { name: "Kestral", to: "Kestrel", former: "reserve", reason: "Impersonation report" }], "the same request, nothing retyped");
+  const t = text(w.host);
+  for (const want of ["Player Name changed", "Kestral is reserved. Kestrel will be told on their next visit.", "Recorded in the audit history", "by Caspian", "Player Name: Kestral → Kestrel · former name reserved", "Caspian · Admin", "Impersonation report", "Release Kestral"]) assert.ok(t.includes(want), want);
+  eq(w.renamed, ["Kestrel"], "the page's pass, title and address follow the new name");
+});
+
+test("a former name taken meanwhile: the refusal says nothing changed and the name step is refused", async () => {
+  const w = world(ADMIN, {
+    "staff-player": { player: view() },
+    "name-check": () => Promise.resolve({ available: true, problem: null }),
+    "staff-rename": () => Promise.reject({ status: 409, error: "conflict", detail: "taken" }),
+  });
+  await w.mount();
+  button(w.host, /^Change Player Name/).click();
+  const input = w.host.find((n) => n.tagName === "input" && /ld-pinput--name/.test(n.className));
+  input.value = "Kestrel"; input.fire("blur"); await settle();
+  const reason = w.host.find((n) => n.tagName === "textarea");
+  reason.value = "Asked by the player"; reason.fire("input");
+  w.host.find((n) => n.tagName === "form").fire("submit");
+  await settle();
+  assert.match(text(w.host), /Another player took Kestrel a moment ago\. Nothing was changed\. Choose another name\./);
+  assert.equal(button(w.host, /^Change to Kestrel/).getAttribute("aria-disabled"), "true");
+});
+
+test("the renamed player's notice: the names and the day only; nothing for a player without one", () => {
+  const { ctx } = load(["account-menu.js"]);
+  const A = ctx.LudumAccountMenu;
+  eq(A.noticeOf({ signedIn: true, notice: { kind: "player-name-changed", from: "Kestral", to: "Kestrel", at: "2026-10-23T14:52:00.000Z" } }), {
+    title: "Your Player Name is now Kestrel",
+    text: "Ludum staff changed your Player Name from Kestral to Kestrel on 23 Oct 2026. It’s shown on your profile, at tables and in your past standings. When you sign in with a password, use Kestrel; Keplr sign-in doesn’t change.",
+  });
+  assert.equal(A.noticeOf({ signedIn: true }), null);
+  assert.equal(A.noticeOf({ signedIn: false, notice: { kind: "player-name-changed", from: "a", to: "b", at: "2026-10-23T00:00:00Z" } }), null);
+  assert.equal(A.noticeOf({ signedIn: true, notice: { kind: "other", from: "a", to: "b", at: "2026-10-23T00:00:00Z" } }), null);
+  const src = readFileSync(resolve(JS, "session.js"), "utf8");
+  for (const route of ["staff-team", "staff-player", "staff-role", "staff-rename", "staff-former-name", "name-notice-dismiss"]) assert.ok(src.includes(`'${route}'`), route);
+});

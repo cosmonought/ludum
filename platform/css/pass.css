@@ -586,3 +586,428 @@
   .ld-step.is-done .ld-step__mark, .ld-step__status.is-ok::before, .ld-step__status.is-bad::before { background: CanvasText; color: Canvas; }
   .ld-btn[aria-disabled="true"] { border-color: GrayText; color: GrayText; }
 }
+
+/* =====================================================================================================================
+   Ludum v1.7 (owner, 2026-10-23): the WORK TABS (Moderation, Disputes), STAFF's Manage and the RECORD pages (the case
+   file, the conduct case, an appeal, a new appeal) -- sections 16-18 of the Ludum Profile design's bundle.css, ported
+   with Ludum's ld- prefix. The components the records layer already names differently in records.css keep distinct
+   names here, so neither layer restyles the other: ld-wl (the work ledger), ld-rdocket, ld-pchoices / ld-pchoice,
+   ld-pcode, ld-rfacts, ld-routcomes / ld-routcome, ld-rtally, ld-rreceipt, ld-ptwocol, ld-pstack, ld-wfilters,
+   ld-pcheck, ld-pselect, ld-ptextarea, ld-pfield, ld-rec (the record head), ld-rstandings; the tabs are ld-ptabs.
+   ===================================================================================================================== */
+
+/* The facts list and the standings of the record pages (the design's .lp-facts and .lp-standings, section 8, which
+   the Games tab already uses as ld-games__facts and ld-places): here under the record names the sections below use. */
+.ld-rfacts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 24px; margin: 0; align-content: start; }
+.ld-rfacts > div { display: contents; }
+.ld-rfacts dt { padding: 12px 0 10px; border-bottom: 1px solid var(--rule); font: 500 15px/28px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
+.ld-rfacts dd { margin: 0; padding: 12px 0 10px; border-bottom: 1px solid var(--rule); font: 400 19px/28px var(--font-mono); min-width: 0; overflow-wrap: anywhere; }
+.ld-rfacts > div:last-child > * { border-bottom: 0; }
+.ld-rstandings { margin: 0; padding: 0; list-style: none; }
+.ld-rstandings__head, .ld-rstandings > li { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; column-gap: 16px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+.ld-rstandings__head { padding: 0 0 8px; border-bottom: 2px solid var(--rule-strong); font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.ld-rstandings > li:last-child { border-bottom: 0; }
+.ld-rstandings > li > span { min-width: 0; overflow-wrap: anywhere; }
+.ld-rstandings .is-num { text-align: right; }
+.ld-rstandings__place { font: 400 28px/.9 var(--font-display); text-transform: uppercase; }
+.ld-rstandings > li.is-you { font-weight: 600; box-shadow: inset 6px 0 0 var(--you); margin-left: -20px; padding-left: 20px; }
+@container ldp (max-width: 1023px) { .ld-rfacts { grid-template-columns: minmax(0, 1fr); } .ld-rfacts dt { padding-bottom: 0; border-bottom: 0; } }
+
+/* ---------- 16. Work tabs: Moderation and Disputes ----------
+   /moderation/ and /disputes/ are your profile's other tabs: the nav, your pass, the line under it, the tab row, then
+   the panel — exactly as /me/ and /me/account/. No second profile head, no second set of tabs. A panel opens with one
+   line of scope and your standing; then its blocks, each a heading and a ledger; then a line like the pass's own:
+   a closed "how it works" and the way out. */
+.ld-workhead { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px 48px; align-items: start; padding-bottom: var(--space-6); }
+.ld-workhead__lede { margin: 0; max-width: 60ch; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-standing { display: flex; flex-wrap: wrap; row-gap: 16px; margin: 0; }
+.ld-standing > div { min-width: 0; padding: 0 24px; border-left: 1px solid var(--rule); }
+.ld-standing > div:first-child { padding-left: 0; border-left: 0; }
+.ld-standing dt { font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
+.ld-standing dd { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 0; font: 500 19px/28px var(--font-mono); white-space: nowrap; }
+.ld-standing a { color: inherit; }
+/* One line for a problem that turns actions off (a chain read failed, the DAO's pins differ, the page is framed). */
+.ld-worknote { display: flex; gap: 14px; align-items: baseline; margin: 0 0 var(--space-6); padding: 14px 18px 16px; border: 2px solid var(--red); background: var(--sheet); font: 400 19px/28px var(--font-sans); color: var(--ink); }
+.ld-worknote::before { content: ''; flex: none; width: 12px; height: 12px; background: var(--red-ink); }
+.ld-worknote b { font-weight: 600; }
+
+.ld-block + .ld-block { margin-top: var(--space-8); }
+/* Ludum: a block the page redraws in place sits in its own slot; the slots keep the same rhythm. */
+.ld-panel > div:has(> .ld-block) + div > .ld-block:first-child { margin-top: var(--space-8); }
+/* Ludum: at full width the appeals ledger's seven columns stay inside the container -- the cue, the status and the
+   tally's header wrap rather than push the table past its edge and squeeze the titles. */
+.ld-wl--appeals .c-you .ld-yours, .ld-wl--appeals .c-status .ld-state, .ld-wl--appeals thead th.is-num { white-space: normal; }
+.ld-block__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 24px; margin-bottom: 16px; }
+.ld-block__head h3 { display: flex; align-items: baseline; gap: 14px; margin: 0; font: 400 36px/.94 var(--font-display); text-transform: uppercase; }
+.ld-block__count { font: 400 19px/1 var(--font-mono); color: var(--ink-3); text-transform: none; }
+.ld-block__read { margin: 0; font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.ld-block__note { margin: 16px 0 0; max-width: 76ch; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-block .ld-none { margin-top: 0; }
+.ld-none.is-bad b { display: flex; align-items: center; gap: 14px; }
+.ld-none.is-bad b::before { content: ''; flex: none; width: 16px; height: 16px; background: var(--red-ink); }
+.ld-none .ld-btn { margin-top: 18px; }
+.ld-reading { display: flex; align-items: center; gap: 14px; margin: 0; padding: 22px 0 6px; border-top: 2px solid var(--rule-strong); font: 400 19px/28px var(--font-mono); color: var(--ink-2); }
+
+/* Filters: pressed toggles, not tabs (they filter one list; the tabs go to pages). The count beside them is live. */
+.ld-wfilters { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px 24px; margin-bottom: 16px; }
+.ld-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.ld-chips button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin: 0; padding: 0 14px; font: 600 16px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); background: transparent; border: 2px solid var(--rule-strong); border-radius: 0; cursor: pointer; }
+.ld-chips button span { font-weight: 400; color: var(--ink-3); }
+.ld-chips button:hover { background: var(--paper-2); }
+.ld-chips button[aria-pressed="true"] { color: var(--paper); background: var(--ink); }
+.ld-chips button[aria-pressed="true"] span { color: var(--paper-2); }
+.ld-wfilters__count { margin: 0; font: 400 19px/28px var(--font-mono); color: var(--ink-2); }
+
+/* The ledger: the Games ledger, generalised (black head, 19px rows, the key in Anton with Ludum's red underline). */
+.ld-wl { width: 100%; border-collapse: collapse; font: 400 19px/28px var(--font-mono); font-variant-numeric: tabular-nums; }
+.ld-wl thead th { padding: 12px 16px 11px; text-align: left; vertical-align: bottom; white-space: nowrap; background: var(--frame); color: var(--on-frame); font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.ld-wl thead th small { margin-left: 6px; font: inherit; opacity: .78; }
+.ld-wl th:first-child, .ld-wl td:first-child { padding-left: 20px; }
+.ld-wl td { padding: 18px 16px 16px; border-bottom: 1px solid var(--rule); vertical-align: top; color: var(--ink); min-width: 0; }
+.ld-wl tbody > tr:last-child > td { border-bottom: 0; }
+.ld-wl .is-num { text-align: right; }
+.ld-wl tbody > tr { transition: background-color var(--dur-wipe) var(--ease-out); }
+.ld-wl tbody > tr:hover { background: var(--paper-2); }
+.ld-wl tr.is-you > td:first-child { box-shadow: inset 6px 0 0 var(--you); }
+.ld-wl__key { display: inline-block; font: 400 36px/.9 var(--font-display); color: var(--ink); text-decoration: none; border-bottom: 2px solid var(--red); padding-top: 2px; }
+.ld-wl__title { display: inline; font: 400 28px/1 var(--font-display); text-transform: uppercase; letter-spacing: .01em; color: var(--ink); text-decoration: none; border-bottom: 2px solid var(--red); }
+.ld-wl__text { color: var(--ink); text-decoration: none; border-bottom: 2px solid var(--red); font-family: var(--font-sans); }
+.ld-wl__key:hover, .ld-wl__title:hover, .ld-wl__text:hover { color: var(--red-ink); }
+.ld-wl__sub { display: block; margin-top: 4px; color: var(--ink-3); }
+.ld-wl__sub a { color: inherit; }
+.ld-wl__sub.is-bad { color: var(--red-ink); font-weight: 500; }
+.ld-wl .c-act { text-align: right; white-space: nowrap; }
+.ld-wl .c-when, .ld-wl .c-open, .ld-wl .c-last, .ld-wl .c-due, .ld-wl .c-since { white-space: nowrap; }
+.ld-wl .c-act .ld-btn { margin: -6px 0; }
+.ld-wl__empty > td { padding: 22px 20px; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-wl__empty:hover { background: none !important; }
+.ld-cellk { display: none; }
+
+/* A row's state: the words, with a shape that says the same (as the account steps do).
+   ring = under way · square = needs someone to act · disc = settled · red square = time ran out or a read failed. */
+.ld-state { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; color: var(--ink-2); }
+.ld-state::before { content: ''; flex: none; width: 12px; height: 12px; border: 2px solid currentColor; border-radius: var(--radius-token); }
+.ld-state.is-due { color: var(--ink); font-weight: 600; }
+.ld-state.is-due::before, .ld-state.is-bad::before { border-radius: 0; background: currentColor; }
+.ld-state.is-done { color: var(--ink-3); }
+.ld-state.is-done::before { background: currentColor; }
+.ld-state.is-bad { color: var(--red-ink); font-weight: 600; }
+.ld-rfacts .ld-state, .ld-recfacts .ld-state, .ld-provenance .ld-state { white-space: normal; align-items: flex-start; }
+.ld-rfacts .ld-state::before, .ld-recfacts .ld-state::before { margin-top: 8px; }
+/* Something that is yours to do (you haven't voted). Yellow is `you`, as everywhere: beside words that say it. */
+.ld-yours { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; font-weight: 600; color: var(--ink); }
+.ld-yours::before { content: ''; flex: none; width: 12px; height: 12px; background: var(--you); outline: 1px solid var(--ink); outline-offset: -1px; }
+
+/* Roles: one account, every role it holds. Admin is inked; Moderator is outlined. They add up, never duplicate. */
+.ld-roles { display: inline-flex; flex-wrap: wrap; gap: 6px; vertical-align: middle; }
+.ld-role { display: inline-flex; align-items: center; min-height: 28px; padding: 3px 9px 1px; font: 600 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; color: var(--ink); border: 2px solid var(--ink); }
+.ld-role--admin { color: var(--paper); background: var(--ink); }
+.ld-wl__name { font: 400 28px/1 var(--font-display); text-transform: uppercase; color: var(--ink); text-decoration: none; border-bottom: 2px solid var(--red); }
+.ld-wl__name:hover { color: var(--red-ink); }
+.ld-wl__you { margin-left: 8px; color: var(--ink-3); }
+
+/* Under the panel: how it works (closed), and the way out — the pass's own line, restated. */
+.ld-workfoot { margin-top: var(--space-7); padding-top: 8px; border-top: 1px solid var(--rule); }
+.ld-workfoot__links { display: flex; flex-wrap: wrap; gap: 4px 28px; margin-top: 10px; }
+
+/* Phones: four tabs make two rows of two, each a full 48px+ target; three or fewer keep one row. */
+@container ldp (max-width: 599px) {
+  .ld-ptabs:has(> a:nth-child(4)) { flex: 1 1 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; }
+  .ld-ptabs:has(> a:nth-child(4)) > a { padding: 0 12px 0 0; border-bottom: 1px solid var(--rule); }
+  .ld-ptabs:has(> a:nth-child(4)) > a::after { left: 0; right: 12px; bottom: -1px; height: 5px; }
+  .ld-ptabs:has(> a:nth-child(4)) > a:nth-last-child(-n+2) { border-bottom: 0; }
+  .ld-ptabs:has(> a:nth-child(4)) > a:nth-last-child(-n+2)::after { bottom: -2px; }
+}
+
+/* Laptop: the ledgers tighten and let their dates and states wrap before anything scrolls. */
+@container ldp (max-width: 1279px) {
+  .ld-wl th, .ld-wl td { padding-inline: 12px; }
+  .ld-wl th:first-child, .ld-wl td:first-child { padding-left: 16px; }
+  .ld-wl .c-due, .ld-wl .c-when, .ld-wl .c-open, .ld-wl .c-last, .ld-wl .ld-state { white-space: normal; }
+  .ld-wl .ld-state { align-items: flex-start; }
+  .ld-wl .ld-state::before { margin-top: 8px; }
+}
+/* Each row becomes a card of labelled facts (labels are aria-hidden; the table's own headers stay for assistive
+   tech): the two widest ledgers (disputed tables, appeals) from laptop down, the others from tablet down. */
+@container ldp (max-width: 1279px) {
+  .ld-wl--wide { position: relative; }
+  .ld-wl--wide thead { display: block; position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+  .ld-wl--wide, .ld-wl--wide tbody, .ld-wl--wide td { display: block; }
+  .ld-wl--wide tbody > tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px 20px; padding: 18px 0 20px; border-bottom: 1px solid var(--rule); }
+  .ld-wl--wide tbody > tr:last-child { border-bottom: 0; }
+  .ld-wl--wide td, .ld-wl--wide td:first-child, .ld-wl--wide td.is-num, .ld-wl--wide td.c-act { padding: 0; border: 0; text-align: left; white-space: normal; }
+  .ld-wl--wide .ld-state, .ld-wl--wide .ld-yours { white-space: normal; align-items: flex-start; }
+  .ld-wl.ld-wl--wide td, .ld-wl--wide .ld-cellk { white-space: normal; }
+  .ld-wl--wide .ld-state::before, .ld-wl--wide .ld-yours::before { margin-top: 8px; }
+  .ld-wl--wide tr.is-you { box-shadow: inset 6px 0 0 var(--you); padding-left: 16px; }
+  .ld-wl--wide tr.is-you > td:first-child { box-shadow: none; }
+  .ld-wl--wide .ld-cellk { display: block; margin-bottom: 4px; font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .ld-wl--wide .c-wide { grid-column: 1 / -1; }
+  .ld-wl--wide .c-act { grid-column: 1 / -1; text-align: left; }
+  .ld-wl--wide .c-act .ld-btn { margin: 4px 0 0; }
+  .ld-wl--wide .c-act:empty { display: none; }
+  .ld-wl--wide .ld-wl__empty { display: block; }
+  .ld-wl--wide .ld-wl__empty > td { padding: 4px 0; }
+}
+@container ldp (max-width: 1023px) {
+  .ld-workhead { grid-template-columns: minmax(0, 1fr); }
+  .ld-wl--stack { position: relative; }
+  .ld-wl--stack thead { display: block; position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+  .ld-wl--stack, .ld-wl--stack tbody, .ld-wl--stack td { display: block; }
+  .ld-wl--stack tbody > tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px 20px; padding: 18px 0 20px; border-bottom: 1px solid var(--rule); }
+  .ld-wl--stack tbody > tr:last-child { border-bottom: 0; }
+  .ld-wl--stack td, .ld-wl--stack td:first-child, .ld-wl--stack td.is-num, .ld-wl--stack td.c-act { padding: 0; border: 0; text-align: left; white-space: normal; }
+  .ld-wl--stack .ld-state, .ld-wl--stack .ld-yours { white-space: normal; align-items: flex-start; }
+  .ld-wl.ld-wl--stack td, .ld-wl--stack .ld-cellk { white-space: normal; }
+  .ld-wl--stack .ld-state::before, .ld-wl--stack .ld-yours::before { margin-top: 8px; }
+  .ld-wl--stack tr.is-you { box-shadow: inset 6px 0 0 var(--you); padding-left: 16px; }
+  .ld-wl--stack tr.is-you > td:first-child { box-shadow: none; }
+  .ld-wl--stack .ld-cellk { display: block; margin-bottom: 4px; font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .ld-wl--stack .c-wide { grid-column: 1 / -1; }
+  .ld-wl--stack .c-act { grid-column: 1 / -1; text-align: left; }
+  .ld-wl--stack .c-act .ld-btn { margin: 4px 0 0; }
+  .ld-wl--stack .c-act:empty { display: none; }
+  .ld-wl--stack .ld-wl__empty { display: block; }
+  .ld-wl--stack .ld-wl__empty > td { padding: 4px 0; }
+}
+/* Laptop and tablet: the wide ledgers' cards lay their facts out in three columns. */
+@container ldp (min-width: 600px) and (max-width: 1279px) {
+  .ld-wl--wide tbody > tr { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 32px; }
+  .ld-wl--disputes tbody > tr { grid-template-areas: "case appeal by" "bond due act"; }
+  .ld-wl--disputes .c-case { grid-area: case; } .ld-wl--disputes .c-appeal { grid-area: appeal; } .ld-wl--disputes .c-by { grid-area: by; }
+  .ld-wl--disputes .c-bond { grid-area: bond; } .ld-wl--disputes .c-due { grid-area: due; } .ld-wl--disputes .c-act { grid-area: act; justify-self: end; align-self: end; }
+  .ld-wl--appeals tbody > tr { grid-template-areas: "no status you" "title title title" "case when tally"; }
+  .ld-wl--appeals .c-no { grid-area: no; } .ld-wl--appeals .c-status { grid-area: status; } .ld-wl--appeals .c-you { grid-area: you; justify-self: end; }
+  .ld-wl--appeals .c-title { grid-area: title; } .ld-wl--appeals .c-case { grid-area: case; } .ld-wl--appeals .c-when { grid-area: when; } .ld-wl--appeals .c-tally { grid-area: tally; }
+}
+@container ldp (max-width: 599px) {
+  .ld-standing { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+  .ld-standing > div, .ld-standing > div:first-child { padding: 0; border: 0; }
+  .ld-block__head h3 { font-size: 28px; }
+  .ld-wl__key { font-size: 32px; }
+  .ld-wl__title, .ld-wl__name { font-size: 24px; }
+  .ld-wl--stack .c-act .ld-btn { display: flex; width: 100%; }
+  .ld-chips button { padding: 0 12px; }
+}
+@container ldp (max-width: 379px) {
+  .ld-wl--stack tbody > tr { grid-template-columns: minmax(0, 1fr); }
+  .ld-standing { grid-template-columns: minmax(0, 1fr); }
+  .ld-state, .ld-yours { white-space: normal; }
+}
+
+/* ---------- 17. Staff: Manage, on another player's profile ----------
+   Staff see one more row under a player's pass: Manage ("Only staff see this", marked in ink — yellow stays `you`).
+   Its rows are the Account tab's rows; its one change today is the Player Name, for Admins; the audit history lists
+   every staff change to this player, newest first. */
+.ld-private--staff::before { background: var(--ink); }
+.ld-account__why { display: block; margin-top: 8px; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-ptextarea { display: block; width: 100%; min-height: 116px; padding: 10px 14px; font: 400 19px/28px var(--font-sans); color: var(--ink); background: var(--sheet); border: 2px solid var(--rule-strong); border-radius: 0; resize: vertical; }
+.ld-step.is-error .ld-ptextarea { border-color: var(--red); box-shadow: inset 6px 0 0 var(--red); }
+.ld-pfield__foot { display: flex; justify-content: space-between; gap: 12px; font: 500 15px/18px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+/* What will change, said before the red button. */
+.ld-confirm { margin-top: 14px; padding: 16px 18px 18px; border: 2px dashed var(--rule-strong); }
+.ld-confirm__names { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 0; font: 400 36px/.94 var(--font-display); text-transform: uppercase; overflow-wrap: anywhere; }
+.ld-confirm__names s { text-decoration: none; color: var(--ink-3); }
+.ld-confirm__names .ld-icon { width: 24px; height: 24px; }
+.ld-confirm ul { display: grid; gap: 6px; margin: 14px 0 0; padding: 0; list-style: none; }
+.ld-confirm li { display: grid; grid-template-columns: 10px minmax(0, 1fr); gap: 12px; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-confirm li::before { content: ''; width: 8px; height: 8px; margin-top: 10px; background: var(--ink-3); }
+.ld-confirm li b { font-weight: 600; color: var(--ink); }
+.ld-recorded { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; margin: 12px 0 0; font: 400 19px/28px var(--font-mono); color: var(--ink-2); }
+.ld-recorded::before { content: ''; width: 12px; height: 12px; background: var(--ink); border-radius: var(--radius-token); align-self: center; }
+.ld-audit { margin-top: var(--space-7); }
+/* Former names: staff-only, each with what became of it. */
+.ld-former { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.ld-former li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+.ld-former__name { font: 400 28px/1 var(--font-display); text-transform: uppercase; }
+.ld-former__when { font: 400 19px/28px var(--font-mono); color: var(--ink-3); }
+
+/* Choices: one of a few, each a row with its consequence (the former name; a case's next status; a vote; an appeal's
+   outcome). A native radio, visually replaced by a ring that fills; the row is the target; disabled rows say why. */
+.ld-pchoices { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.ld-pchoices legend { margin-bottom: 10px; padding: 0; font: 600 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.ld-pchoices--row { grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); }
+.ld-pchoice { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr); column-gap: 14px; row-gap: 4px; padding: 14px 16px 15px; border: 2px solid var(--rule); background: var(--sheet); cursor: pointer; }
+.ld-pchoice:hover { border-color: var(--ink); }
+.ld-pchoice input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.ld-pchoice__box { grid-row: 1 / span 2; width: 22px; height: 22px; margin-top: 3px; border: 2px solid var(--ink); border-radius: var(--radius-token); }
+.ld-pchoice__name { font: 600 19px/28px var(--font-mono); color: var(--ink); }
+.ld-pchoice__line { font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-pchoice:has(input:checked) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.ld-pchoice:has(input:checked) .ld-pchoice__box { background: radial-gradient(circle, var(--ink) 0 5px, transparent 6px); }
+.ld-pchoice:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 3px; }
+.ld-pchoice.is-disabled { cursor: not-allowed; border-style: dashed; background: transparent; }
+.ld-pchoice.is-disabled .ld-pchoice__box { border-color: var(--ink-3); }
+.ld-pchoice.is-disabled .ld-pchoice__name { color: var(--ink-3); }
+.ld-key .ld-pchoice, .ld-keyin .ld-pchoice { background: var(--paper-2); }
+
+
+
+/* ---------- 18. Records: the case file, the conduct case, the appeal, a new appeal ----------
+   A record opens on the pass's stock: a head printed as a ticket (main part | perforation | stub). The main part holds
+   the way back to its tab, what the record is, its title and one sentence; the stub holds the few facts that decide
+   what happens next. Below it, the same blocks as the work tabs (Anton heading, read time, ledger or facts, one note).
+   No numbered section heads, no second profile head, no stamped boxes. */
+.ld-rec { max-width: none; --stub-w: clamp(320px, 28cqi, 420px); }
+.ld-rec__head { display: grid; gap: 12px; padding: 22px 32px 30px; }
+.ld-rec--form { --stub-w: clamp(380px, 32cqi, 480px); }
+.ld-ticket__stub .ld-rfacts { grid-template-columns: minmax(0, 1fr); }
+.ld-ticket__stub .ld-rfacts dt { padding-bottom: 0; border-bottom: 0; }
+.ld-ticket__stub .ld-rfacts dd { padding-top: 2px; }
+.ld-rec__top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 24px; margin-bottom: 6px; }
+.ld-back .ld-icon { width: 18px; height: 18px; }
+.ld-rec__kicker { margin: 0; font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.ld-rec__title { margin: 0; min-width: 0; font: 400 88px/.88 var(--font-display); text-transform: uppercase; overflow-wrap: anywhere; padding-top: .04em; }
+.ld-rec__title:focus { outline: 0; }
+.ld-rec__title--m { font-size: 56px; line-height: .94; }
+.ld-rec__dek { margin: 4px 0 0; max-width: 64ch; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-recfacts { display: grid; align-content: start; margin: 0; padding: 22px 28px 26px; }
+.ld-recfacts > div { padding: 12px 0 14px; border-top: 1px solid var(--rule); min-width: 0; }
+.ld-recfacts > div:first-child { border-top: 0; padding-top: 0; }
+.ld-recfacts dt { font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.ld-recfacts dd { margin: 8px 0 0; font: 500 19px/28px var(--font-mono); overflow-wrap: anywhere; }
+.ld-recfacts dd.is-fig { font: 400 36px/.94 var(--font-display); text-transform: uppercase; }
+.ld-recfacts dd small { display: block; margin-top: 2px; font: 400 19px/28px var(--font-mono); color: var(--ink-3); text-transform: none; }
+.ld-recsource { margin: 14px 0 0; font: 500 15px/20px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); overflow-wrap: anywhere; }
+.ld-recsource span { white-space: nowrap; }
+.ld-partynote { margin: 24px 0 0; padding: 14px 18px 16px; background: var(--sheet); box-shadow: inset 6px 0 0 var(--you); font: 400 19px/28px var(--font-sans); color: var(--ink); }
+.ld-partynote b { font-weight: 600; }
+.ld-recbody { margin-top: var(--space-7); }
+.ld-ptwocol { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 32px 56px; align-items: start; }
+.ld-pstack { display: grid; gap: 20px; align-content: start; min-width: 0; }
+.ld-sub { margin: 0 0 12px; font: 600 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.ld-provenance { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 6px 16px; margin: 20px 0 0; padding-top: 14px; border-top: 1px solid var(--rule); font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+
+/* The docket: what happened (a disc), what is happening now (a square, on the stub's tint), what is due (a ring). */
+.ld-rdocket { margin: 0; padding: 0; list-style: none; border-top: 2px solid var(--rule-strong); }
+.ld-rdocket > li { display: grid; grid-template-columns: 190px 24px minmax(0, 1fr) auto; grid-template-areas: "when mark main aside"; column-gap: 20px; padding: 16px 16px 18px 0; border-bottom: 1px solid var(--rule); }
+.ld-rdocket__when { grid-area: when; margin: 0; padding-left: 16px; font: 400 19px/28px var(--font-mono); color: var(--ink-2); }
+.ld-rdocket__when b { display: block; font-weight: 600; color: var(--ink); }
+.ld-rdocket__mark { grid-area: mark; justify-self: center; width: 14px; height: 14px; margin-top: 7px; border: 2px solid var(--ink); border-radius: var(--radius-token); background: var(--ink); }
+.ld-rdocket__main { grid-area: main; min-width: 0; }
+.ld-rdocket__what { margin: 0; font: 600 19px/28px var(--font-mono); color: var(--ink); }
+.ld-rdocket__what a { color: inherit; text-decoration: none; border-bottom: 2px solid var(--red); }
+.ld-rdocket__line { margin: 4px 0 0; max-width: 70ch; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-rdocket__by { display: block; margin-top: 6px; font: 500 15px/18px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.ld-rdocket__aside { grid-area: aside; align-self: start; padding-top: 2px; font: 400 19px/28px var(--font-mono); }
+.ld-rdocket > li.is-now { background: var(--paper-2); }
+.ld-rdocket > li.is-now .ld-rdocket__mark { border-radius: 0; }
+.ld-rdocket > li.is-due .ld-rdocket__mark { background: transparent; }
+
+/* What each resolution would do: four columns, rules not boxes; the one that happens without a vote on the tint. */
+.ld-routcomes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 2px solid var(--rule-strong); }
+.ld-routcome { min-width: 0; padding: 18px 20px 22px; border-left: 1px solid var(--rule); }
+.ld-routcome:first-child { border-left: 0; padding-left: 0; }
+.ld-routcome--alt { background: var(--paper-2); }
+.ld-routcome h4 { margin: 0; font: 400 28px/1 var(--font-display); text-transform: uppercase; }
+.ld-routcome p { margin: 10px 0 0; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-routcome dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; margin: 14px 0 0; font: 400 19px/28px var(--font-mono); font-variant-numeric: tabular-nums; }
+.ld-routcome dt, .ld-routcome dd { margin: 0; padding: 6px 0; border-top: 1px solid var(--rule); }
+.ld-routcome dd { text-align: right; padding-left: 12px; }
+.ld-routcome dt.is-you { font-weight: 600; box-shadow: inset 4px 0 0 var(--you); padding-left: 10px; }
+.ld-routcome.is-off h4, .ld-routcome.is-off p { color: var(--ink-3); }
+
+/* The game's result, in its game's own field (as the rating plate is). */
+.ld-fieldpanel { padding: 18px 22px 22px; background: var(--plate-ground); color: var(--plate-ink); }
+.ld-fieldpanel__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 16px; margin-bottom: 14px; }
+.ld-fieldpanel__head h4 { margin: 0; font: 400 28px/1 var(--font-display); text-transform: uppercase; color: var(--plate-ink); }
+.ld-fieldpanel__head span { font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--plate-label); }
+.ld-fieldpanel .ld-rstandings__head { color: var(--plate-label); border-bottom-color: var(--plate-ink); }
+.ld-fieldpanel .ld-rstandings > li { border-bottom-color: color-mix(in srgb, var(--plate-ink) 22%, transparent); font: 400 19px/28px var(--font-mono); }
+.ld-fieldpanel .ld-rstandings > li.is-you { margin-left: -22px; padding-left: 22px; }
+.ld-fieldpanel__note { margin: 14px 0 0; font: 400 19px/28px var(--font-sans); color: var(--plate-label); }
+
+/* The vote: shares of total voting power, the quorum marked. Yes solid, No hatched, Abstain grey; the figures say it. */
+.ld-rtally { display: grid; gap: 12px; }
+.ld-rtally__row { display: grid; grid-template-columns: 120px minmax(0, 1fr) 104px; gap: 16px; align-items: center; }
+.ld-rtally__name { font: 600 19px/28px var(--font-mono); }
+.ld-rtally__bar { position: relative; height: 20px; border: 2px solid var(--ink); background: var(--sheet); }
+.ld-rtally__fill { position: absolute; inset: 0 auto 0 0; background: var(--ink); }
+.ld-rtally__fill--no { background: repeating-linear-gradient(135deg, var(--ink) 0 3px, transparent 3px 7px); }
+.ld-rtally__fill--abstain { background: var(--ink-3); }
+.ld-rtally__mark { position: absolute; top: -10px; bottom: -10px; width: 3px; margin-left: -1px; background: var(--red-ink); }
+.ld-rtally__fig { text-align: right; font: 400 19px/28px var(--font-mono); font-variant-numeric: tabular-nums; }
+.ld-rtally__row.is-turnout { margin-top: 8px; padding-top: 18px; border-top: 1px solid var(--rule); }
+.ld-rtally__src { margin: 6px 0 0; font: 400 19px/28px var(--font-sans); color: var(--ink-2); }
+.ld-rtally__src b { font-weight: 600; color: var(--red-ink); }
+
+/* Exact messages: shown, never paraphrased. Scrolls inside itself; focusable to scroll by keyboard. */
+.ld-pcode { margin: 0; max-height: 380px; overflow: auto; padding: 16px 18px; font: 400 19px/28px var(--font-mono); white-space: pre; tab-size: 2; color: var(--ink); background: var(--paper-2); border: 2px solid var(--rule-strong); }
+[data-theme="press"] .ld-pcode { background: var(--sheet); }
+
+/* A transaction, unlike a sign-in signature, moves something on chain and costs a network fee: it is said first. */
+.ld-tx { display: grid; gap: 14px; padding: 22px 24px 26px; background: var(--paper); color: var(--ink); }
+.ld-tx__warn { display: flex; gap: 12px; align-items: baseline; margin: 0; font: 400 19px/28px var(--font-sans); color: var(--ink); }
+.ld-tx__warn::before { content: ''; flex: none; width: 12px; height: 12px; background: var(--yellow); }
+.ld-tx__warn b { font-weight: 600; }
+.ld-tx__label { margin: 0; font: 500 15px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.ld-tx__status { margin: 0; font: 400 19px/28px var(--font-mono); color: var(--ink-2); }
+.ld-tx .ld-pchoices { margin-top: 2px; }
+
+.ld-rreceipt { border: 2px solid var(--rule-strong); background: var(--sheet); }
+.ld-rreceipt__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; padding: 14px 18px 12px; border-bottom: 2px solid var(--rule-strong); }
+.ld-rreceipt__head b { font: 400 28px/1 var(--font-display); text-transform: uppercase; }
+.ld-rreceipt .ld-rfacts { padding: 2px 18px 6px; }
+.ld-rreceipt__foot { padding: 10px 18px 14px; border-top: 1px solid var(--rule); }
+
+.ld-pcheck { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 14px; align-items: start; font: 400 19px/28px var(--font-sans); color: var(--ink); cursor: pointer; }
+.ld-pcheck input { appearance: none; width: 22px; height: 22px; margin: 3px 0 0; border: 2px solid currentColor; border-radius: 0; background: transparent; cursor: pointer; }
+.ld-pcheck input:checked { background: currentColor; box-shadow: inset 0 0 0 4px var(--paper); }
+.ld-pcheck input:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.ld-pselect { width: 100%; min-height: 52px; padding: 10px 44px 10px 14px; font: 500 19px/28px var(--font-mono); color: var(--ink); background: var(--sheet) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 4v15M6 13l6 6 6-6' fill='none' stroke='%230B0B0B' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 14px center / 20px 20px; border: 2px solid var(--rule-strong); border-radius: 0; appearance: none; }
+.ld-weights { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 14px; }
+.ld-details > summary { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; cursor: pointer; list-style: none; font: 600 16px/18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.ld-details > summary::-webkit-details-marker { display: none; }
+.ld-details > summary span { background: linear-gradient(currentColor, currentColor) 0 100% / 100% 2px no-repeat; padding-bottom: 4px; }
+.ld-details[open] > summary .ld-plus-v { display: none; }
+.ld-details > summary .ld-icon { width: 18px; height: 18px; }
+
+@container ldp (max-width: 1279px) {
+  .ld-rec__title { font-size: 76px; }
+  .ld-rec__title--m { font-size: 48px; }
+  .ld-routcomes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ld-routcome:nth-child(3) { border-left: 0; padding-left: 0; }
+  .ld-routcome:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  .ld-routcome--alt:nth-child(n+3) { padding-left: 20px; }
+}
+@container ldp (max-width: 1023px) {
+  .ld-rec__title { font-size: 64px; }
+  .ld-ptwocol { grid-template-columns: minmax(0, 1fr); }
+  .ld-rdocket > li { grid-template-columns: 24px minmax(0, 1fr) auto; grid-template-areas: "mark when aside" "mark main aside"; row-gap: 2px; padding-right: 12px; }
+  .ld-rdocket__when { padding-left: 0; }
+  .ld-rdocket__when b { display: inline; margin-right: 10px; }
+  .ld-rdocket__mark { margin-left: 12px; }
+}
+@container ldp (max-width: 599px) {
+  .ld-rec__head { padding: 18px 16px 22px; }
+  .ld-rec__title { font-size: 52px; }
+  .ld-rec__title--m { font-size: 32px; }
+  .ld-recfacts { padding: 18px 16px 20px; }
+  .ld-routcomes { grid-template-columns: minmax(0, 1fr); }
+  .ld-routcome, .ld-routcome:first-child, .ld-routcome:nth-child(3) { border-left: 0; padding-left: 0; padding-right: 0; }
+  .ld-routcome + .ld-routcome { border-top: 1px solid var(--rule); }
+  .ld-routcome--alt, .ld-routcome--alt:nth-child(n+3) { padding-left: 14px; padding-right: 14px; }
+  .ld-rdocket > li { grid-template-areas: "mark when" "mark main" "mark aside"; grid-template-columns: 24px minmax(0, 1fr); }
+  .ld-rdocket__aside { padding-top: 8px; }
+  .ld-rtally__row { grid-template-columns: 84px minmax(0, 1fr) 76px; gap: 10px; }
+  .ld-pchoices--row { grid-template-columns: minmax(0, 1fr); }
+  .ld-tx { padding: 18px 16px 20px; }
+  .ld-fieldpanel { padding: 16px 16px 18px; }
+  .ld-fieldpanel .ld-rstandings__head, .ld-fieldpanel .ld-rstandings > li { grid-template-columns: 52px minmax(0, 1fr) auto; }
+  .ld-fieldpanel .ld-rstandings > li.is-you { margin-left: -16px; padding-left: 16px; }
+  .ld-former__name { font-size: 24px; }
+}
+@container ldp (max-width: 379px) {
+  .ld-rec__title { font-size: 44px; }
+  .ld-rec__title--m { font-size: 28px; }
+}
+
+@media (forced-colors: active) {
+  .ld-state::before, .ld-yours::before, .ld-worknote::before, .ld-none.is-bad b::before, .ld-recorded::before { forced-color-adjust: none; border: 2px solid CanvasText; background: CanvasText; }
+  .ld-state:not(.is-due):not(.is-done):not(.is-bad)::before { background: Canvas; }
+  .ld-chips button[aria-pressed="true"] { forced-color-adjust: none; background: Highlight; color: HighlightText; }
+  .ld-role--admin { forced-color-adjust: none; background: CanvasText; color: Canvas; }
+  .ld-rdocket__mark, .ld-pchoice__box, .ld-pcheck input, .ld-rtally__bar { forced-color-adjust: none; border-color: CanvasText; }
+  .ld-rdocket > li:not(.is-due) .ld-rdocket__mark, .ld-rtally__fill { background: CanvasText; }
+  .ld-pchoice:has(input:checked) .ld-pchoice__box, .ld-pcheck input:checked { background: Highlight; }
+}

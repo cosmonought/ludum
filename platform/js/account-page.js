@@ -1,6 +1,7 @@
 /* Ludum · /me/account/ -- your profile, Account (Ludum Profile "the pass", owner 2026-10-22). The same pass and tabs as
  * Games, then four private facts, each with at most one action:
- *   Player Name           permanent (one name, for signing in and everywhere you are shown); no action.
+ *   Player Name           one name, for signing in and everywhere you are shown; no action (v1.7: players can't change
+ *                         it after registration; Ludum staff may, from Manage, and the player is told).
  *   Authorization Wallet  signs you in through Keplr. Change wallet: your password, then this wallet's approval, then the
  *                         new wallet's acceptance -- nothing changes until the new wallet accepts. A wallet another
  *                         account holds, or released less than 24 hours ago, is refused (wallet exclusivity, unchanged).
@@ -374,7 +375,7 @@
     slot.appendChild(el('section', { class: 'ld-panel', 'aria-labelledby': 'panel-account' }, [
       el('h2', { class: 'ld-sr', id: 'panel-account', text: 'Account' }),
       el('dl', { class: 'ld-account' }, [
-        row('Player Name', el('span', { class: 'ld-account__value', text: v.name }), 'Your name at every table, on your profile and for signing in. It is permanent.', null),
+        row('Player Name', el('span', { class: 'ld-account__value', text: v.name }), 'Your Player Name cannot be changed by you after registration. Ludum staff may change it when necessary.', null),
         row('Authorization Wallet', walletValue, 'Signs you in through Keplr.' + (v.wallet ? ' Set ' + v.wallet.since + '.' : '') + ' Changing it needs your password, this wallet’s approval and the new wallet’s acceptance.', v.wallet ? walletBtn : null, walletMore),
         row('Password', pwValue, 'Used to authorize a new wallet or as an alternative way to sign in. You can change it with the current password or with Keplr.', pwBtn, pwMore),
         row('Sessions', el('span', { class: 'ld-account__value ld-account__value--mono', text: 'Signed in on this browser' }), sessionsNote, sessions.button, sessions.slot)

@@ -1,5 +1,5 @@
-// The governance pages as Claude Design drew them (Appeals & Disputes, Case file, New appeal, Proposal, the list), run
-// for real (gov.js + gov-case.js + records.js + gov-page.js) in a small fake DOM against the fixture world.
+// The governance pages as Claude Design drew them (the Disputes tab, Case file, New appeal, Proposal, the list), run for
+// real (records.js + pass.js + work.js + gov.js + gov-case.js + gov-page.js) in a small fake DOM against the fixture world.
 // Pinned: the governance trust path is unchanged -- chain reads only on load (GET, the pinned REST endpoint), Keplr never
 // touched on load, the server record never enables an action, the deadline guard and the membership checks gate every
 // transaction, link-by-decoding only; and nothing is invented when a read fails.
@@ -58,9 +58,9 @@ async function load(page, search = "", { world = F.world(), sessionApi, withSess
     fetch: F.restFetch(world, (u, init) => requests.push([u, init && init.method])), keplr,
   };
   ctx.window = ctx; ctx.top = ctx; ctx.self = ctx;
-  if (withSession) ctx.LudumSession = { api: (route, b, options) => { apiCalls.push([route, b, options]); return sessionApi ? sessionApi(route, b) : Promise.resolve(F.caseRecord(Number(b.chainGameId))); }, ...(who ? { whoami: () => Promise.resolve(who) } : {}) };
+  if (withSession) ctx.LudumSession = { api: (route, b, options) => { apiCalls.push([route, b, options]); return route === "profile" ? Promise.resolve(PROFILE) : sessionApi ? sessionApi(route, b) : Promise.resolve(F.caseRecord(Number(b.chainGameId))); }, ...(who ? { whoami: () => Promise.resolve(who) } : {}) };
   vm.createContext(ctx);
-  for (const f of ["platform/js/records.js", "platform/js/gov.js", "platform/js/gov-case.js", "platform/js/gov-page.js"]) vm.runInContext(src(f), ctx, { filename: f });
+  for (const f of ["platform/js/records.js", "platform/js/pass.js", "platform/js/work.js", "platform/js/gov.js", "platform/js/gov-case.js", "platform/js/gov-page.js"]) vm.runInContext(src(f), ctx, { filename: f });
   const settle = async () => { for (let i = 0; i < wait; i++) await new Promise((r) => setImmediate(r)); };
   await settle();
   const text = () => body.textContent.replace(/\s+/g, " ");
@@ -70,18 +70,23 @@ async function load(page, search = "", { world = F.world(), sessionApi, withSess
   return { ctx, body, head, keplr, requests, apiCalls, replaced, assigned, text, buttons, links, connect, settle, storage };
 }
 const disabled = (b) => b.getAttribute("aria-disabled") === "true";
+/** The `profile` answer the Disputes tab's pass is drawn from. */
+const PROFILE = { standing: { completedGames: 3, uniqueOpponents: 2, memberSince: "2026-10" }, publicCredits: { value: 1200, provenance: "server-recorded" }, ratings: [] };
 const caseOf = (rec) => () => Promise.resolve(rec);
 
-/* ================= Appeals & Disputes (/disputes/) ================= */
+/* ================= Disputes (/disputes/): a tab of your profile ================= */
 
-test("register: the pending-review table, from the chain, with Play's names only when its wallets match", async () => {
+test("register: the Disputes tab -- your pass and tabs, the disputed tables from the chain, Play's names only when its wallets match", async () => {
   const p = await load("register", "", { who: { signedIn: true, account: { name: "Marlowe", username: "m" }, roles: { reviewer: false } } });
   const t = p.text();
-  for (const want of ["Your record", "Appeals & Disputes", "Pending review", "Escrow game 7", "Escrow game 6", "seat 2", "Marlowe", "5.00", "Proposal 13", "Under appeal", "Proposal 11"]) assert.ok(t.includes(want), want);
+  for (const want of ["Games", "Account", "Disputes", "Disputed tables", "Escrow game 7", "Escrow game 6", "seat 2", "Marlowe", "5.00", "Proposal 13", "Voting", "Proposal 11", "Appeals", "How a dispute is decided", "All Ludum DAO proposals"]) assert.ok(t.includes(want), want);
+  const current = p.body.findAll((n) => n.tagName === "a" && n.getAttribute("aria-current") === "page");
+  assert.deepEqual(current.map((a) => a.getAttribute("href")), ["/disputes/"], "Disputes is the current tab");
+  assert.ok(!t.includes("Pending review") && !t.includes("Appeals & Disputes"), "the old page head is gone");
   assert.equal(p.keplr.calls, 0, "Keplr is never touched on load");
   assert.equal(p.head.children.length, 0, "the signing bundle is never loaded on load");
   for (const [u, method] of p.requests) { assert.ok(u.startsWith(F.PIN.rest), u); assert.equal(method, "GET", "page load never POSTs to the chain"); }
-  assert.ok(p.apiCalls.every(([route]) => route === "case"), "only Play's public case route");
+  assert.ok(p.apiCalls.every(([route]) => route === "case" || route === "profile"), "only Play's public case route, and your own profile for the pass");
 });
 
 test("register: proposals with the design's filters and counts; percentages are the proposal's own", async () => {
@@ -95,32 +100,32 @@ test("register: proposals with the design's filters and counts; percentages are 
   assert.equal(failedTab.getAttribute("aria-pressed"), "true");
 });
 
-test("register: a member's cues appear only for a connected member wallet", async () => {
-  const p = await load("register");
-  assert.ok(!p.text().includes("Ready to execute"), "no cue before a wallet is connected");
-  await p.connect();
-  assert.ok(p.text().includes("Member"));
-  assert.ok(p.text().includes("4.0%"), "voting power: the cw4 weight over the group's total weight");
-  assert.ok(p.text().includes("Ready to execute"));
-  assert.ok(p.text().includes("Your vote is open"));
-  assert.equal(p.storage.size, 0, "signed out: nothing is remembered (membership is kept per signed-in account only)");
-});
-
-test("register: a member wallet connected while signed in is remembered under THAT account only", async () => {
-  const who = { signedIn: true, account: { name: "Ann", username: "ann", memberSince: "2026-10", authorizationWallet: null } };
-  const p = await load("register", "", { who });
-  await p.connect();
-  assert.equal(p.storage.size, 1);
+test("register: your standing and a member's cues are read on chain from the account's Authorization Wallet -- Keplr never asked", async () => {
+  const youOf = (authorizationWallet) => ({ signedIn: true, account: { name: "Ann", username: "ann", memberSince: "2026-10", authorizationWallet }, roles: { reviewer: false } });
+  const p = await load("register", "", { who: youOf({ address: F.MEMBER }) });
+  const t = p.text();
+  assert.ok(t.includes("Member"), "Ludum DAO: Member");
+  assert.ok(t.includes("4.0%"), "voting power: the cw4 weight over the group's total weight");
+  assert.ok(t.includes("Ready to execute"));
+  assert.ok(t.includes("Your vote is open"));
+  assert.equal(p.keplr.calls, 0, "the standing needs no Keplr");
+  assert.equal(p.buttons(/Keplr/).length, 0, "the Disputes tab signs nothing: votes and executions are on each appeal's page");
   const R = p.ctx.LudumRecords;
-  assert.ok(R.rememberedMember(p.ctx.localStorage, Date.now(), "ann"), "Ann's menu draws Appeals & Disputes");
+  assert.ok(R.rememberedMember(p.ctx.localStorage, Date.now(), "ann"), "Ann's tabs draw Disputes");
   assert.equal(R.rememberedMember(p.ctx.localStorage, Date.now(), "bob"), null, "another account on this browser never inherits it");
+  const outsider = await load("register", "", { who: youOf({ address: "juno1" + "n".repeat(38) }) });
+  assert.match(outsider.text(), /Not a member/);
+  assert.doesNotMatch(outsider.text(), /Your vote is open|Ready to execute/, "no member's cue for a wallet that is not one");
+  const signedOut = await load("register");
+  assert.doesNotMatch(signedOut.text(), /Your vote is open|Voting power/, "signed out: no standing, no cue");
+  assert.equal(signedOut.storage.size, 0, "signed out: nothing is remembered (membership is kept per signed-in account only)");
 });
 
 test("register: nothing disputed and no proposals -> empty states; an unreadable chain -> unavailable, nothing invented", async () => {
   const empty = F.world({ games: () => ({ data: { games: [] } }), reverse_proposals: () => ({ data: { proposals: [] } }) });
   const p = await load("register", "", { world: empty });
-  assert.match(p.text(), /Nothing pending/);
-  assert.match(p.text(), /No proposals yet/);
+  assert.match(p.text(), /Nothing is disputed/);
+  assert.match(p.text(), /No appeals yet/);
   const down = await load("register", "", { world: F.world({ games: () => ({ status: 502, message: "bad gateway" }) }) });
   assert.match(down.text(), /Unavailable.*could not be read from the chain/);
   assert.doesNotMatch(down.text(), /Escrow game 7/);
@@ -133,7 +138,7 @@ test("case: docket, parties, the disputed result, evidence, the four outcomes an
   const t = p.text();
   for (const want of ["Docket", "Result recorded", "Challenged", "Appeal proposed", "Voting closes", "Resolver deadline", "Parties", "Teodora", "11.940882", "Challenger · bond 5.00",
     "The disputed result", "$6,940", "Recorded settlement", "29.25", "Settlement key 2 · trusted", "Evidence", "1,486 entries", "matches neither", "agree with the chain facts",
-    "What each resolution would do", "13.982058", "by the corrected weights", "9.75", "Timeout", "5.00 back", "The appeal", "41.0%", "Quorum 20%", "You are a party", "34.25 JUNOX", "Chain facts from escrow"]) {
+    "What each resolution would do", "13.982058", "pays by its corrected weights", "9.75", "Timeout", "5.00 back", "The appeal", "41.0%", "Quorum 20%", "You sat at this table", "34.25 JUNOX", "Chain facts from escrow"]) {
     assert.ok(t.includes(want), want);
   }
   assert.equal(p.apiCalls.length, 1, "exactly one `case` call");
@@ -348,14 +353,16 @@ test("route map: the design's /account/ and /cases/ addresses go to the engineer
   for (const bad of ["/cases/x/", "/cases//evil.example/", "/account/games/../x", "/accountx/", "/cases/052/", "//evil.example/cases/1/", "/account/appeals/proposals/0/"]) assert.equal(M.mapDesignPath(bad), null, bad);
 });
 
-test("every governance page: the §2.4 CSP first, the records layer, no inline script, the scripts in order", () => {
+test("every governance page: the §2.4 CSP first, the records layer and the pass's, no inline script, the scripts in order", () => {
   for (const [rel, kind] of [["disputes/index.html", "register"], ["disputes/case/index.html", "case"], ["governance/index.html", "governance"], ["governance/new/index.html", "new"], ["governance/proposal/index.html", "proposal"]]) {
     const html = src(rel);
     assert.match(html, /<head>\n<meta http-equiv="Content-Security-Policy"/, rel);
     assert.match(html, new RegExp(`data-gov-page="${kind}"`), rel);
     const order = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
-    assert.deepEqual(order, ["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", "/platform/js/auth.js", "/platform/js/account-menu.js", "/platform/js/gov.js", "/platform/js/gov-case.js", "/platform/js/gov-page.js"], rel);
+    assert.deepEqual(order, ["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", "/platform/js/pass.js", "/platform/js/work.js", "/platform/js/auth.js", "/platform/js/account-menu.js", "/platform/js/gov.js", "/platform/js/gov-case.js", "/platform/js/gov-page.js"], rel);
     assert.ok(html.indexOf("/platform/css/records.css") > html.indexOf("/design-system/css/ludum.css"), rel);
+    assert.ok(html.indexOf("/platform/css/pass.css") > html.indexOf("/platform/css/records.css"), rel);
+    assert.match(html, /<main id="main" class="ld-profile">/, `${rel}: the profile's container`);
     assert.doesNotMatch(html, /<script>|\son[a-z]+=|javascript:|ld-specimen/i, rel);
   }
   assert.match(src("404.html"), /<script src="\/platform\/js\/route-map\.js"><\/script>\r?\n<script src="\/design-system\/js\/ludum\.js">/);

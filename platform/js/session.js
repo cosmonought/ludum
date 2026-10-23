@@ -46,7 +46,9 @@
 
   var PLAY_ORIGIN = 'https://play.netadao.org';
   var API_BASE = PLAY_ORIGIN + '/gs/api/ludum/v1/';
-  var ROUTES = ['session', 'games', 'game', 'case', 'account', 'display-name', 'moderation-queue', 'moderation-case', 'moderation-decide', 'profile', 'player', 'name-check', 'players'];
+  var ROUTES = ['session', 'games', 'game', 'case', 'account', 'display-name', 'moderation-queue', 'moderation-case', 'moderation-decide', 'profile', 'player', 'name-check', 'players',
+    /* v1.7: website staff (Manage, the Moderation team) and the renamed player's notice */
+    'staff-team', 'staff-player', 'staff-role', 'staff-rename', 'staff-former-name', 'name-notice-dismiss'];
   var RETURN_PATH = /^\/[a-z0-9\/_-]{0,128}$/;
   var AUTH_ACTIONS = ['start', 'sign-in', 'authorization', 'create', 'recover', 'confirm', 'sign-out', 'password', 'wallet-challenge', 'wallet-replace', 'keplr-sign-in', 'wallet-approve', 'sign-out-others'];
 

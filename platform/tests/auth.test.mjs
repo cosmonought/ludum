@@ -376,7 +376,8 @@ test("the account pages: the §2.4 CSP first, no third-party script, the forms' 
   }
   /* The approved copy (Ludum Profile, owner 2026-10-22). */
   assert.ok(page.includes("This is the name displayed on your profile, at game tables, and to other players. "), "Player Name note");
-  assert.ok(page.includes("It is permanent."));
+  assert.ok(page.includes("Your Player Name cannot be changed by you after registration.") && page.includes(" Ludum staff may change it when necessary."), "v1.7: players can't change it; staff may");
+  assert.ok(page.includes("That name isn’t available. Choose another."), "v1.7: a reserved former name, never whose it was");
   assert.ok(page.includes("Used to authorize a new wallet or as an alternative way to sign in."));
   assert.ok(page.includes("Future sign-ins only require your authorized Keplr wallet and a verification signature."));
   assert.ok(page.includes("Your account isn’t created yet: finish with step 4."), "signing is not creating");

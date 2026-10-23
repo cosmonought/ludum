@@ -1,6 +1,6 @@
 /* Ludum · LudumAuth -- Ludum's own account actions (1830Juno docs/ludum/LUDUM_PLATFORM_ARCHITECTURE.md §15, §19; the
  * owner's final authentication policy, 2026-10-22):
- *   - ONE permanent Player Name, for signing in and for everything other players see;
+ *   - ONE Player Name, for signing in and for everything other players see (players can't change it; Ludum staff may);
  *   - Sign in with Keplr is primary (the Authorization Wallet approves one SIGN-IN signature); the Player Name and
  *     password are the alternative;
  *   - a forgotten password is reset with the Authorization Wallet alone (the wallet identifies the account);

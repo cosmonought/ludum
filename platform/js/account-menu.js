@@ -10,6 +10,9 @@
  * It asks `LudumSession.whoami()` once. Until the answer the slot is empty (no flash of SIGN IN for a signed-in player);
  * if Play cannot be reached the slot offers SIGN IN. Everything from the server is set as text. Needs
  * /platform/js/session.js before it.
+ *
+ * v1.7: while staff have changed this player's Player Name and they haven't said Got it, the notice sits under the nav on
+ * every page (the session answer's `notice`).
  */
 (function () {
   'use strict';
@@ -34,6 +37,49 @@
 
   /** Whether `path` is the signed-in player's own profile (the name carries the current bar there). */
   function isOwnProfile(path) { return typeof path === 'string' && (path === '/me/' || path.indexOf('/me/account/') === 0); }
+
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  /** v1.7 (Ludum Profile "NameNotice"): the renamed player's notice, from the session answer (pure): {title, text} or
+   *  null. Only the old and new names and the day -- never a reason, a staff name or anything from the audit history. */
+  function noticeOf(session) {
+    var n = session && session.signedIn === true ? session.notice : null;
+    if (!n || n.kind !== 'player-name-changed' || typeof n.from !== 'string' || typeof n.to !== 'string' || typeof n.at !== 'string') return null;
+    var d = new Date(n.at);
+    if (isNaN(d.getTime())) return null;
+    var day = d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+    return {
+      title: 'Your Player Name is now ' + n.to,
+      text: 'Ludum staff changed your Player Name from ' + n.from + ' to ' + n.to + ' on ' + day + '. It’s shown on your profile, at tables and in your past standings. When you sign in with a password, use ' + n.to + '; Keplr sign-in doesn’t change.'
+    };
+  }
+
+  /** The notice under the nav, until Got it: dismissed on the server, so it doesn't come back on another device. If the
+   *  dismissal doesn't reach the server, the notice stays and says so. */
+  function drawNotice(nav, session) {
+    var said = noticeOf(session);
+    var old = document.querySelector('aside.ld-flag[data-name-notice]');
+    if (old && old.parentNode) old.parentNode.removeChild(old);
+    if (!said || !nav.parentNode) return;
+    var got = el('button', { class: 'ld-btn ld-btn--secondary ld-btn--s', type: 'button', text: 'Got it' });
+    var fail = el('p', { role: 'alert', hidden: '' });
+    var aside = el('aside', { class: 'ld-flag', 'aria-labelledby': 'ld-flag-title', 'data-name-notice': '' }, [el('div', { class: 'ld-wrap ld-flag__inner' }, [
+      el('div', { class: 'ld-flag__text' }, [el('h2', { class: 'ld-flag__title', id: 'ld-flag-title', text: said.title }), el('p', { text: said.text }), fail]),
+      got
+    ])]);
+    got.addEventListener('click', function () {
+      got.disabled = true;
+      window.LudumSession.api('name-notice-dismiss', {}).then(function () {
+        if (aside.parentNode) aside.parentNode.removeChild(aside);
+        var main = document.getElementById('main');
+        if (main) { if (!main.hasAttribute('tabindex')) main.setAttribute('tabindex', '-1'); main.focus(); }
+      }, function () {
+        got.disabled = false;
+        fail.textContent = 'That didn’t reach the game server. Try Got it again in a moment.';
+        fail.hidden = false;
+      });
+    });
+    nav.parentNode.insertBefore(aside, nav.nextSibling);
+  }
 
   /** Sign out here: the shared session ends for Ludum and Play; then this page reloads, signed out (a private page goes
    *  home). If the request fails, Play's own sign-out link is offered instead (nothing is left half-done). */
@@ -116,6 +162,7 @@
     }
     if (!slot.parentNode) bar.insertBefore(slot, play);
     if (sheetSlot && !sheetSlot.parentNode) sheet.insertBefore(sheetSlot, foot || null);
+    drawNotice(nav, session);
   }
 
   function start() {
@@ -124,6 +171,6 @@
     window.LudumSession.whoami().then(function (session) { render(nav, session); }, function () { render(nav, null); });
   }
 
-  window.LudumAccountMenu = Object.freeze({ entries: entries, isOwnProfile: isOwnProfile, render: render });
+  window.LudumAccountMenu = Object.freeze({ entries: entries, isOwnProfile: isOwnProfile, noticeOf: noticeOf, render: render });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();

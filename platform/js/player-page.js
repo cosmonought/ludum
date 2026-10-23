@@ -110,7 +110,7 @@
     });
   }
 
-  /** A player's public profile. */
+  /** A player's public profile; staff (v1.7) also see Manage under it (staff-manage.js), never on their own. */
   function profile(slot, session, name) {
     slot.textContent = '';
     var shell = P.pass(null, { name: name, id: 'pass-name' });
@@ -119,8 +119,22 @@
     return session.api('player', { name: name }).then(function (answer) {
       var figures = P.figuresOfPlayer(answer.player);
       document.title = figures.name + ' — Ludum';
-      slot.replaceChild(P.pass(figures, { id: 'pass-name' }), shell);
+      var drawn = P.pass(figures, { id: 'pass-name' });
+      slot.replaceChild(drawn, shell);
       slot.appendChild(P.passFoot());
+      var M = window.LudumManage;
+      if (!M || typeof session.whoami !== 'function') return;
+      /* A rename made here: the pass, the title and the address follow the new name (the old one is never kept). */
+      function renamed(to) {
+        document.title = to + ' — Ludum';
+        try { window.history.replaceState(null, '', '/players/?name=' + encodeURIComponent(to)); } catch (e) { /* the address stays */ }
+        session.api('player', { name: to }).then(function (next) {
+          var fresh = P.pass(P.figuresOfPlayer(next.player), { id: 'pass-name' });
+          slot.replaceChild(fresh, drawn);
+          drawn = fresh;
+        }, function () { /* the figures stay; the name is corrected on the next visit */ });
+      }
+      return session.whoami().then(function (who) { if (M.seesManage(who, figures.name)) return M.mount(slot, session, who, figures.name, renamed); }, function () { /* no Manage without a session */ });
     }, function (e) {
       slot.textContent = '';
       document.title = 'Players — Ludum';

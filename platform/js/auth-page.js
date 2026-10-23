@@ -126,7 +126,7 @@
       say.textContent = 'Approve the connection in Keplr.';
       A.signInWithKeplr(S, G, function (stage, info) {
         if (stage === 'wallet') { extra.textContent = ''; extra.appendChild(T.wallet(info.wallet)); }
-        if (stage === 'sign') { extra.appendChild(T.check([['Site', T.siteName()], ['Account', 'The one this wallet authorizes'], ['Wallet', A.short(info.wallet)]])); say.textContent = 'Approve the signature in Keplr.'; }
+        if (stage === 'sign') { extra.appendChild(T.check([['Site', T.siteName()], ['Account', 'The one this wallet authorizes'], ['Wallet', A.short(info.wallet)]])); extra.appendChild(el('p', { class: 'ld-key__lede', text: 'The message names no account: which one you’re signed in to comes back once the wallet has signed.' })); say.textContent = 'Approve the signature in Keplr.'; }
         if (stage === 'session') say.textContent = 'Signing you in.';
       }).then(function () {
         say.textContent = 'Signed in.';
@@ -137,7 +137,7 @@
         var k = A.keplrProblem(e, G);
         if (e && e.error === 'wallet-not-authorized') {
           var shown = extra.querySelector('.ld-key__wallet');
-          trouble('This wallet isn’t authorized', 'No Ludum account signs in with this wallet. In Keplr, switch to your Authorization Wallet and try again, or create an account.', [retryButton()]);
+          trouble('This wallet isn’t authorized', 'No Ludum account signs in with this wallet. You’re not signed in. In Keplr, switch to your Authorization Wallet and try again, or create an account.', [retryButton()]);
           if (shown) extra.insertBefore(shown, extra.firstChild);
           return;
         }
@@ -199,7 +199,7 @@
     var nameIn = T.input('su-n', { name: true, autocomplete: 'username', field: 'name', attrs: { maxlength: '64', required: '', 'aria-describedby': 'su-n-note' } });
     var s1 = T.step(1, { label: 'Player Name', labelFor: 'su-n', errorId: 'su-n-err' });
     s1.body.appendChild(el('div', { class: 'ld-step__row' }, [nameIn]));
-    s1.body.appendChild(el('p', { class: 'ld-step__note', id: 'su-n-note' }, ['This is the name displayed on your profile, at game tables, and to other players. ', el('b', { text: 'It is permanent.' })]));
+    s1.body.appendChild(el('p', { class: 'ld-step__note', id: 'su-n-note' }, ['This is the name displayed on your profile, at game tables, and to other players. ', el('b', { text: 'Your Player Name cannot be changed by you after registration.' }), ' Ludum staff may change it when necessary.']));
     s1.set('active');
 
     /* Step 2 */
@@ -272,6 +272,8 @@
         if (r.available) { state.available = true; s1.set('done', { text: 'Available', kind: 'ok' }); }
         else if (r.problem === 'taken') nameError('Taken', 'Another player already has that name. Choose another.');
         else if (r.problem === 'not-allowed') nameError('Not allowed', 'That name isn’t allowed. Choose another.');
+        /* v1.7: a former name staff reserved -- never whose it was. */
+        else if (r.problem === 'unavailable') nameError('Unavailable', 'That name isn’t available. Choose another.');
         else nameError('Not a name', A.sentence({ error: 'bad-name' }, 'create'));
         refreshGo();
       }, function (e) {
@@ -457,7 +459,7 @@
       alt: el('p', { class: 'ld-ticket__alt' }, ['Remembered it?', el('a', { class: 'ld-link', href: '/me/sign-in/' + carried(search) }, ['Sign in ', ARROW()])]),
       main: [el('div', { class: 'ld-key', 'data-theme': 'press' }, [s1.node]), el('div', { class: 'ld-steplist' }, [s2.node, s3.node])],
       stubCopy: true,
-      stub: [stubCopy('Which account?', [note('The wallet decides. The account’s name appears once the new password is set.')]),
+      stub: [stubCopy('Which account?', [note('The wallet decides. Keplr’s message names no account; the account’s name appears once the new password is set.')]),
         stubCopy('Afterwards', [note('You’re signed in here, and other browsers signed in to the account are signed out.')])]
     });
     mountTicket(slot, made, null);
@@ -477,7 +479,7 @@
       s1Say.textContent = 'Approve the connection in Keplr.';
       A.authorizeReset(S, G, function (stage, info) {
         if (stage === 'wallet') { s1Wallet.textContent = ''; s1Wallet.appendChild(T.wallet(info.wallet)); }
-        if (stage === 'sign') { s1.set('active', { text: 'Approve in Keplr' }); s1Say.textContent = ''; s1Extra.appendChild(T.check([['Site', T.siteName()], ['Password for', 'The account this wallet authorizes'], ['Wallet', A.short(info.wallet)]])); }
+        if (stage === 'sign') { s1.set('active', { text: 'Approve in Keplr' }); s1Say.textContent = ''; s1Extra.appendChild(T.check([['Site', T.siteName()], ['Account', 'The one this wallet authorizes'], ['Wallet', A.short(info.wallet)]])); }
       }).then(function (proof) {
         held = proof;
         T.idle(keyBtn);
@@ -485,7 +487,7 @@
         s1Acts.textContent = '';
         s1.set('done', { text: 'Approved', kind: 'ok' });
         s1Lede.textContent = '';
-        s1Lede.textContent = 'Approved. Set the new password below within a few minutes.';
+        s1Lede.textContent = 'Approved. Set the new password below within a few minutes. The account’s name appears once it’s set.';
         set.removeAttribute('aria-disabled');
         why.textContent = '';
         s2.set('active'); s3.set('active');
@@ -533,7 +535,7 @@
         }
         if (e && e.error === 'wallet-not-authorized') {
           held = null; set.setAttribute('aria-disabled', 'true'); why.textContent = 'Approve with your wallet first (step 1).';
-          trouble('Not authorized', 'This wallet isn’t authorized', 'No Ludum account signs in with this wallet. In Keplr, switch to the account’s Authorization Wallet and try again.', [button('Reset with Keplr', approve)]);
+          trouble('Not authorized', 'This wallet isn’t authorized', 'No Ludum account signs in with this wallet, so no password was set. Nothing was changed. In Keplr, switch to the account’s Authorization Wallet and start again.', [button('Reset with Keplr', approve)]);
           s2.set('todo'); s3.set('todo');
           return;
         }

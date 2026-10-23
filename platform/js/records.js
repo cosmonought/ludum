@@ -1,12 +1,12 @@
 /* Ludum · LudumRecords — the shared pieces of the records pages (/me/, /me/account/, /players/, /moderation/), built
- * from the records layer's components (platform/css/records.css): the record head, the profile tabs, stamps, amounts,
- * shortened ids and hashes, notices and the docket.
+ * from the records layer's components (platform/css/records.css): the record head, stamps, amounts, shortened ids and
+ * hashes, notices and the docket. The profile tabs themselves are pass.js's tabsRow.
  *
  * Everything from a server or the chain goes in as textContent: nothing here parses a string as HTML. Icons are the
  * design system's own paths (Ludum.icon), never data.
  *
  * The profile tabs follow the two-authorities rule (design handoff §3): Moderation is drawn only for a conduct reviewer
- * (the signed-in account, `session.roles.reviewer`, decided by the server), Appeals & Disputes only when the chain says
+ * (the signed-in account, `session.roles.reviewer`, decided by the server), Disputes only when the chain says
  * the SIGNED-IN ACCOUNT's Authorization Wallet -- or a Keplr wallet this account connected on the governance pages -- is a
  * Ludum DAO member. That answer is read automatically (no Keplr needed: the cw4 group's public `member` query), kept for
  * ten minutes in this browser UNDER THIS ACCOUNT'S USERNAME, and never used for another account: a different account
@@ -179,16 +179,6 @@
     return { text: '—', kind: 'closed' };
   }
 
-  /* ---------- the tabs' rule (pure) ---------- */
-
-  /** The profile tabs this visitor sees, in order. `current` is one of "record" | "account" | "moderation" | "appeals". */
-  function profileTabs(session, daoMember, current) {
-    var tabs = [{ key: 'record', href: '/me/', text: 'Your record' }, { key: 'account', href: '/me/account/', text: 'Your account' }];
-    if (session && session.signedIn === true && session.roles && session.roles.reviewer === true) tabs.push({ key: 'moderation', href: '/moderation/', text: 'Moderation' });
-    if (daoMember) tabs.push({ key: 'appeals', href: '/disputes/', text: 'Appeals & Disputes' });
-    return tabs.map(function (t) { return { key: t.key, href: t.href, text: t.text, current: t.key === current }; });
-  }
-
   function accountOf(session) { return session && session.signedIn === true && session.account && typeof session.account.username === 'string' ? session.account.username : null; }
 
   /** This account's remembered membership entry, or null: {account, member, keplr, checkedAt}. Another account's entry,
@@ -206,7 +196,7 @@
       return { account: v.account, member: v.member, keplr: v.keplr, checkedAt: v.checkedAt };
     } catch (e) { return null; }
   }
-  /** Whether to draw Appeals & Disputes for THIS account from what is remembered (fresh, this account's): {checkedAt} or
+  /** Whether to draw Disputes for THIS account from what is remembered (fresh, this account's): {checkedAt} or
    *  null. `account` is the signed-in username; without it nothing is drawn. */
   function rememberedMember(storage, nowMs, account) {
     var v = membershipEntry(storage, nowMs, account, false);
@@ -324,11 +314,6 @@
       ])
     ]);
   }
-  function tabsNav(tabs) {
-    return el('div', { class: 'ld-wrap ld-rectabs' }, [el('nav', { class: 'ld-tabs', 'aria-label': 'Profile' }, tabs.map(function (t) {
-      return el('a', { href: t.href, 'aria-current': t.current ? 'page' : null, text: t.text });
-    }))]);
-  }
   /** A records section: number, title and dek, then the body. 1830Juno §17: a page of data has no numbered chapters --
    *  `no` null draws the head without its number. */
   function section(no, id, title, dek, body, extraClass) {
@@ -380,28 +365,14 @@
   /** A Mintscan-free receipt link: the chain's own REST view of one transaction. */
   function txHref(hash) { return 'https://juno.api.t.stavr.tech/cosmos/tx/v1beta1/txs/' + encodeURIComponent(String(hash)); }
 
-  /** Mount the page's record head and tabs in `slot` once the session is known; the Appeals tab follows the chain's
-   *  answer for THIS account (drawn at once from a fresh remembered answer, then corrected when the chain answers). */
-  function profileFrame(slot, session, current, head) {
-    slot.textContent = '';
-    slot.appendChild(rechead(head));
-    var nav = tabsNav(profileTabs(session, rememberedMember(root.localStorage, Date.now(), accountOf(session)), current));
-    slot.appendChild(nav);
-    checkMembership(session).then(function (member) {
-      if (member === null || !nav.parentNode) return;
-      var drawn = !!nav.querySelector('a[href="/disputes/"]');
-      if (drawn !== member) { var next = tabsNav(profileTabs(session, member, current)); nav.parentNode.replaceChild(next, nav); nav = next; }
-    });
-  }
-
   var api = {
     day: day, clock: clock, month: month, shortId: shortId, shortHash: shortHash, shortAddress: shortAddress, junox: junox, amountClass: amountClass,
-    ordinal: ordinal, dollars: dollars, daysUntil: daysUntil, provenanceText: provenanceText, profileTabs: profileTabs,
+    ordinal: ordinal, dollars: dollars, daysUntil: daysUntil, provenanceText: provenanceText,
     rememberedMember: rememberedMember, rememberMember: rememberMember, forgetMembership: forgetMembership, checkMembership: checkMembership,
     membershipEntry: membershipEntry, accountOf: accountOf, DAO_MEMBER_KEY: DAO_MEMBER_KEY, LEGACY_DAO_MEMBER_KEY: LEGACY_DAO_MEMBER_KEY,
     DAO_MEMBER_TTL_MS: DAO_MEMBER_TTL_MS, CHAIN_REST: CHAIN_REST, CW4_GROUP: CW4_GROUP,
-    el: el, icon: icon, stamp: stamp, idSpan: idSpan, hashSpan: hashSpan, val: val, td: td, notice: notice, rechead: rechead, tabsNav: tabsNav,
-    section: section, ledger: ledger, go: go, docketItem: docketItem, txHref: txHref, profileFrame: profileFrame,
+    el: el, icon: icon, stamp: stamp, idSpan: idSpan, hashSpan: hashSpan, val: val, td: td, notice: notice, rechead: rechead,
+    section: section, ledger: ledger, go: go, docketItem: docketItem, txHref: txHref,
     credits: credits, rating: rating, ratingChange: ratingChange, signClass: signClass, gameName: gameName,
     outcomeOf: outcomeOf, tip: tip, duration: duration
   };
