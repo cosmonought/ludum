@@ -1,12 +1,12 @@
 /* Ludum · LudumPass -- the player's pass (Ludum Profile, Direction A "the pass", owner 2026-10-22): one composition for
  * every profile, public (/players/?name=) and your own (/me/, /me/account/). Three bands inside a 2px edge: the MAIN
  * part (the name; Credits; Lifetime Earnings and Activity Rank; each game's Skill Rating plate down the right side), a
- * PERFORATION in the Neta colours, and the STUB (Experience: Completed Games, Unique Opponents, Member Since).
+ * PERFORATION in the Neta colours, and the STUB (Experience: Games Played, Unique Opponents, Member Since).
  *
  * Every figure is the server's (1830Juno §18/§19: `player`, or the own `profile` with its `standing`), never counted
  * here. Credits and Lifetime Earnings are always shown; a Skill Rating is "Provisional" until five rated games in its
  * game, with five punches (aria-hidden: the words beside them say the same). Activity Rank counts activity, not skill;
- * with no completed game it reads "Not ranked yet". No avatar, no mark: the name, in Anton, is the identity.
+ * with no game played it reads "Not ranked yet". No avatar, no mark: the name, in Anton, is the identity.
  *
  *   LudumPass.figuresOfPlayer(player)          the public `player` answer, as the pass reads it (pure)
  *   LudumPass.figuresOfProfile(profile, who)   the own `profile` answer (+ the session), as the pass reads it (pure)
@@ -144,7 +144,7 @@
     var plates = f ? platesOrder(f.ratings) : [];
     var layout = platesLayout(plates.length);
     var heading = el('h1', { class: 'ld-pass__name' + (size ? ' ld-pass__name--' + size : ''), id: id, tabindex: opts.focusable ? '-1' : null, text: name || ' ' });
-    var stub = [['Completed Games', f ? (f.completed === null ? '—' : whole(f.completed)) : '—'], ['Unique Opponents', f ? (f.opponents === null ? '—' : whole(f.opponents)) : '—'], ['Member Since', f ? month(f.memberSince) : '—']];
+    var stub = [['Games Played', f ? (f.completed === null ? '—' : whole(f.completed)) : '—'], ['Unique Opponents', f ? (f.opponents === null ? '—' : whole(f.opponents)) : '—'], ['Member Since', f ? month(f.memberSince) : '—']];
     return el('article', { class: 'ld-pass', 'aria-labelledby': id, 'aria-busy': f ? null : 'true' }, [
       el('div', { class: 'ld-pass__main' }, [
         el('header', { class: 'ld-pass__head' }, [heading]),
@@ -157,7 +157,7 @@
             ])]),
         el('dl', { class: 'ld-perf' }, [
           el('div', { class: 'ld-fig ld-fig--earn' }, [el('dt', { text: 'Lifetime Earnings' }), el('dd', { text: f ? whole(f.earnings === null ? null : Math.max(0, f.earnings)) : '—' })]),
-          el('div', { class: 'ld-fig ld-fig--rank' }, [el('dt', null, ['Activity Rank', el('small', { text: 'by completed games' })]), rankValue(f)])
+          el('div', { class: 'ld-fig ld-fig--rank' }, [el('dt', null, ['Activity Rank', el('small', { text: 'by games played' })]), rankValue(f)])
         ])
       ]),
       el('div', { class: 'ld-pass__perf', 'aria-hidden': 'true' }, [el('i')]),
@@ -169,9 +169,9 @@
     ['Credits', 'Credits held now, including any staked at tables still in play.'],
     ['Skill Rating', 'One per game, starting at 1,500. Provisional until five rated games in that game; each one punches a hole.'],
     ['Lifetime Earnings', 'Payouts minus wagers, over settled games. Never shown below 0.'],
-    ['Activity Rank', 'Place among all players by completed games; ties share a place. It measures activity, not skill.'],
-    ['Completed Games', 'Games played to the end. Cancelled games and games still in play do not count.'],
-    ['Unique Opponents', 'Different players met in completed multiplayer games. Each counts once.']
+    ['Activity Rank', 'Place among all players by games played; ties share a place. It measures activity, not skill.'],
+    ['Games Played', 'Games played to the end, and games the table clock ended after a player ran out of time. Cancelled games, games every player agreed to annul and games still in play do not count.'],
+    ['Unique Opponents', 'Different players met in games played. Each counts once.']
   ];
 
   /** The one line under the pass: "How these figures are counted" (closed) and "Find a player". */

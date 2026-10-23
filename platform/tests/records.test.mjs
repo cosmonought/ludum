@@ -352,6 +352,10 @@ test("v1.3 the profile pages speak to players: no internal terminology in what t
   assert.match(pass, /It measures activity, not skill/);
   assert.match(pass, /Provisional until five rated games in that game/);
   assert.match(pass, /'Unique Opponents'/);
+  /* Owner decision 2026-10-23 (1830Juno permanent results): a clock-forced ending counts as a game played, so the figure
+     is Games Played -- never 'Completed Games' -- and says which endings count. */
+  assert.match(pass, /'Games Played', 'Games played to the end, and games the table clock ended after a player ran out of time./);
+  assert.doesNotMatch(pass, /Completed Games|by completed games/);
   assert.match(pass, /Not ranked yet/);
   for (const file of ["me-record.js", "player-page.js", "account-page.js", "records.js", "pass.js"]) {
     eq([file, (said(file).match(/Not shown yet|Private ·|once you have 5|once a player has 5|Players met/) || [null])[0]], [file, null]);
