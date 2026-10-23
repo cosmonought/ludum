@@ -2,10 +2,16 @@
  * then the private tabs ("Only you see these": Games, Account; Moderation and Disputes where held) and your games, each
  * result opening in place. /me/?game=<gameId> opens one (the old /me/game/?id= page leads here).
  *
- * PROGRESSIVE (owner: the profile took 2-5 s): the session, your figures (`profile`, with its v1.6 `standing`) and the
- * first page of games are asked for AT ONCE. The pass is drawn as soon as the session answers (the name), its figures as
- * soon as `profile` answers, the games as soon as their first page does; older pages follow, one after another, without
- * holding anything up. Every figure is the server's own (§16-§19), never recomputed here.
+ * PROGRESSIVE (owner: the profile took 2-5 s): the session and your figures (`profile`, with its v1.6 `standing`) are
+ * asked for at once; the pass is drawn as soon as the session answers (the name), its figures as soon as `profile`
+ * answers, the games as soon as their first page does; older pages follow, one after another, without holding anything
+ * up. Every figure is the server's own (§16-§19), never recomputed here.
+ *
+ * COLD START (owner performance review 2026-10-23): a cold first visit showed "Reading your profile…" for 2-5 s because
+ * the games' first page made the server replay completed games on its one event loop, and the session's answer waited
+ * behind them. So: the pass's SHELL is drawn at once -- no name, no figure, no tab: nothing about anyone, the same for
+ * every visitor -- and the games are asked for only once the session has said this browser is signed in (a signed-out
+ * visitor no longer asks at all). The session and the figures are never queued behind the history.
  *
  * The games ledger (the design's): Date, Game, Table (its edition), Players, Finish, Credits, Rating. Finish is the row's
  * disclosure (`aria-expanded`); a pointer may press anywhere on the row. The result: the players by place with their
@@ -369,18 +375,20 @@
       el('p', null, [el('a', { class: 'ld-btn', href: window.LudumSession.signInUrl('/me/') }, ['Sign in ', P.svg(P.ARROW_RIGHT)])])]));
   }
 
-  /** The three reads start together; each draws as it lands. */
+  /** The session and the figures start together, the games once the session says signed in; each draws as it lands.
+   *  Until the session answers, the pass's shell: nothing personal. */
   function mount(root, session) {
     var slot = root.querySelector('[data-pass-slot]');
     var wanted = openedIn(window.location.search);
+    slot.replaceChildren(P.pass(null, {}), P.passFoot());
     var who = session.whoami();
     var figures = session.api('profile', {});
-    var firstPage = session.api('games', { limit: 50 });
     /* Nothing is left unhandled while the session is being read. */
     figures.catch(function () { return null; });
-    firstPage.catch(function () { return null; });
     return who.then(function (w) {
       if (!w || w.signedIn !== true) { signedOut(slot); return; }
+      var firstPage = session.api('games', { limit: 50 });
+      firstPage.catch(function () { return null; });
       slot.textContent = '';
       var passSlot = el('div');
       passSlot.appendChild(P.pass(null, { name: w.account.name }));

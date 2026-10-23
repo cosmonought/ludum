@@ -362,3 +362,91 @@ test("v1.3 the profile pages speak to players: no internal terminology in what t
   assert.doesNotMatch(record, /\$[^{]*credits|credits[^']*\$/);
 });
 
+/* ---------- /me/'s cold start (owner performance review 2026-10-23) ---------- */
+
+/** A DOM small enough for the profile page's first moments: elements, text, attributes, children. */
+class FakeNode {
+  constructor(tag) { this.tagName = String(tag).toUpperCase(); this.attrs = new Map(); this.children = []; this.className = ""; this.classList = { toggle() {}, add() {}, remove() {}, contains: () => false }; this.style = {}; this.hidden = false; }
+  setAttribute(k, v) { this.attrs.set(k, String(v)); }
+  getAttribute(k) { return this.attrs.has(k) ? this.attrs.get(k) : null; }
+  removeAttribute(k) { this.attrs.delete(k); }
+  hasAttribute(k) { return this.attrs.has(k); }
+  appendChild(c) { this.children.push(c); c.parentNode = this; return c; }
+  insertBefore(c, ref) { const at = ref ? this.children.indexOf(ref) : -1; if (at < 0) this.children.push(c); else this.children.splice(at, 0, c); c.parentNode = this; return c; }
+  replaceChildren(...nodes) { this.children = []; nodes.forEach((n) => this.appendChild(n)); }
+  get firstChild() { return this.children[0] || null; }
+  get textContent() { return this.children.map((c) => c.textContent).join(""); }
+  set textContent(v) { this.children = v === "" ? [] : [new FakeText(String(v))]; }
+  set innerHTML(v) { this.children = [new FakeNode("svg")]; }
+  addEventListener() {}
+  querySelector(selector) { return this.find((n) => selector === "[data-pass-slot]" ? n.hasAttribute && n.hasAttribute("data-pass-slot") : false); }
+  querySelectorAll() { return []; }
+  find(test) { for (const c of this.children) { if (c instanceof FakeNode) { if (test(c)) return c; const deeper = c.find(test); if (deeper) return deeper; } } return null; }
+  all(test, out = []) { for (const c of this.children) if (c instanceof FakeNode) { if (test(c)) out.push(c); c.all(test, out); } return out; }
+}
+class FakeText { constructor(text) { this.textContent = text; } }
+
+function loadDom(files) {
+  const storage = new Map();
+  const window = {
+    location: { pathname: "/me/", search: "", assign() {}, replace() {} },
+    localStorage: { getItem: (k) => (storage.has(k) ? storage.get(k) : null), setItem: (k, v) => storage.set(k, String(v)), removeItem: (k) => storage.delete(k) },
+    sessionStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+    LudumSession: { signInUrl: (p) => "/me/sign-in/?return=" + encodeURIComponent(p || "/me/") },
+  };
+  const document = { readyState: "complete", querySelector: () => null, addEventListener() {}, createElement: (tag) => new FakeNode(tag), createTextNode: (text) => new FakeText(text) };
+  const context = vm.createContext({ window, document, URLSearchParams, Date, JSON, Object, Array, String, Number, Math, BigInt, Promise, Error, encodeURIComponent, setTimeout, clearTimeout, globalThis: undefined });
+  context.globalThis = context;
+  for (const f of files) vm.runInContext(readFileSync(resolve(JS, f), "utf8"), context, { filename: f });
+  const root = new FakeNode("main");
+  const slot = new FakeNode("div");
+  slot.setAttribute("data-pass-slot", "");
+  slot.textContent = "Reading your profile…";
+  root.appendChild(slot);
+  return { window, root, slot };
+}
+
+/** A session whose answer the case gives when it chooses; every read it is asked for, in order. */
+function heldSession() {
+  const asked = [];
+  let answer;
+  const who = new Promise((resolve) => (answer = resolve));
+  return { asked, answer: (w) => answer(w), session: { whoami: () => { asked.push("session"); return who; }, api: (route) => { asked.push(route); return new Promise(() => {}); } } };
+}
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+test("/me/ cold start: the pass's shell at once -- no name, no figure, no tab; the session and the figures first; the games only once signed in", async () => {
+  const { window, root, slot } = loadDom(["records.js", "pass.js", "me-record.js"]);
+  const held = heldSession();
+  window.LudumMeRecord.mount(root, held.session);
+  /* Before the session answers: the shell, the same for every visitor. */
+  const shell = slot.find((n) => n.className === "ld-pass");
+  assert.ok(shell, "the pass's shell is drawn at once");
+  assert.equal(shell.getAttribute("aria-busy"), "true");
+  assert.equal(shell.find((n) => n.tagName === "H1").textContent.trim(), "", "no name");
+  assert.ok(!/Reading your profile/.test(slot.textContent), "the placeholder is gone");
+  assert.ok(!slot.find((n) => n.className === "ld-tabsrow"), "no private tab before the session");
+  assert.ok(!/[0-9]/.test(shell.all((n) => n.tagName === "DD").map((n) => n.textContent).join("")), "no figure");
+  eq(held.asked, ["session", "profile"], "the games wait for the session");
+  /* Signed out: the games are never asked for. */
+  held.answer({ signedIn: false });
+  await settle();
+  eq(held.asked, ["session", "profile"]);
+  assert.match(slot.textContent, /Signed out/);
+  /* Signed in: the name, the private tabs, and only now the games. */
+  const again = loadDom(["records.js", "pass.js", "me-record.js"]);
+  const signedIn = heldSession();
+  again.window.LudumMeRecord.mount(again.root, signedIn.session);
+  signedIn.answer({ signedIn: true, account: { name: "Ann Player", authorizationWallet: null }, roles: {} });
+  await settle();
+  eq(signedIn.asked, ["session", "profile", "games"]);
+  assert.equal(again.slot.find((n) => n.tagName === "H1").textContent, "Ann Player");
+  assert.ok(again.slot.find((n) => n.className === "ld-tabsrow"), "the private tabs, once signed in");
+});
+
+test("/me/ opens the connections to play.netadao.org early: credentialed (the reads) and anonymous (their preflights)", () => {
+  const html = readFileSync(resolve(JS, "..", "..", "me", "index.html"), "utf8");
+  const hints = [...html.matchAll(/<link rel="preconnect" href="([^"]+)"( crossorigin)?>/g)].map((m) => [m[1], m[2] !== undefined]);
+  eq(hints, [["https://play.netadao.org", false], ["https://play.netadao.org", true]]);
+  assert.ok(html.indexOf('rel="preconnect"') > html.indexOf("Content-Security-Policy"), "after the CSP, which stays the first child of <head>");
+});
