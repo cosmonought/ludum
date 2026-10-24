@@ -164,6 +164,11 @@
 .ld-private::before { content: ''; width: 10px; height: 10px; background: var(--you); }
 .ld-panel { padding-top: var(--space-6); }
 .ld-panel[hidden] { display: none; }
+/* The Games panel opens as the Account panel does: the tab row's rule is its top, so its states (no games, none match,
+   reading, unreadable) draw no second rule and start 4px down, level with Account's first row. .ld-none elsewhere keeps
+   its rule. */
+.ld-panel--games .ld-none { margin-top: 0; padding-top: 4px; border-top: 0; }
+.ld-panel--games p.ld-games__muted[role="status"] { margin: 0; padding-top: 4px; }
 
 /* ---------- 8. Games: the ledger; a result opens in place ---------- */
 

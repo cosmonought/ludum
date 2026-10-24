@@ -398,7 +398,7 @@
       slot.appendChild(tabsSlot);
       var block = gamesBlock(session);
       block.loading();
-      slot.appendChild(el('section', { class: 'ld-panel', 'aria-labelledby': 'panel-games' }, [el('h2', { class: 'ld-sr', id: 'panel-games', text: 'Games' }), block.host]));
+      slot.appendChild(el('section', { class: 'ld-panel ld-panel--games', 'aria-labelledby': 'panel-games' }, [el('h2', { class: 'ld-sr', id: 'panel-games', text: 'Games' }), block.host]));
       var dao = R.rememberedMember(window.localStorage, Date.now(), R.accountOf(w));
       R.checkMembership(w).then(function (member) { if (member !== null && member !== dao) { dao = member; tabsSlot.replaceChildren(P.tabsRow(w, 'games', { daoMember: member, games: tabCount })); } });
       var tabCount;

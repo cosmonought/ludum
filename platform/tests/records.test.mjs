@@ -3,7 +3,7 @@
 // Run from the repository root: node --test platform/tests/records.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
@@ -477,4 +477,39 @@ test("/me/ opens the connections to play.netadao.org early: credentialed (the re
   const hints = [...html.matchAll(/<link rel="preconnect" href="([^"]+)"( crossorigin)?>/g)].map((m) => [m[1], m[2] !== undefined]);
   eq(hints, [["https://play.netadao.org", false], ["https://play.netadao.org", true]]);
   assert.ok(html.indexOf('rel="preconnect"') > html.indexOf("Content-Security-Policy"), "after the CSP, which stays the first child of <head>");
+});
+
+/** One top-level rule's declarations in a stylesheet, by its exact selector (null when there is none). */
+function ruleOf(css, selector) {
+  const line = css.split(/\r?\n/).find((l) => l.startsWith(selector + " { "));
+  return line ? line.slice(selector.length + 3, line.lastIndexOf(" }")).trim() : null;
+}
+
+test("/me/ Games: no second rule under the tab row -- its states start 4px down, as Account's first row does; .ld-none keeps its rule elsewhere", async () => {
+  const signedIn = { signedIn: true, account: { name: "Ann Player", authorizationWallet: null }, roles: {} };
+  const panelWith = async (games) => {
+    const page = loadDom(["records.js", "pass.js", "me-record.js"]);
+    page.window.LudumMeRecord.mount(page.root, { whoami: () => Promise.resolve(signedIn), api: (route) => (route === "games" ? games() : new Promise(() => {})) });
+    await settle();
+    return page.slot.find((n) => n.tagName === "SECTION");
+  };
+  /* Reading, no games yet and unreadable are each drawn inside the Games panel, which carries the modifier. */
+  const reading = await panelWith(() => new Promise(() => {}));
+  assert.equal(reading.className, "ld-panel ld-panel--games");
+  assert.ok(reading.find((n) => n.className === "ld-games__muted" && n.getAttribute("role") === "status" && n.textContent === "Reading your games…"));
+  const empty = await panelWith(() => Promise.resolve({ games: [], nextCursor: null }));
+  assert.match(empty.find((n) => n.className === "ld-none").textContent, /^No games yet/);
+  const failed = await panelWith(() => Promise.reject({ error: "unavailable" }));
+  assert.match(failed.find((n) => n.className === "ld-none").textContent, /^Your games can’t be read right now/);
+
+  const css = readFileSync(resolve(JS, "..", "css", "pass.css"), "utf8");
+  assert.equal(ruleOf(css, ".ld-panel--games .ld-none"), "margin-top: 0; padding-top: 4px; border-top: 0;");
+  assert.equal(ruleOf(css, '.ld-panel--games p.ld-games__muted[role="status"]'), "margin: 0; padding-top: 4px;");
+  assert.match(ruleOf(css, ".ld-account > div:first-child"), /padding-top: 4px;/, "level with Account's first row");
+  assert.equal(ruleOf(css, ".ld-none"), "margin-top: 16px; padding: 22px 0 6px; border-top: 2px solid var(--rule-strong);", "everywhere else .ld-none keeps its rule");
+  assert.match(ruleOf(css, ".ld-tabsrow"), /border-bottom: 2px solid var\(--rule-strong\);/, "the tab row's rule stays");
+  assert.equal(ruleOf(css, ".ld-ptabs > a[aria-current]::after"), "transform: scaleX(1); background: var(--ink);", "and the current tab's bar");
+  for (const file of readdirSync(JS).filter((f) => f.endsWith(".js") && f !== "me-record.js")) {
+    assert.ok(!readFileSync(resolve(JS, file), "utf8").includes("ld-panel--games"), `${file}: only the Games panel carries the modifier`);
+  }
 });
