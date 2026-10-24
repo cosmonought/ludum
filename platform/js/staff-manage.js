@@ -8,10 +8,11 @@
  *                   moves only by the server operator's command).
  * then the player's append-only audit history (staff only). Every control follows a PERMISSION the server sends with the
  * player (`can`), never a role name: a Moderator sees them aria-disabled, "Changing it is for Admins only for now." Every
- * change may need "Confirm it's you" (Ludum's password confirmation; then the same request is sent again, nothing
- * retyped), and the server checks the permission again. The reason and the staff names stay here: the renamed player is
- * told only the new name (account-menu.js). Everything from the server is set as text. Needs session.js, records.js,
- * pass.js, work.js and auth.js. */
+ * change is approved in Keplr by the staff member's own Authorization Wallet (owner, 2026-10-23: never the password) --
+ * one off-chain signature over exactly that change, no transaction, no fee -- and sent with the approval; the server
+ * checks the approval and the permission again. The reason and the staff names stay here: the renamed player is told
+ * only the new name (account-menu.js). Everything from the server is set as text. Needs session.js, records.js, pass.js,
+ * work.js, gov.js (Keplr) and auth.js. */
 (function (root) {
   'use strict';
   var P = root.LudumPass;
@@ -132,17 +133,28 @@
       error: function (text) { error.textContent = text || ''; error.hidden = !text; return this; }
     };
   }
-  /** "Confirm it's you" in `slot`, then `again` (the same request). Resolves nothing; the caller's buttons stay as they are. */
-  function reconfirm(session, slot, again, back) {
-    slot.textContent = '';
+  /** v1.7: approve `body` for `route` in Keplr with this staff member's own Authorization Wallet (the key field is drawn
+   *  in `slot`), then send it with the approval. Resolves the server's answer. Rejects with {stopped: true} when no
+   *  approval came of it (the slot says why: nothing was sent), or with the server's refusal of the change. */
+  function approveAndSend(session, who, route, body, slot) {
     var A = root.LudumAuth;
-    var panel = A.confirmPanel(session, {
-      onDone: function () { slot.textContent = ''; again(); },
-      onCancel: function () { slot.textContent = ''; if (back) back.focus(); }
-    });
-    slot.appendChild(panel);
-    var input = panel.querySelector('input');
-    if (input) input.focus();
+    var G = root.LudumGov;
+    var held = who && who.account && who.account.authorizationWallet;
+    var input = { route: route, body: body, account: who.account.name, authorizationWallet: held && typeof held.address === 'string' ? held.address : null };
+    return A.approveStaffAction(session, G, input, slot).then(function (proof) {
+      var sent = {};
+      Object.keys(body).forEach(function (k) { sent[k] = body[k]; });
+      Object.keys(proof).forEach(function (k) { sent[k] = proof[k]; });
+      return session.api(route, sent).then(function (answer) { slot.textContent = ''; return answer; }, function (e) {
+        if (e && e.error === 'confirmation-required') {
+          slot.textContent = '';
+          slot.appendChild(el('p', { class: 'ld-step__error', role: 'alert', text: A.staffApprovalSentence(e, G) }));
+          throw { stopped: true };
+        }
+        slot.textContent = '';
+        throw e;
+      });
+    }, function () { throw { stopped: true }; });
   }
   function recorded(by) { return el('p', { class: 'ld-recorded', text: 'Recorded in the audit history · ' + R.day(new Date().toISOString()) + ', ' + R.clock(new Date().toISOString()) + ' · by ' + by }); }
   function reasonField(id, hint) {
@@ -177,7 +189,8 @@
       el('li', null, [fateLine]),
       el('li', null, [signLine]),
       el('li', null, [el('span', { text: 'They’re told in Ludum on their next visit: the new name, with no reason and no staff name.' })]),
-      el('li', null, [el('span', { text: 'Recorded in the audit history: you, the time, the reason and what happened to ' + current + '.' })])
+      el('li', null, [el('span', { text: 'Recorded in the audit history: you, the time, the reason and what happened to ' + current + '.' })]),
+      el('li', null, [el('span', { text: 'You approve it in Keplr with your Authorization Wallet: one signature, not a transaction.' })])
     ])]);
     var go = button('Change name');
     go.className = 'ld-btn ld-btn--red';
@@ -190,7 +203,7 @@
     var form = el('form', { class: 'ld-change', role: 'group', 'aria-labelledby': id + '-h', novalidate: '' }, [
       el('div', { class: 'ld-change__head' }, [el('h3', { id: id + '-h', text: 'Change Player Name' }), el('p', { text: 'Admins only. Recorded in the audit history.' })]),
       s1.node, s2.node, s3.node, s4.node,
-      el('div', { class: 'ld-change__foot' }, [el('p', { text: 'Nothing changes until you confirm.' }), cancel])
+      el('div', { class: 'ld-change__foot' }, [el('p', { text: 'Nothing changes until you approve it in Keplr.' }), cancel])
     ]);
     s1.set('active'); s2.set('done', 'Release', 'ok');
 
@@ -262,14 +275,14 @@
       }
       if (!reason) { why.input.setAttribute('aria-invalid', 'true'); s3.set('error', 'Missing', 'bad').error('Give a reason. It’s kept in the audit history.'); why.input.focus(); return; }
       s4.error('');
-      busy(go, 'Changing name');
+      busy(go, 'Approve in Keplr');
       var to = state.name;
-      session.api('staff-rename', { name: current, to: to, former: state.fate, reason: reason }).then(function (r) {
+      approveAndSend(session, who, 'staff-rename', { name: current, to: to, former: state.fate, reason: reason }, confirmSlot).then(function (r) {
         idle(go);
         done({ kind: 'renamed', from: current, to: r.player.name, former: state.fate, view: r.player });
       }, function (e) {
         idle(go);
-        if (e && e.error === 'reauth-required' && A) { reconfirm(session, confirmSlot, send, go); return; }
+        if (e && e.stopped) return;
         if (e && e.error === 'conflict' && (e.detail === 'taken' || e.detail === 'reserved')) bad(e.detail === 'taken' ? 'Taken' : 'Reserved', refusal(e, 'rename', to));
         s4.set('error').error(refusal(e, 'rename', to));
       });
@@ -312,7 +325,7 @@
       el('div', { class: 'ld-change__head' }, [el('h3', { id: id + '-h', text: opts.title }), el('p', { text: opts.lede })]),
       s1.node,
       el('div', { style: 'margin-top:16px' }, [go]), errorP, confirmSlot,
-      el('div', { class: 'ld-change__foot' }, [el('p', { text: 'Nothing changes until you confirm.' }), cancel])
+      el('div', { class: 'ld-change__foot' }, [el('p', { text: 'Nothing changes until you approve it in Keplr.' }), cancel])
     ]);
     s1.set('active');
     why.input.addEventListener('input', function () { if (reasonOf(why.input)) { why.input.removeAttribute('aria-invalid'); s1.set('done', 'Given', 'ok'); } else s1.set('active'); });
@@ -320,10 +333,10 @@
       var reason = reasonOf(why.input);
       if (!reason) { why.input.setAttribute('aria-invalid', 'true'); s1.set('error', 'Missing', 'bad').error('Give a reason. It’s kept in the audit history.'); why.input.focus(); return; }
       errorP.hidden = true;
-      busy(go, opts.busy);
-      opts.send(reason).then(function (r) { idle(go); opts.done(r); }, function (e) {
+      busy(go, 'Approve in Keplr');
+      approveAndSend(session, opts.who, opts.route, opts.body(reason), confirmSlot).then(function (r) { idle(go); opts.done(r); }, function (e) {
         idle(go);
-        if (e && e.error === 'reauth-required' && root.LudumAuth) { reconfirm(session, confirmSlot, send, go); return; }
+        if (e && e.stopped) return;
         errorP.textContent = refusal(e, opts.ctx, null); errorP.hidden = false;
       });
     }
@@ -391,8 +404,8 @@
             title: (reserve ? 'Reserve ' : 'Release ') + newest.name,
             lede: reserve ? 'Nobody else can register it while it’s reserved. Admins only. Recorded in the audit history.' : 'Another player may register it again. Admins only. Recorded in the audit history.',
             hint: 'Required. Kept in the audit history with your name and the time; other staff can read it.',
-            action: (reserve ? 'Reserve ' : 'Release ') + newest.name, busy: reserve ? 'Reserving' : 'Releasing', ctx: 'former', red: false,
-            send: function (reason) { return session.api('staff-former-name', { name: view.name, former: newest.name, action: reserve ? 'reserve' : 'release', reason: reason }); },
+            action: (reserve ? 'Reserve ' : 'Release ') + newest.name, ctx: 'former', red: false, who: who, route: 'staff-former-name',
+            body: function (reason) { return { name: view.name, former: newest.name, action: reserve ? 'reserve' : 'release', reason: reason }; },
             done: function (r) { draw(r.player, { kind: 'former', name: newest.name, reserved: reserve }); }
           }, close);
         });
@@ -411,8 +424,8 @@
             title: isModerator ? 'Remove ' + view.name + ' as a Moderator' : 'Appoint ' + view.name + ' a Moderator',
             lede: isModerator ? 'They stop reviewing conduct cases at once, on every device. Recorded in the audit history.' : 'They review conduct cases from their profile’s Moderation tab. Recorded in the audit history.',
             hint: 'Required. Kept in the audit history with your name and the time; other staff can read it.',
-            action: isModerator ? 'Remove Moderator' : 'Appoint Moderator', busy: isModerator ? 'Removing' : 'Appointing', ctx: 'role', red: isModerator,
-            send: function (reason) { return session.api('staff-role', { name: view.name, role: 'moderator', action: isModerator ? 'remove' : 'appoint', reason: reason }); },
+            action: isModerator ? 'Remove Moderator' : 'Appoint Moderator', ctx: 'role', red: isModerator, who: who, route: 'staff-role',
+            body: function (reason) { return { name: view.name, role: 'moderator', action: isModerator ? 'remove' : 'appoint', reason: reason }; },
             done: function () { return read(view.name, { kind: 'role', appointed: !isModerator }); }
           }, close);
         });

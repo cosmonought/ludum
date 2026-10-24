@@ -583,6 +583,8 @@
   .ld-punches i { forced-color-adjust: none; border-color: CanvasText; }
   .ld-punches i.is-punched { background: CanvasText; }
   .ld-step__mark, .ld-step__status::before, .ld-wait i { forced-color-adjust: none; border-color: CanvasText; }
+  /* v1.7 review: the mark keeps no colour of its own here (its number was ink on Canvas). */
+  .ld-step__mark, .ld-step.is-active .ld-step__mark, .ld-step.is-error .ld-step__mark { color: CanvasText; border-color: CanvasText; }
   .ld-step.is-done .ld-step__mark, .ld-step__status.is-ok::before, .ld-step__status.is-bad::before { background: CanvasText; color: Canvas; }
   .ld-btn[aria-disabled="true"] { border-color: GrayText; color: GrayText; }
 }
@@ -1010,4 +1012,7 @@
   .ld-rdocket__mark, .ld-pchoice__box, .ld-pcheck input, .ld-rtally__bar { forced-color-adjust: none; border-color: CanvasText; }
   .ld-rdocket > li:not(.is-due) .ld-rdocket__mark, .ld-rtally__fill { background: CanvasText; }
   .ld-pchoice:has(input:checked) .ld-pchoice__box, .ld-pcheck input:checked { background: Highlight; }
+  /* The key field keeps its edge: what happens in Keplr stays set apart. */
+  .ld-key, .ld-tx { border: 1px solid CanvasText; }
+  .ld-confirm li::before { forced-color-adjust: none; background: CanvasText; }
 }

@@ -296,9 +296,9 @@ test("the new pages load their scripts in order, with the §2.4 CSP first and th
     ["me/index.html", pass, "me-record.js"],
     ["me/account/index.html", [...pass, "/platform/js/ticket.js", "/platform/js/gov.js"], "account-page.js"],
     ["me/game/index.html", [], "game-record.js"],
-    ["moderation/index.html", [...pass, "/platform/js/work.js"], "moderation-page.js"],
-    ["moderation/case/index.html", [...pass, "/platform/js/work.js"], "moderation-page.js"],
-    ["players/index.html", [...pass, "/platform/js/work.js", "/platform/js/staff-manage.js"], "player-page.js"],
+    ["moderation/index.html", [...pass, "/platform/js/work.js", "/platform/js/gov.js"], "moderation-page.js"],
+    ["moderation/case/index.html", [...pass, "/platform/js/work.js", "/platform/js/gov.js"], "moderation-page.js"],
+    ["players/index.html", [...pass, "/platform/js/work.js", "/platform/js/staff-manage.js", "/platform/js/gov.js"], "player-page.js"],
   ]) {
     /* Read as the site serves it, line ends normalised (a Windows checkout writes CRLF; the published file is LF). */
     const html = readFileSync(resolve(ROOT, rel), "utf8").replace(/\r\n/g, "\n");

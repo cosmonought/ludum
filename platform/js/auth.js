@@ -31,7 +31,10 @@
  *   LudumAuth.approveRelease(S, G, {account, current}, step)                Change wallet, step 2
  *   LudumAuth.acceptWallet(S, G, {account, current, operation}, step)       Change wallet, step 3
  *   LudumAuth.signOutOthers(S) / signOut(S)
- *   LudumAuth.confirmPanel(S, {onDone, onCancel})  the "Confirm it's you" panel (moderation decisions use it)
+ *   LudumAuth.confirmPanel(S, {onDone, onCancel})  the "Confirm it's you" panel (the password; no staff action uses it)
+ *   LudumAuth.confirmStaffAction(S, G, {route, body, account, authorizationWallet}, step)   v1.7: a staff change approved
+ *                                               in Keplr (STAFF-CONFIRM, its digest computed here); approveStaffAction
+ *                                               draws it in a key field
  */
 (function (root) {
   'use strict';
@@ -44,7 +47,18 @@
     'REPLACE-APPROVE': "approve replacing this account's Authorization Wallet.",
     'REPLACE-ACCEPT': "make this wallet this account's new Authorization Wallet.",
     'SIGN-IN': 'sign in to this account.',
-    'REPLACE-RELEASE': "approve replacing this account's Authorization Wallet with the wallet that accepts next."
+    'REPLACE-RELEASE': "approve replacing this account's Authorization Wallet with the wallet that accepts next.",
+    /* v1.7 (owner, 2026-10-23): a privileged staff action, confirmed by the staff member's own Authorization Wallet --
+       its text carries `Action` and `Action digest` after `Purpose` (Play's profileAuthorizationV1.ts, line for line). */
+    'STAFF-CONFIRM': "confirm this staff action with this account's Authorization Wallet."
+  };
+  var HEX_64 = /^[0-9a-f]{64}$/;
+  /** v1.7: each confirmable staff route's fields, in canonical order (Play's server/src/ludum/staffConfirm.ts). */
+  var STAFF_FIELDS = {
+    'staff-rename': ['name', 'to', 'former', 'reason'],
+    'staff-role': ['name', 'role', 'action', 'reason'],
+    'staff-former-name': ['name', 'former', 'action', 'reason'],
+    'moderation-decide': ['caseId', 'revision', 'status', 'note']
   };
   var JUNO = /^juno1[02-9ac-hj-np-z]{38}$/;
   var HEX_32 = /^[0-9a-f]{32}$/;
@@ -52,14 +66,14 @@
   var PASSWORD_MIN = 12;
   var NAME_MAX = 24;
 
-  function accountLine(v) {
+  function accountLine(v, max) {
     if (typeof v !== 'string' || v !== v.trim()) return false;
     var points = Array.from(v);
-    if (points.length < 1 || points.length > 64) return false;
+    if (points.length < 1 || points.length > (max || 64)) return false;
     return points.every(function (p) { var c = p.codePointAt(0); return !(c <= 0x1f || (c >= 0x7f && c <= 0x9f) || c === 0x2028 || c === 0x2029); });
   }
   function signerFor(f) {
-    if (f.purpose === 'CREATE' || f.purpose === 'RECOVER' || f.purpose === 'SIGN-IN' || f.purpose === 'REPLACE-RELEASE') return f.replaces === null ? f.authorizationWallet : null;
+    if (f.purpose === 'CREATE' || f.purpose === 'RECOVER' || f.purpose === 'SIGN-IN' || f.purpose === 'REPLACE-RELEASE' || f.purpose === 'STAFF-CONFIRM') return f.replaces === null ? f.authorizationWallet : null;
     if (f.replaces === null || f.replaces === f.authorizationWallet) return null;
     return f.purpose === 'REPLACE-APPROVE' ? f.replaces : f.purpose === 'REPLACE-ACCEPT' ? f.authorizationWallet : null;
   }
@@ -70,24 +84,33 @@
     var wallets = [f.authorizationWallet, f.signer].concat(f.replaces === null ? [] : [f.replaces]);
     if (!wallets.every(function (w) { return typeof w === 'string' && JUNO.test(w); })) return null;
     if (signerFor(f) !== f.signer) return null;
-    return [TAG, f.appName + ': ' + SENTENCES[f.purpose], NOT_A_TRANSACTION, 'Purpose: ' + f.purpose, 'Site: ' + f.site, 'Account: ' + f.account,
-      'Authorization wallet: ' + f.authorizationWallet, 'Replaces: ' + (f.replaces === null ? 'none' : f.replaces), 'Signer: ' + f.signer,
-      'Operation: ' + f.operation, 'Nonce: ' + f.nonce, 'Expires: ' + new Date(f.expiresAt).toISOString()].join('\n');
+    var staff = f.purpose === 'STAFF-CONFIRM';
+    if (staff && (!accountLine(f.action, 240) || !HEX_64.test(f.actionDigest || ''))) return null;
+    if (!staff && (f.action !== undefined || f.actionDigest !== undefined)) return null;
+    return [TAG, f.appName + ': ' + SENTENCES[f.purpose], NOT_A_TRANSACTION, 'Purpose: ' + f.purpose]
+      .concat(staff ? ['Action: ' + f.action, 'Action digest: ' + f.actionDigest] : [])
+      .concat(['Site: ' + f.site, 'Account: ' + f.account,
+        'Authorization wallet: ' + f.authorizationWallet, 'Replaces: ' + (f.replaces === null ? 'none' : f.replaces), 'Signer: ' + f.signer,
+        'Operation: ' + f.operation, 'Nonce: ' + f.nonce, 'Expires: ' + new Date(f.expiresAt).toISOString()]).join('\n');
   }
 
   /** The fields of an authorization text, or null when it is not exactly one (Play's parser, line for line). */
   function parseAuthorization(text) {
     if (typeof text !== 'string' || text.length > 4096) return null;
     var lines = text.split('\n');
-    if (lines.length !== 12 || lines[0] !== TAG || lines[2] !== NOT_A_TRANSACTION) return null;
+    /* STAFF-CONFIRM: two more lines (Action, Action digest) after Purpose; every other purpose: twelve. */
+    var staff = lines[3] === 'Purpose: STAFF-CONFIRM';
+    var s = staff ? 2 : 0;
+    if (lines.length !== 12 + s || lines[0] !== TAG || lines[2] !== NOT_A_TRANSACTION) return null;
     function field(at, label) { var p = label + ': '; return lines[at].indexOf(p) === 0 ? lines[at].slice(p.length) : null; }
     var purpose = field(3, 'Purpose');
     if (purpose === null || !Object.prototype.hasOwnProperty.call(SENTENCES, purpose)) return null;
     var tail = ': ' + SENTENCES[purpose];
     var intro = lines[1].length > tail.length && lines[1].slice(-tail.length) === tail ? lines[1].slice(0, -tail.length) : null;
-    var f = { appName: intro, purpose: purpose, site: field(4, 'Site'), account: field(5, 'Account'), authorizationWallet: field(6, 'Authorization wallet'),
-      replaces: field(7, 'Replaces'), signer: field(8, 'Signer'), operation: field(9, 'Operation'), nonce: field(10, 'Nonce') };
-    var expires = field(11, 'Expires');
+    var f = { appName: intro, purpose: purpose, site: field(4 + s, 'Site'), account: field(5 + s, 'Account'), authorizationWallet: field(6 + s, 'Authorization wallet'),
+      replaces: field(7 + s, 'Replaces'), signer: field(8 + s, 'Signer'), operation: field(9 + s, 'Operation'), nonce: field(10 + s, 'Nonce') };
+    if (staff) { f.action = field(4, 'Action'); f.actionDigest = field(5, 'Action digest'); }
+    var expires = field(11 + s, 'Expires');
     for (var k in f) if (f[k] === null) return null;
     if (expires === null) return null;
     var at = Date.parse(expires);
@@ -109,8 +132,90 @@
     if (f.authorizationWallet !== e.authorizationWallet) return 'The authorization message names another Authorization Wallet, so nothing was signed.';
     if (e.replaces !== undefined && f.replaces !== e.replaces) return 'The authorization message replaces another wallet than your current one, so nothing was signed.';
     if (e.operation !== undefined && f.operation !== e.operation) return 'The authorization message belongs to another request, so nothing was signed.';
+    if (e.purpose === 'STAFF-CONFIRM' && (typeof e.actionDigest !== 'string' || f.actionDigest !== e.actionDigest)) return 'The confirmation message is for a different change than the one on this page, so nothing was signed.';
     if (f.expiresAt <= e.now) return 'The authorization message has expired. Start again.';
     return null;
+  }
+
+  /* ---------- v1.7: a privileged staff action, approved with the staff member's own Authorization Wallet ---------- */
+
+  /** The action's canonical form: [route, each field in the route's order, null for one not sent] (pure). */
+  function canonicalAction(route, body) {
+    var fields = STAFF_FIELDS[route];
+    if (!fields) return null;
+    return JSON.stringify([route].concat(fields.map(function (k) { return body && Object.prototype.hasOwnProperty.call(body, k) && body[k] !== undefined ? body[k] : null; })));
+  }
+  /** SHA-256 (lowercase hex) of the canonical form, as the server computes it. Resolves the hex. */
+  function actionDigest(route, body) {
+    var canonical = canonicalAction(route, body);
+    var subtle = root.crypto && root.crypto.subtle;
+    if (canonical === null || !subtle || typeof root.TextEncoder !== 'function') return Promise.reject(local('This browser cannot compute the change’s digest, so nothing was signed.'));
+    return subtle.digest('SHA-256', new root.TextEncoder().encode(canonical)).then(function (buffer) {
+      return Array.prototype.map.call(new Uint8Array(buffer), function (b) { return (b < 16 ? '0' : '') + b.toString(16); }).join('');
+    });
+  }
+
+  /** Approve one staff change (or a moderation decision) in Keplr: connect (Keplr must be on this account's Authorization
+   *  Wallet), the STAFF-CONFIRM text minted for exactly this request (`staff-confirm`), checked -- this site, this
+   *  account, this wallet, the digest this page computes from the very body it will send -- then signed. Off chain: no
+   *  transaction, no fee. Resolves the three fields the request carries. `input`: {route, body, account,
+   *  authorizationWallet}. */
+  function confirmStaffAction(S, G, input, step) {
+    step = step || function () {};
+    if (!STAFF_FIELDS[input.route]) return Promise.reject(local('That isn’t a change this page can approve.'));
+    step('keplr');
+    var digest = actionDigest(input.route, input.body);
+    return keplrCall(G.connect()).then(function (w) {
+      if (input.authorizationWallet && w.address !== input.authorizationWallet) throw local('Keplr is on ' + short(w.address) + '. Switch Keplr to your Authorization Wallet (' + short(input.authorizationWallet) + ') and try again. Nothing was signed or changed.', 'wrong-wallet');
+      step('wallet', { wallet: w.address });
+      return Promise.all([digest, S.api('staff-confirm', Object.assign({ route: input.route }, input.body))]).then(function (r) {
+        var text = r[1] && r[1].text;
+        var f = checked(text, { purpose: 'STAFF-CONFIRM', site: site(), account: input.account, signer: w.address, authorizationWallet: w.address, actionDigest: r[0], now: Date.now() });
+        step('sign', { account: f.account, wallet: w.address, action: f.action });
+        return keplrCall(G.signArbitrary(w.address, text)).then(function (signed) {
+          return { confirmOperation: r[1].operation, confirmPubKey: signed.pubKey, confirmSignature: signed.signature };
+        });
+      });
+    });
+  }
+
+  /** What a refused approval says (pure). `e`: a Keplr problem, this page's own refusal, or the server's answer. */
+  function staffApprovalSentence(e, G) {
+    /* The server's answers first: a refusal from the server is never mistaken for a Keplr problem. */
+    if (e && e.error === 'confirmation-required') return 'That approval didn’t check out (it expired, was already used, or was for another change). Nothing was changed. Approve again.';
+    if (e && e.error === 'conflict' && e.detail === 'no-authorization-wallet') return 'This account has no Authorization Wallet, so it cannot approve staff changes.';
+    if (e && e.error === 'not-found') return 'This change isn’t yours to approve.';
+    if (e && e.error) return sentence(e, 'staff');
+    if (e && e.local) return e.message;
+    var k = keplrProblem(e, G);
+    if (k === 'no-keplr') return 'Keplr isn’t in this browser. Staff changes are approved with your Authorization Wallet in Keplr: install the extension, then try again. Nothing was changed.';
+    if (k === 'declined') return 'The approval was declined in Keplr. Nothing was changed.';
+    return 'Keplr couldn’t complete the approval. Nothing was changed. Try again.';
+  }
+
+  /** The approval in a key field drawn in `slot`: what Keplr is asked, the checklist (Site, Account, Action, Wallet),
+   *  then the proof. Rejects with the error, its sentence already shown in the field. */
+  function approveStaffAction(S, G, input, slot) {
+    var el = root.LudumRecords.el;
+    slot.textContent = '';
+    var say = el('p', { class: 'ld-tx__status', role: 'status', text: 'Approve the connection in Keplr.' });
+    var list = el('div');
+    slot.appendChild(el('div', { class: 'ld-key', 'data-theme': 'press' }, [el('div', { class: 'ld-tx', 'data-theme': 'press' }, [
+      el('p', { class: 'ld-tx__warn' }, [el('span', null, [el('b', { text: 'Approve with your Authorization Wallet.' }), ' Keplr asks for one signature over exactly this change. It is a signature, not a transaction: nothing moves and there is no fee.'])]),
+      list, say])]));
+    return confirmStaffAction(S, G, input, function (stage, info) {
+      if (stage === 'wallet') say.textContent = 'Preparing the approval…';
+      if (stage === 'sign') {
+        list.appendChild(el('dl', { class: 'ld-key__wallet', style: 'margin:0' }, [el('dt', { text: 'Site' }), el('dd', { text: root.location ? root.location.host : '' }),
+          el('dt', { text: 'Account' }), el('dd', { text: info.account }), el('dt', { text: 'Action' }), el('dd', { text: info.action }),
+          el('dt', { text: 'Wallet' }), el('dd', { text: short(info.wallet) })]));
+        say.textContent = 'Approve the signature in Keplr.';
+      }
+    }).then(function (proof) { say.textContent = 'Approved. Recording the change…'; return proof; }, function (e) {
+      say.setAttribute('role', 'alert');
+      say.textContent = staffApprovalSentence(e, G);
+      throw e;
+    });
   }
 
   /** A refusal in the account's words. `context`: "sign-in" | "create" | "reset" | "change" | "confirm" | "wallet". */
@@ -397,6 +502,7 @@
     signIn: signIn, signInWithKeplr: signInWithKeplr, authorizeCreate: authorizeCreate, finishCreate: finishCreate,
     authorizeReset: authorizeReset, finishReset: finishReset, changePassword: changePassword, authorizeChange: authorizeChange, finishChange: finishChange,
     approveRelease: approveRelease, acceptWallet: acceptWallet, confirm: confirm, signOutOthers: signOutOthers, signOut: signOut, confirmPanel: confirmPanel,
+    canonicalAction: canonicalAction, actionDigest: actionDigest, confirmStaffAction: confirmStaffAction, approveStaffAction: approveStaffAction, staffApprovalSentence: staffApprovalSentence,
     PASSWORD_MIN: PASSWORD_MIN, NAME_MAX: NAME_MAX
   };
   root.LudumAuth = api;

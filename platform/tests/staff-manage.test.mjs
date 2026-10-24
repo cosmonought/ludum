@@ -1,8 +1,9 @@
 // v1.7 website staff on Ludum: Manage under another player's pass (staff-manage.js) and the renamed player's notice
 // (account-menu.js), run for real in a small fake DOM. Pinned: Manage only for `staff.view` and never on your own
 // profile; every control follows the server's `can` (a Moderator sees them aria-disabled, "Admins only for now"); a
-// rename needs an available name and a reason, is sent once with exactly what was chosen, and after "Confirm it's you"
-// the SAME request is sent again; the notice says only the names and the day.
+// rename needs an available name and a reason, is approved in Keplr by the Admin's own Authorization Wallet for exactly
+// that request (v1.7, owner 2026-10-23: never the password) and sent with the approval; a refused approval changes
+// nothing and the change is approved again; the notice says only the names and the day.
 // Run from the repository root: node --test platform/tests/staff-manage.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -56,7 +57,8 @@ const settle = async () => { for (let i = 0; i < 30; i++) await new Promise((r) 
 const text = (n) => n.textContent.replace(/\s+/g, " ");
 const button = (root, re) => root.find((n) => n.tagName === "button" && re.test(n.textContent));
 
-const ADMIN = { signedIn: true, account: { name: "Caspian" }, staff: { roles: ["admin", "moderator"], permissions: ["case.review", "staff.view", "moderator.manage", "player.rename", "name.reserve"] } };
+const ADMIN_WALLET = "juno1" + "a".repeat(38);
+const ADMIN = { signedIn: true, account: { name: "Caspian", authorizationWallet: { address: ADMIN_WALLET } }, staff: { roles: ["admin", "moderator"], permissions: ["case.review", "staff.view", "moderator.manage", "player.rename", "name.reserve"] } };
 const MOD = { signedIn: true, account: { name: "Ivo" }, staff: { roles: ["moderator"], permissions: ["case.review", "staff.view"] } };
 function view(over = {}) {
   return { name: "Kestral", memberSince: "2026-10", active: true, roles: [], formerNames: [], audit: [], can: { rename: true, reserve: true, moderator: true }, you: false, ...over };
@@ -66,12 +68,17 @@ function world(who, answers) {
   const w = load(["records.js", "pass.js", "work.js", "auth.js", "staff-manage.js"]);
   const calls = [];
   const session = { api: (route, body) => { calls.push([route, JSON.parse(JSON.stringify(body))]); const a = answers[route]; return typeof a === "function" ? a(body, calls) : a === undefined ? Promise.reject({ status: 404, error: "not-found" }) : Promise.resolve(a); } };
-  const confirms = [];
-  w.ctx.LudumAuth.confirmPanel = (S, opts) => { confirms.push(opts); return w.document.createElement("form"); };
+  /* "Keplr": each approval is recorded (what the page asked to approve) and answers a proof. */
+  const approvals = [];
+  w.ctx.LudumAuth.approveStaffAction = (S, G, input, slot) => {
+    approvals.push(JSON.parse(JSON.stringify(input)));
+    slot.appendChild(w.document.createElement("div"));
+    return Promise.resolve({ confirmOperation: "op" + approvals.length, confirmPubKey: "PK", confirmSignature: "SIG" + approvals.length });
+  };
   const host = w.document.createElement("div");
   w.body.appendChild(host);
   const renamed = [];
-  return { ...w, host, calls, session, confirms, renamed, M: w.ctx.LudumManage, mount: () => w.ctx.LudumManage.mount(host, session, who, "Kestral", (to) => renamed.push(to)) };
+  return { ...w, host, calls, session, approvals, renamed, M: w.ctx.LudumManage, mount: () => w.ctx.LudumManage.mount(host, session, who, "Kestral", (to) => renamed.push(to)) };
 }
 
 test("who sees Manage: staff.view, never on your own profile, never a player", () => {
@@ -130,14 +137,14 @@ test("a Moderator's Manage: the same rows, the controls aria-disabled and tied t
   assert.match(text(w.host), /Released/);
 });
 
-test("Change Player Name: an available name and a reason, sent once as chosen; Confirm it's you sends the SAME request again", async () => {
+test("Change Player Name: an available name and a reason; approved in Keplr for exactly that request, sent with the approval; a refused approval changes nothing", async () => {
   let renames = 0;
   const after = view({ name: "Kestrel", formerNames: [{ name: "Kestral", until: "2026-10-23T14:52:00Z", state: "reserved" }],
     audit: [{ at: "2026-10-23T14:52:00Z", kind: "player-renamed", from: "Kestral", to: "Kestrel", former: "reserved", outcome: "committed", by: { name: "Caspian", role: "admin" }, reason: "Impersonation report" }] });
   const w = world(ADMIN, {
     "staff-player": { player: view() },
     "name-check": (b) => Promise.resolve({ name: b.name, available: b.name === "Kestrel", problem: b.name === "Kestrel" ? null : "taken" }),
-    "staff-rename": () => (++renames === 1 ? Promise.reject({ status: 403, error: "reauth-required" }) : Promise.resolve({ player: after })),
+    "staff-rename": () => (++renames === 1 ? Promise.reject({ status: 403, error: "confirmation-required", detail: "expired" }) : Promise.resolve({ player: after })),
   });
   await w.mount();
   button(w.host, /^Change Player Name/).click();
@@ -160,13 +167,17 @@ test("Change Player Name: an available name and a reason, sent once as chosen; C
   reason.value = "Impersonation report"; reason.fire("input");
   assert.match(text(w.host), /Change to Kestrel/);
   assert.match(text(w.host), /Kestral is reserved:/);
+  assert.equal(w.approvals.length, 0, "nothing approved before the press");
   form.fire("submit");
   await settle();
-  assert.equal(w.confirms.length, 1, "Confirm it's you opens in step 4");
-  w.confirms[0].onDone();
+  const change = { name: "Kestral", to: "Kestrel", former: "reserve", reason: "Impersonation report" };
+  eq(w.approvals, [{ route: "staff-rename", body: change, account: "Caspian", authorizationWallet: ADMIN_WALLET }], "Keplr is asked to approve exactly this change, with the Admin's own wallet");
+  assert.match(text(w.host), /That approval didn’t check out .* Nothing was changed. Approve again./, "the server refused the approval: said in step 4");
+  assert.equal(w.renamed.length, 0);
+  form.fire("submit");
   await settle();
   const sent = w.calls.filter(([r]) => r === "staff-rename").map(([, b]) => b);
-  eq(sent, [{ name: "Kestral", to: "Kestrel", former: "reserve", reason: "Impersonation report" }, { name: "Kestral", to: "Kestrel", former: "reserve", reason: "Impersonation report" }], "the same request, nothing retyped");
+  eq(sent, [{ ...change, confirmOperation: "op1", confirmPubKey: "PK", confirmSignature: "SIG1" }, { ...change, confirmOperation: "op2", confirmPubKey: "PK", confirmSignature: "SIG2" }], "each request carries its own approval; nothing retyped");
   const t = text(w.host);
   for (const want of ["Player Name changed", "Kestral is reserved. Kestrel will be told on their next visit.", "Recorded in the audit history", "by Caspian", "Player Name: Kestral → Kestrel · former name reserved", "Caspian · Admin", "Impersonation report", "Release Kestral"]) assert.ok(t.includes(want), want);
   eq(w.renamed, ["Kestrel"], "the page's pass, title and address follow the new name");

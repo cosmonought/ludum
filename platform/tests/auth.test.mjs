@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
+import { createHash } from "node:crypto";
 
 const eq = (actual, expected, message) => assert.deepEqual(JSON.parse(JSON.stringify(actual)), expected, message);
 const JS = resolve(dirname(fileURLToPath(import.meta.url)), "..", "js");
@@ -467,3 +468,59 @@ test("v1.3/v1.6: LudumSession reaches the profile and directory routes and the w
   await assert.rejects(S.api("display-names", {}), (e) => e.error === "bad-request");
   assert.equal(calls.length, 6);
 });
+
+/* ---------------- v1.7 (owner, 2026-10-23): a staff change, approved with the staff member's Authorization Wallet ---------------- */
+
+
+/** A STAFF-CONFIRM text exactly as Play's `profileAuthorizationText` makes it (two more lines after Purpose). */
+function staffText(action, digest, over = {}) {
+  const f = { site: SITE, account: "Caspian", wallet: WALLET, operation: "77777777777777777777777777777777", ...over };
+  return ["18COSMOS/PROFILE-AUTHORIZATION/v1", "Project 18XX: confirm this staff action with this account's Authorization Wallet.", "This is not a transaction: it moves no funds and grants no permission to spend.",
+    "Purpose: STAFF-CONFIRM", `Action: ${action}`, `Action digest: ${digest}`, `Site: ${f.site}`, `Account: ${f.account}`, `Authorization wallet: ${f.wallet}`, "Replaces: none", `Signer: ${f.wallet}`,
+    `Operation: ${f.operation}`, `Nonce: ${f.operation}`, "Expires: 2026-10-10T12:00:00.000Z"].join("\n");
+}
+const RENAME = { name: "Kestral", to: "Kestrel", former: "reserve", reason: "Impersonating another player" };
+const RENAME_CANONICAL = '["staff-rename","Kestral","Kestrel","reserve","Impersonating another player"]';
+const sha = (s) => createHash("sha256").update(s, "utf8").digest("hex");
+
+test("v1.7 staff approval: the canonical form and digest are the server's; the text parses with its Action lines", async () => {
+  const A = load(["auth.js"], { crypto: globalThis.crypto, TextEncoder }).window.LudumAuth;
+  assert.equal(A.canonicalAction("staff-rename", RENAME), RENAME_CANONICAL, "server/src/ludum/staffConfirm.ts canonicalAction, byte for byte");
+  assert.equal(A.canonicalAction("moderation-decide", { caseId: "cc_1", revision: 2, status: "no-violation" }), '["moderation-decide","cc_1",2,"no-violation",null]');
+  assert.equal(A.canonicalAction("staff-grant-admin", {}), null, "no other action");
+  assert.equal(await A.actionDigest("staff-rename", RENAME), sha(RENAME_CANONICAL));
+  const text = staffText("Change the Player Name Kestral to Kestrel; the former name is reserved", sha(RENAME_CANONICAL));
+  const f = A.parseAuthorization(text);
+  eq([f.purpose, f.action, f.actionDigest, f.account, f.signer], ["STAFF-CONFIRM", "Change the Player Name Kestral to Kestrel; the former name is reserved", sha(RENAME_CANONICAL), "Caspian", WALLET]);
+  assert.equal(A.parseAuthorization(text.replace("Purpose: STAFF-CONFIRM", "Purpose: SIGN-IN")), null, "action lines on another purpose: no text");
+  assert.equal(A.checkAuthorization(text, { purpose: "STAFF-CONFIRM", site: SITE, account: "Caspian", signer: WALLET, authorizationWallet: WALLET, now: BEFORE }) !== null, true, "no digest expected: nothing is signed");
+});
+
+test("v1.7 staff approval: Keplr on the account's Authorization Wallet; the text for EXACTLY this change checked before Keplr signs; the three fields the request carries", at(async () => {
+  const A = load(["auth.js"], { crypto: globalThis.crypto, TextEncoder }).window.LudumAuth;
+  const k = { address: WALLET, signed: [], connect: () => Promise.resolve({ address: k.address }), signArbitrary: (addr, text) => { k.signed.push([addr, text]); return Promise.resolve({ pubKey: "PK", signature: "SIG" }); }, keplr: () => ({}) };
+  const asked = [];
+  const S = (text) => ({ api: (route, body) => { asked.push([route, body]); return Promise.resolve({ operation: "77777777777777777777777777777777", text }); } });
+  const input = { route: "staff-rename", body: RENAME, account: "Caspian", authorizationWallet: WALLET };
+  const good = staffText("Change the Player Name Kestral to Kestrel; the former name is reserved", sha(RENAME_CANONICAL));
+  const proof = await A.confirmStaffAction(S(good), k, input);
+  eq(proof, { confirmOperation: "77777777777777777777777777777777", confirmPubKey: "PK", confirmSignature: "SIG" });
+  eq(asked, [["staff-confirm", { route: "staff-rename", ...RENAME }]]);
+  eq(k.signed, [[WALLET, good]]);
+
+  /* A text minted for another reason: refused before Keplr is asked. */
+  k.signed = [];
+  const other = staffText("Change the Player Name Kestral to Kestrel; the former name is reserved", sha(RENAME_CANONICAL.replace("Impersonating", "Another")));
+  await assert.rejects(A.confirmStaffAction(S(other), k, input), /different change than the one on this page/);
+  /* Another site, another account: refused. */
+  await assert.rejects(A.confirmStaffAction(S(staffText("x", sha(RENAME_CANONICAL), { site: "https://evil.example" })), k, input), /another site/);
+  await assert.rejects(A.confirmStaffAction(S(staffText("x", sha(RENAME_CANONICAL), { account: "Mallory" })), k, input), /another account/);
+  /* Keplr on another wallet: refused before anything is minted. */
+  k.address = OTHER;
+  asked.length = 0;
+  await assert.rejects(A.confirmStaffAction(S(good), k, input), /Switch Keplr to your Authorization Wallet/);
+  eq(asked, [], "nothing minted for another wallet");
+  eq(k.signed, [], "nothing was ever signed for a refused text");
+  assert.match(A.staffApprovalSentence({ error: "confirmation-required", detail: "used" }, k), /didn’t check out .* Nothing was changed\. Approve again\./);
+  assert.match(A.staffApprovalSentence({ message: "x" }, {}), /Keplr isn’t in this browser/);
+}));

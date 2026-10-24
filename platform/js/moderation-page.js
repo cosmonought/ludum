@@ -3,10 +3,10 @@
  *
  * The authority is Play's: the Ludum routes `moderation-queue`, `moderation-case` and `moderation-decide` answer 404 to
  * anyone who is not a reviewer -- one bound at Play's startup, or (v1.7) an account the staff log gives the Moderator
- * role, read at every request -- never list a case the reviewer is a party to, and take a decision only under a live
- * "Confirm it's you" (403 reauth-required). The reviewer confirms HERE, with Ludum's own "Confirm it's you"
- * (LudumAuth.confirmPanel), and the same decision is then sent again; Play's confirmation link stays the fallback. The
- * team roster is the server's `staff-team` answer. Who holds a role is decided by the server alone: nothing here grants
+ * role, read at every request -- never list a case the reviewer is a party to, and take a decision only with the
+ * reviewer's own Authorization Wallet approval of exactly that decision (v1.7, owner 2026-10-23: Keplr, never the
+ * password; LudumAuth.approveStaffAction -- one off-chain signature, no transaction, no fee). The team roster is the
+ * server's `staff-team` answer. Who holds a role is decided by the server alone: nothing here grants
  * or asks for one, and this page hides nothing the server would show and decides nothing itself.
  *
  * The tab opens exactly as /me/ does: your pass, the line under it, the tab row with Moderation current, then the panel
@@ -14,13 +14,12 @@
  * pass's stock, then the blocks Decide, Evidence, Parties, History.
  *
  * Confidential: parties are display names, seat ids and account fingerprints, never a username, wallet or id. Nothing
- * is kept in this browser except, for the length of one "Confirm it's you" round trip, which case to reopen. */
+ * is kept in this browser. */
 (function () {
   'use strict';
   var R = window.LudumRecords;
   var P = window.LudumPass;
   var W = window.LudumWork;
-  var RESUME_KEY = 'ludum.moderation.resume';
   var CASE_ID = /^cc_[0-9a-f]{32}$/;
 
   /** Play's transitions (frontend/src/utils/conductReport.ts CONDUCT_TRANSITIONS); the server checks them again. */
@@ -193,7 +192,8 @@
     var used = el('span', { text: '0 / 1,000' });
     note.addEventListener('input', function () { used.textContent = note.value.length.toLocaleString('en-US') + ' / 1,000'; });
     var error = el('p', { class: 'ld-step__error', role: 'alert', hidden: true });
-    var go = el('button', { class: 'ld-btn ld-btn--red', type: 'button' }, ['Record the decision', P.svg(P.ARROW_RIGHT)]);
+    var goLabel = el('span', { text: 'Record the decision' });
+    var go = el('button', { class: 'ld-btn ld-btn--red', type: 'button' }, [goLabel, P.svg(P.ARROW_RIGHT)]);
     var confirmSlot = el('div', { class: 'au-confirm-slot' });
     var form = el('form', { novalidate: 'novalidate' }, [
       W.choices({ legend: 'Move the case from ' + (LABEL[c.status] || c.status) + ' to', name: 'cc-s', options: moves.map(function (to) { return { value: to, name: MOVE[to], line: LINE[to] }; }), onChange: function (v) { chosen = v; } }),
@@ -202,36 +202,38 @@
         el('p', { class: 'ld-step__note', id: 'cc-n-hint', style: 'margin:0 0 8px', text: 'Kept with the case for reviewers. Never shown to the players.' }),
         note, el('div', { class: 'ld-pfield__foot' }, [el('span', { text: 'Reviewers only' }), used])
       ]),
-      error, confirmSlot, el('div', { style: 'margin-top:18px' }, [go])
+      error, confirmSlot, el('div', { style: 'margin-top:18px' }, [go]),
+      el('p', { class: 'ld-step__note', text: 'You approve the decision in Keplr with your Authorization Wallet: one signature over exactly this move and note, not a transaction.' })
     ]);
     form.addEventListener('submit', function (e) { e.preventDefault(); });
     function decide() {
       error.hidden = true;
       if (!chosen) { error.textContent = 'Choose where the case moves.'; error.hidden = false; return; }
       go.disabled = true;
+      goLabel.textContent = 'Approve in Keplr';
       var bodyJson = { caseId: c.caseId, revision: c.revision, status: chosen };
       if (note.value.trim() !== '') bodyJson.note = note.value;
-      session.api('moderation-decide', bodyJson).then(function (r) {
+      /* v1.7: approved in Keplr by this reviewer's own Authorization Wallet (exactly this decision: the case, its
+         revision, the move and the note), then sent with the approval. */
+      var A = window.LudumAuth, G = window.LudumGov;
+      session.whoami().then(function (who) {
+        var held = who && who.account && who.account.authorizationWallet;
+        return A.approveStaffAction(session, G, { route: 'moderation-decide', body: bodyJson, account: who.account.name, authorizationWallet: held && typeof held.address === 'string' ? held.address : null }, confirmSlot)
+          .then(function (proof) {
+            var sent = {};
+            Object.keys(bodyJson).forEach(function (k) { sent[k] = bodyJson[k]; });
+            Object.keys(proof).forEach(function (k) { sent[k] = proof[k]; });
+            return session.api('moderation-decide', sent);
+          }, function () { throw { stopped: true }; });
+      }).then(function (r) {
         drawCase(slot, session, r.case, 'Recorded: the case is now ' + (LABEL[r.case.status] || r.case.status) + '.', new Date().toISOString());
       }, function (e) {
         go.disabled = false;
-        if (e && e.error === 'reauth-required' && window.LudumAuth) {
-          /* Ludum's own "Confirm it's you"; then the SAME decision is sent again (the choice and note are kept). */
-          confirmSlot.textContent = '';
-          go.disabled = true;
-          var panel = window.LudumAuth.confirmPanel(window.LudumSession, {
-            onDone: function () { confirmSlot.textContent = ''; decide(); },
-            onCancel: function () { confirmSlot.textContent = ''; go.disabled = false; go.focus(); }
-          });
-          confirmSlot.appendChild(panel);
-          var field = panel.querySelector('input');
-          if (field) field.focus();
-          return;
-        } else if (e && e.error === 'reauth-required') {
-          try { window.sessionStorage.setItem(RESUME_KEY, c.caseId); } catch (x) { /* the reviewer reopens the case */ }
-          error.textContent = '';
-          error.appendChild(document.createTextNode('A decision needs “Confirm it’s you” first. Your choice is not saved. '));
-          error.appendChild(el('a', { class: 'ld-link', href: e.confirmUrl || window.LudumSession.confirmUrl('/moderation/'), text: 'Confirm it’s you on Play' }));
+        goLabel.textContent = 'Record the decision';
+        if (e && e.stopped) return;
+        confirmSlot.textContent = '';
+        if (e && e.error === 'confirmation-required') {
+          error.textContent = A.staffApprovalSentence(e, G);
         } else if (e && e.error === 'conflict') {
           error.textContent = e.detail === 'stale' ? 'Another reviewer moved this case meanwhile. Reload it and decide again.' : (e.reason || 'That move is not allowed now.');
         } else if (e && e.error === 'not-found') {
@@ -306,10 +308,6 @@
         if (!id || !CASE_ID.test(id)) { stop(slot, 'No case chosen', 'Open a case from the Moderation tab.', el('a', { class: 'ld-link', href: '/moderation/', text: 'Moderation' })); return; }
         return casePage(slot, who, session, id);
       }
-      /* Back from "Confirm it's you": reopen the case the decision was for (once). */
-      var resume = null;
-      try { resume = window.sessionStorage.getItem(RESUME_KEY); window.sessionStorage.removeItem(RESUME_KEY); } catch (x) { resume = null; }
-      if (resume && CASE_ID.test(resume)) { window.location.replace('/moderation/case/?id=' + resume); return; }
       return queuePage(slot, who, session);
     }).catch(function (e) {
       if (e && e.error === 'not-found') stop(slot, 'Not available', mode === 'case' ? 'This case is not available to you: it does not exist, or you are a party to it.' : 'This tab is for Moderators.', el('a', { class: 'ld-link', href: '/moderation/', text: 'Moderation' }));
