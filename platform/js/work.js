@@ -12,7 +12,7 @@
  *   LudumWork.reading(text)                     three holes and what is being read
  *   LudumWork.state(text, kind)                 a row's state with its shape: "" ring, "due" square, "done" disc, "bad"
  *   LudumWork.yours(text)                       something that is yours to do (the yellow square)
- *   LudumWork.roles(roles)                      the role chips of one account (Admin inked, Moderator outlined)
+ *   LudumWork.roles(roles)                      the role chips of one account (Admin inked, Moderator and Appeals outlined)
  *   LudumWork.chips(label, filters, onPick)     pressed toggles with their counts, and the live count beside them
  *   LudumWork.ledger(opts)                      the work ledger (a table; each row a card of labelled facts on phones)
  *   LudumWork.cell(label, children, cls)        one ledger cell with its phone label
@@ -68,7 +68,7 @@
   function state(text, kind) { return el('span', { class: 'ld-state' + (kind ? ' is-' + kind : ''), text: text }); }
   function yours(text) { return el('span', { class: 'ld-yours', text: text }); }
 
-  var ROLE_WORD = { admin: 'Admin', moderator: 'Moderator' };
+  var ROLE_WORD = { admin: 'Admin', moderator: 'Moderator', appeals: 'Appeals' };
   function roles(list) {
     var held = (list || []).filter(function (r) { return Object.prototype.hasOwnProperty.call(ROLE_WORD, r); });
     if (!held.length) return document.createTextNode('None');
@@ -183,8 +183,9 @@
   /**
    * A work tab's top, exactly as /me/ draws its own: YOUR pass (its shell at once, the figures when `profile` answers),
    * the line under it, and the tab row with this tab current. The Disputes tab is drawn from this account's remembered
-   * DAO membership at once and corrected when the chain answers (records.js `checkMembership`: no Keplr). Returns
-   * {setCounts({moderation, disputes})} so the panel can put its counts beside the work tabs once it has read them.
+   * DAO membership at once and corrected when the chain answers (records.js `checkMembership`: no Keplr), and for the
+   * Appeals team from the session. Returns {setCounts({moderation})} so the Moderation panel can put its count beside
+   * its tab once it has read it.
    */
   function profileTop(slot, session, who, current) {
     var R = root.LudumRecords;
@@ -192,7 +193,7 @@
     var counts = {};
     var dao = R.rememberedMember(root.localStorage, Date.now(), R.accountOf(who));
     var tabsSlot = el('div');
-    function drawTabs() { fill(tabsSlot, [P.tabsRow(who, current, { daoMember: dao, moderation: counts.moderation, disputes: counts.disputes })]); }
+    function drawTabs() { fill(tabsSlot, [P.tabsRow(who, current, { daoMember: dao, moderation: counts.moderation })]); }
     drawTabs();
     fill(slot, [passSlot, P.passFoot(), tabsSlot]);
     session.api('profile', {}).then(function (profile) { fill(passSlot, [P.pass(P.figuresOfProfile(profile, who))]); }, function () { /* the shell stays */ });

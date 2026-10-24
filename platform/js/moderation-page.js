@@ -41,7 +41,8 @@
   var FILTER = { all: null, open: ['open'], review: ['under-review'], escalated: ['escalated'], closed: ['no-violation', 'conduct-confirmed'] };
   var ACTIVE = ['open', 'escalated', 'under-review'];
   var NOTE_MAX = 1000;
-  var CAN = { 'case.review': 'Reviews conduct cases', 'player.rename': 'Changes Player Names', 'moderator.manage': 'Appoints Moderators', 'name.reserve': 'Reserves former names' };
+  var CAN = { 'case.review': 'Reviews conduct cases', 'appeal.review': 'Prepares appeals', 'player.rename': 'Changes Player Names', 'moderator.manage': 'Appoints Moderators',
+    'appeals.manage': 'Appoints Appeals staff', 'name.reserve': 'Reserves former names' };
 
   /** The filter counts (pure). */
   function counts(cases) {
@@ -67,8 +68,8 @@
   function decisionFoot() {
     return W.workfoot('What a decision does', [
       ['A decision', 'Records a status and a note for reviewers. It changes no game, seat, profile or payout, and no player is told.'],
-      ['Separate from appeals', 'Conduct review is Play’s, by its reviewers. It never touches a table’s credits, a result or a Ludum DAO vote.'],
-      ['Confirm it’s you', 'Recording a decision asks for your password first, once per few minutes.'],
+      ['Separate from appeals', 'Conduct review is Play’s, by its reviewers. It never touches a table’s credits, a result or a Ludum DAO vote. Appeals are a separate team’s, and aren’t open yet.'],
+      ['Approved in Keplr', 'Each decision is approved with your Authorization Wallet in Keplr: one signature over exactly that decision, not a transaction.'],
       ['Roles', 'One account per person. Roles add up: an Admin who moderates holds both roles on the same account.']
     ], []);
   }
@@ -267,7 +268,8 @@
     body.appendChild(W.block({ title: 'Evidence', read: 'Facts the server kept at each report' }, [W.stack([W.facts([
       ['Log pointer, first report', logLine],
       ['Check', c.verification.detail],
-      ['Retired real-money escrow', ev.table.money ? (ev.money ? 'Phase ' + (ev.money.phase || 'unknown') + (ev.money.held ? ' · held' : '') : 'Not readable then') : 'None'],
+      /* v1.7 (owner, 2026-10-24): the retired escrow is evidence only for the old money tables it held -- kept there. */
+      ev.table.money ? ['Retired real-money escrow', ev.money ? 'Phase ' + (ev.money.phase || 'unknown') + (ev.money.held ? ' · held' : '') : 'Not readable then'] : null,
       ['Reporter’s note', c.note === null ? 'None' : '“' + c.note + '”'],
       ['Not captured', ev.not_captured.length ? ev.not_captured.join('; ') : 'Nothing missing']
     ]), W.twocol(countsLedger, chat)])]));

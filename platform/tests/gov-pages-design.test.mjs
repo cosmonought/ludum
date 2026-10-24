@@ -1,8 +1,10 @@
-// The governance pages as Claude Design drew them (the Disputes tab, Case file, New appeal, Proposal, the list), run for
-// real (records.js + pass.js + work.js + gov.js + gov-case.js + gov-page.js) in a small fake DOM against the fixture world.
-// Pinned: the governance trust path is unchanged -- chain reads only on load (GET, the pinned REST endpoint), Keplr never
-// touched on load, the server record never enables an action, the deadline guard and the membership checks gate every
-// transaction, link-by-decoding only; and nothing is invented when a read fails.
+// The governance pages as Claude Design drew them (the proposals, a proposal) and the Disputes tab, run for real
+// (records.js + pass.js + work.js + gov.js + gov-page.js; disputes-page.js) in a small fake DOM against the fixture world.
+// LUDUM v1.7 (owner, 2026-10-24): the retired JUNOX escrow is no Ludum feature -- no disputed tables, case file, new
+// appeal, Case column, game checks or resolver deadline, and the world answers no escrow query. Pinned: the governance
+// trust path is unchanged -- chain reads only on load (GET, the pinned REST endpoint), Keplr never touched on load, the
+// pins, the framing guard and the membership checks gate every transaction; nothing is invented when a read fails; and
+// Disputes is a neutral page that reads no chain of its own and counts nothing.
 // Run from the repository root: node --test platform/tests/gov-pages-design.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -33,256 +35,103 @@ class Node {
   get id() { return this.getAttribute("id"); }
   find(pred) { if (pred(this)) return this; for (const c of this.children) { const f = c.find?.(pred); if (f) return f; } return null; }
   findAll(pred, out = []) { if (pred(this)) out.push(this); for (const c of this.children) c.findAll?.(pred, out); return out; }
+  /** Enough of querySelector for disputes-page.js: "[attr]". */
+  querySelector(sel) { const m = /^\[([a-z-]+)\]$/.exec(sel); return m ? this.find((n) => n !== this && n.getAttribute && n.getAttribute(m[1]) !== null) : null; }
 }
 class Text { constructor(t) { this.text = String(t); this.parentNode = null; } get textContent() { return this.text; } }
 
-async function load(page, search = "", { world = F.world(), sessionApi, withSession = true, who = null, wait = 60, hash = "" } = {}) {
+function context(world, requests, extra = {}) {
   const body = new Node("body");
-  body.setAttribute("data-gov-page", page);
-  for (const id of ["gv-frame", "gv-body"]) { const n = new Node("div"); n.setAttribute("id", id); body.appendChild(n); }
   const head = new Node("head");
   const document = {
     readyState: "complete", title: "", body, head,
     createElement: (t) => new Node(t), createTextNode: (t) => new Text(t),
     getElementById: (id) => body.find((n) => n.getAttribute && n.getAttribute("id") === id),
+    querySelector: (sel) => body.querySelector(sel),
     addEventListener() {},
   };
   const keplr = { calls: 0, experimentalSuggestChain() { this.calls += 1; return Promise.resolve(); }, enable() { this.calls += 1; return Promise.resolve(); }, getKey() { this.calls += 1; return Promise.resolve({ bech32Address: F.MEMBER, name: "m", pubKey: new Uint8Array(33) }); } };
-  const requests = [], apiCalls = [], replaced = [], assigned = [];
+  const replaced = [], assigned = [];
   const storage = new Map();
   const ctx = {
     document, URLSearchParams, TextEncoder, TextDecoder, atob, btoa, Promise, AbortController, setTimeout: (f) => setTimeout(f, 0), clearTimeout,
-    setInterval: () => 0, Date, JSON, Math, Number, String, Object, Array, Error, RegExp, Boolean, BigInt, isFinite,
-    location: { search, hash, href: "https://ludum.netadao.org/x/" + search, pathname: "/x/", reload() {}, replace: (u) => replaced.push(u), assign: (u) => assigned.push(u), ancestorOrigins: [] },
+    setInterval: () => 0, Date, JSON, Math, Number, String, Object, Array, Error, RegExp, Boolean, BigInt, isFinite, Intl, encodeURIComponent, unescape,
+    location: { search: extra.search || "", hash: extra.hash || "", href: "https://ludum.netadao.org/x/" + (extra.search || ""), pathname: "/x/", reload() {}, replace: (u) => replaced.push(u), assign: (u) => assigned.push(u), ancestorOrigins: extra.ancestors || [] },
     localStorage: { getItem: (k) => storage.get(k) ?? null, setItem: (k, v) => storage.set(k, String(v)), removeItem: (k) => storage.delete(k) },
     fetch: F.restFetch(world, (u, init) => requests.push([u, init && init.method])), keplr,
   };
-  ctx.window = ctx; ctx.top = ctx; ctx.self = ctx;
-  if (withSession) ctx.LudumSession = { api: (route, b, options) => { apiCalls.push([route, b, options]); return route === "profile" ? Promise.resolve(PROFILE) : sessionApi ? sessionApi(route, b) : Promise.resolve(F.caseRecord(Number(b.chainGameId))); }, ...(who ? { whoami: () => Promise.resolve(who) } : {}) };
-  vm.createContext(ctx);
-  for (const f of ["platform/js/records.js", "platform/js/pass.js", "platform/js/work.js", "platform/js/gov.js", "platform/js/gov-case.js", "platform/js/gov-page.js"]) vm.runInContext(src(f), ctx, { filename: f });
-  const settle = async () => { for (let i = 0; i < wait; i++) await new Promise((r) => setImmediate(r)); };
+  ctx.window = ctx; ctx.self = ctx;
+  ctx.top = extra.framed ? {} : ctx;
+  return { ctx, body, head, keplr, replaced, assigned, storage };
+}
+const settleFor = (wait) => async () => { for (let i = 0; i < wait; i++) await new Promise((r) => setImmediate(r)); };
+
+async function load(page, search = "", { world = F.world(), who = null, wait = 60, hash = "", framed = false, ancestors } = {}) {
+  const requests = [], apiCalls = [];
+  const c = context(world, requests, { search, hash, framed, ancestors });
+  c.body.setAttribute("data-gov-page", page);
+  for (const id of ["gv-frame", "gv-body"]) { const n = new Node("div"); n.setAttribute("id", id); c.body.appendChild(n); }
+  c.ctx.LudumSession = { api: (route, b, options) => { apiCalls.push([route, b, options]); return Promise.reject({ status: 404, error: "not-found" }); }, ...(who ? { whoami: () => Promise.resolve(who) } : {}) };
+  vm.createContext(c.ctx);
+  for (const f of ["platform/js/records.js", "platform/js/pass.js", "platform/js/work.js", "platform/js/gov.js", "platform/js/gov-page.js"]) vm.runInContext(src(f), c.ctx, { filename: f });
+  const settle = settleFor(wait);
   await settle();
+  const { body } = c;
   const text = () => body.textContent.replace(/\s+/g, " ");
   const buttons = (re) => body.findAll((n) => n.tagName === "button" && re.test(n.textContent));
   const links = (re) => body.findAll((n) => n.tagName === "a" && re.test(n.textContent));
   async function connect() { const b = buttons(/^Connect Keplr$/)[0]; assert.ok(b, "a Connect Keplr control"); b.click(); await settle(); }
-  return { ctx, body, head, keplr, requests, apiCalls, replaced, assigned, text, buttons, links, connect, settle, storage };
+  return { ...c, requests, apiCalls, text, buttons, links, connect, settle };
 }
 const disabled = (b) => b.getAttribute("aria-disabled") === "true";
-/** The `profile` answer the Disputes tab's pass is drawn from. */
-const PROFILE = { standing: { completedGames: 3, uniqueOpponents: 2, memberSince: "2026-10" }, publicCredits: { value: 1200, provenance: "server-recorded" }, ratings: [] };
-const caseOf = (rec) => () => Promise.resolve(rec);
+const escrowRead = (requests) => requests.some(([u]) => u.includes(F.RETIRED_ESCROW));
+/** Strings a player can be shown: comments stripped. */
+const said = (rel) => src(rel).replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
-/* ================= Disputes (/disputes/): a tab of your profile ================= */
+/* ================= /governance/: every proposal ================= */
 
-test("register: the Disputes tab -- your pass and tabs, the disputed tables from the chain, Play's names only when its wallets match", async () => {
-  const p = await load("register", "", { who: { signedIn: true, account: { name: "Marlowe", username: "m" }, roles: { reviewer: false } } });
+test("governance list: every proposal with the design's filters and counts; percentages are the proposal's own; no Case column", async () => {
+  const p = await load("governance");
   const t = p.text();
-  for (const want of ["Games", "Account", "Disputes", "Disputed tables", "Escrow game 7", "Escrow game 6", "seat 2", "Marlowe", "5.00", "Proposal 13", "Voting", "Proposal 11", "Appeals", "How a dispute is decided", "All Ludum DAO proposals"]) assert.ok(t.includes(want), want);
-  const current = p.body.findAll((n) => n.tagName === "a" && n.getAttribute("aria-current") === "page");
-  assert.deepEqual(current.map((a) => a.getAttribute("href")), ["/disputes/"], "Disputes is the current tab");
-  assert.ok(!t.includes("Pending review") && !t.includes("Appeals & Disputes"), "the old page head is gone");
-  assert.equal(p.keplr.calls, 0, "Keplr is never touched on load");
-  assert.equal(p.head.children.length, 0, "the signing bundle is never loaded on load");
-  for (const [u, method] of p.requests) { assert.ok(u.startsWith(F.PIN.rest), u); assert.equal(method, "GET", "page load never POSTs to the chain"); }
-  assert.ok(p.apiCalls.every(([route]) => route === "case" || route === "profile"), "only Play's public case route, and your own profile for the pass");
-});
-
-test("register: proposals with the design's filters and counts; percentages are the proposal's own", async () => {
-  const p = await load("register");
-  const t = p.text();
-  for (const want of ["All 4", "Voting 1", "Passed 1", "Executed 1", "Failed 1", "41 · 12 · 6", "Execution failed", "Appeal 7: uphold"]) assert.ok(t.includes(want), want);
+  for (const want of ["Proposals", "All 4", "Voting 1", "Passed 1", "Executed 1", "Failed 1", "41 · 12 · 6", "Execution failed", "Appeal 7: uphold"]) assert.ok(t.includes(want), want);
+  assert.doesNotMatch(t, /Not an appeal|Escrow game|escrow|Disputed tables|resolver/i, "the escrow's labels are gone");
+  const heads = p.body.findAll((n) => n.tagName === "th").map((n) => n.textContent.trim());
+  assert.ok(!heads.includes("Case"), heads.join(","));
   const failedTab = p.buttons(/^Failed/)[0];
   failedTab.click();
   const rows = p.body.findAll((n) => n.tagName === "tr" && n.getAttribute("data-ld-status"));
   assert.deepEqual(rows.map((r) => r.getAttribute("data-ld-status")), ["failed"]);
   assert.equal(failedTab.getAttribute("aria-pressed"), "true");
+  assert.equal(p.keplr.calls, 0, "Keplr is never touched on load");
+  assert.equal(p.head.children.length, 0, "the signing bundle is never loaded on load");
+  for (const [u, method] of p.requests) { assert.ok(u.startsWith(F.PIN.rest), u); assert.equal(method, "GET", "page load never POSTs to the chain"); }
+  assert.equal(escrowRead(p.requests), false, "the retired escrow is never read");
+  assert.equal(p.apiCalls.length, 0, "the governance pages ask Play for nothing");
 });
 
-test("register: your standing and a member's cues are read on chain from the account's Authorization Wallet -- Keplr never asked", async () => {
-  const youOf = (authorizationWallet) => ({ signedIn: true, account: { name: "Ann", username: "ann", memberSince: "2026-10", authorizationWallet }, roles: { reviewer: false } });
-  const p = await load("register", "", { who: youOf({ address: F.MEMBER }) });
-  const t = p.text();
-  assert.ok(t.includes("Member"), "Ludum DAO: Member");
-  assert.ok(t.includes("4.0%"), "voting power: the cw4 weight over the group's total weight");
-  assert.ok(t.includes("Ready to execute"));
-  assert.ok(t.includes("Your vote is open"));
-  assert.equal(p.keplr.calls, 0, "the standing needs no Keplr");
-  assert.equal(p.buttons(/Keplr/).length, 0, "the Disputes tab signs nothing: votes and executions are on each appeal's page");
-  const R = p.ctx.LudumRecords;
-  assert.ok(R.rememberedMember(p.ctx.localStorage, Date.now(), "ann"), "Ann's tabs draw Disputes");
-  assert.equal(R.rememberedMember(p.ctx.localStorage, Date.now(), "bob"), null, "another account on this browser never inherits it");
-  const outsider = await load("register", "", { who: youOf({ address: "juno1" + "n".repeat(38) }) });
-  assert.match(outsider.text(), /Not a member/);
-  assert.doesNotMatch(outsider.text(), /Your vote is open|Ready to execute/, "no member's cue for a wallet that is not one");
-  const signedOut = await load("register");
-  assert.doesNotMatch(signedOut.text(), /Your vote is open|Voting power/, "signed out: no standing, no cue");
-  assert.equal(signedOut.storage.size, 0, "signed out: nothing is remembered (membership is kept per signed-in account only)");
+test("governance list: an old #proposal-N link is forwarded to the proposal page; a member's cues follow a connected member wallet", async () => {
+  const old = await load("governance", "", { hash: "#proposal-13" });
+  assert.deepEqual(old.replaced, ["/governance/proposal/?id=13"]);
+  const junk = await load("governance", "", { hash: "#proposal-13x" });
+  assert.deepEqual(junk.replaced, [], "only an exact old anchor is forwarded");
+  const p = await load("governance");
+  assert.doesNotMatch(p.text(), /Your vote is open|Ready to execute/, "no cue before a member wallet");
+  await p.connect();
+  assert.match(p.text(), /Ready to execute/);
+  assert.match(p.text(), /Your vote is open/);
 });
 
-test("register: nothing disputed and no proposals -> empty states; an unreadable chain -> unavailable, nothing invented", async () => {
-  const empty = F.world({ games: () => ({ data: { games: [] } }), reverse_proposals: () => ({ data: { proposals: [] } }) });
-  const p = await load("register", "", { world: empty });
-  assert.match(p.text(), /Nothing is disputed/);
-  assert.match(p.text(), /No appeals yet/);
-  const down = await load("register", "", { world: F.world({ games: () => ({ status: 502, message: "bad gateway" }) }) });
+test("governance list: no proposals -> the empty state; an unreadable chain -> unavailable, nothing invented", async () => {
+  const empty = await load("governance", "", { world: F.world({ reverse_proposals: () => ({ data: { proposals: [] } }) }) });
+  assert.match(empty.text(), /No proposals yet/);
+  const down = await load("governance", "", { world: F.world({ reverse_proposals: () => ({ status: 502, message: "bad gateway" }) }) });
   assert.match(down.text(), /Unavailable.*could not be read from the chain/);
-  assert.doesNotMatch(down.text(), /Escrow game 7/);
+  assert.doesNotMatch(down.text(), /Appeal 7/);
 });
 
-/* ================= Case file (/disputes/case/?id=) ================= */
+/* ================= /governance/proposal/?id= ================= */
 
-test("case: docket, parties, the disputed result, evidence, the four outcomes and the appeal -- from the chain and Play's agreeing record", async () => {
-  const p = await load("case", "?id=7", { who: { signedIn: true, account: { name: "Marlowe", username: "m" } } });
-  const t = p.text();
-  for (const want of ["Docket", "Result recorded", "Challenged", "Appeal proposed", "Voting closes", "Resolver deadline", "Parties", "Teodora", "11.940882", "Challenger · bond 5.00",
-    "The disputed result", "$6,940", "Recorded settlement", "29.25", "Settlement key 2 · trusted", "Evidence", "1,486 entries", "matches neither", "agree with the chain facts",
-    "What each resolution would do", "13.982058", "pays by its corrected weights", "9.75", "Timeout", "5.00 back", "The appeal", "41.0%", "Quorum 20%", "You sat at this table", "34.25 JUNOX", "Chain facts from escrow"]) {
-    assert.ok(t.includes(want), want);
-  }
-  assert.equal(p.apiCalls.length, 1, "exactly one `case` call");
-  assert.deepEqual(JSON.parse(JSON.stringify(p.apiCalls[0][1])), { chainGameId: "7" });
-  assert.equal(p.apiCalls[0][2], undefined, "never a sign-in redirect");
-  assert.equal(p.keplr.calls, 0);
-  assert.equal(p.buttons(/Uphold|Annul|Sign/).length, 0, "the case file signs nothing itself: proposing is New appeal's");
-});
-
-test("case: every server failure says what happened and shows nothing of Play's record; the chain facts stand", async () => {
-  const fail = (status, detail) => () => Promise.reject({ status, error: "x", detail });
-  const cases = [
-    [fail(404, "the escrow has no such game"), /No such game.*this browser read one from the chain.*disagree/],
-    [fail(503, "the chain could not be read"), /could not produce this record \(the chain could not be read\)/],
-    [fail(400, "bad"), /Refused/],
-    [fail(429), /Busy/],
-    [fail(0, "Play could not be reached"), /could not be reached from this browser/],
-    [fail(500), /answered unexpectedly \(HTTP 500\)/],
-    [caseOf(F.caseRecord(8)), /Rejected.*not #7/],
-    [caseOf({ ...F.caseRecord(7), seats: F.caseRecord(7).seats.map((s, i) => (i === 1 ? { ...s, wallet: "juno1" + "y".repeat(38) } : s)) }), /Disagrees with the chain.*seat 1 differs/],
-  ];
-  for (const [answer, want] of cases) {
-    const p = await load("case", "?id=7", { sessionApi: answer });
-    assert.match(p.text(), want);
-    assert.doesNotMatch(p.text(), /\$6,940|Teodora|matches neither/, "nothing from the record is shown");
-    assert.match(p.text(), /Chain facts from escrow/, "the chain facts still stand on their own");
-    assert.match(p.text(), /13\.982058/, "the escrow's arithmetic needs no server");
-  }
-});
-
-test("case: a game the chain does not have; a chain that cannot be read; no session at all", async () => {
-  const missing = await load("case", "?id=9", { sessionApi: () => Promise.reject({ status: 404, error: "not-found" }) });
-  assert.match(missing.text(), /No such game.*has no game #9/);
-  assert.match(missing.text(), /The server also reports that escrow .* has no game #9/);
-  const down = await load("case", "?id=7", { world: F.world({ game: () => ({ status: 502, message: "bad gateway" }) }) });
-  assert.match(down.text(), /could not be read from this browser/);
-  assert.doesNotMatch(down.text(), /Create appeal/, "no action without this browser's chain facts");
-  const alone = await load("case", "?id=7", { withSession: false });
-  assert.match(alone.text(), /no connection to play\.netadao\.org/);
-  assert.match(alone.text(), /Seat 0/, "chain seats without names");
-});
-
-test("case: the server record never enables an action -- a settled chain game offers no appeal; the deadline guard holds", async () => {
-  const settled = F.world({ game: (c, a) => ({ data: F.chainGame(a.chain_game_id, { state: "settled", dispute: { ...F.chainGame(7).game.dispute, resolution: "upheld", resolved_at: F.ns(F.NOW) } }) }), reverse_proposals: () => ({ data: { proposals: [] } }) });
-  const s = await load("case", "?id=7", { world: settled });
-  assert.match(s.text(), /Resolved · upheld/);
-  assert.match(s.text(), /the server read the escrow as disputed; this browser read settled/);
-  assert.equal(s.links(/Create appeal/).length, 0);
-  const late = F.world({ reverse_proposals: () => ({ data: { proposals: [] } }), game: (c, a) => { const g = F.chainGame(a.chain_game_id); g.deadlines.resolver_timeout_at = F.ns(F.NOW + 3 * 86400); return { data: g }; } });
-  const l = await load("case", "?id=7", { world: late });
-  assert.match(l.text(), /Deadline guard/);
-  assert.equal(l.links(/Create appeal/).length, 0);
-  const open = await load("case", "?id=7", { world: F.world({ reverse_proposals: () => ({ data: { proposals: [] } }) }) });
-  assert.equal(open.links(/Create appeal/).length, 1, "a disputed game with time left links to New appeal");
-  assert.equal(open.links(/Create appeal/)[0].getAttribute("href"), "/governance/new/?case=7");
-});
-
-test("case: only proposals that decode to THIS game's Resolve on the pinned escrow are linked", async () => {
-  const props = [F.proposal(5, 8, "open"), { ...F.proposal(6, 7, "open"), proposal: { ...F.proposal(6, 7, "open").proposal, msgs: [{ wasm: { execute: { contract_addr: "juno1" + "x".repeat(58), msg: F.proposal(6, 7, "open").proposal.msgs[0].wasm.execute.msg, funds: [] } } }] } }, F.proposal(4, 7, "open")];
-  const p = await load("case", "?id=7", { world: F.world({ reverse_proposals: () => ({ data: { proposals: props } }) }) });
-  assert.match(p.text(), /Proposal 4/);
-  assert.doesNotMatch(p.text(), /Proposal 5|Proposal 6/);
-});
-
-test("case: an untrusted (compromised) settlement key changes the Timeout outcome, never invents payouts", async () => {
-  const p = await load("case", "?id=7", { world: F.world({ signer_key: () => ({ data: { key: { key_id: 2, compromised: true } } }) }) });
-  assert.match(p.text(), /Settlement key 2 · compromised/);
-  assert.match(p.text(), /Its signer key is compromised: the escrow refunds or settles on a trusted checkpoint/);
-});
-
-/* ================= New appeal (/governance/new/?case=) ================= */
-
-test("new appeal: the six steps; submit stays disabled until a member wallet, an outcome and the read check -- then the exact message is simulated", async () => {
-  const p = await load("new", "?case=7");
-  const t = p.text();
-  for (const want of ["The case", "Still disputed", "has Proposal 13", "The outcome", "Title and rationale", "The message", "Timing", "Voting period", "Enough", "Deposit", "None", "Submit", "Your wallet, your proposal"]) assert.ok(t.includes(want), want);
-  let submit = p.buttons(/Sign and submit with Keplr/)[0];
-  assert.ok(disabled(submit));
-  assert.match(p.text(), /Not yet: .*choose an outcome.*connect a Keplr wallet.*confirm you have read the case file/);
-  await p.connect();
-  const annul = p.body.find((n) => n.tagName === "input" && n.getAttribute("value") === "annul");
-  annul.fire("change");
-  const title = p.body.find((n) => n.getAttribute && n.getAttribute("id") === "nw-t");
-  assert.equal(title.getAttribute("value"), "Appeal 7: annul", "the title follows the outcome until edited");
-  const read = p.body.find((n) => n.getAttribute && n.getAttribute("id") === "nw-read");
-  read.checked = true; read.fire("change");
-  submit = p.buttons(/Sign and submit with Keplr/)[0];
-  assert.ok(!disabled(submit), p.text().match(/Not yet: [^.]*/)?.[0]);
-  let captured = null;
-  p.ctx.LudumGov.prepare = (_r, spec) => { captured = spec; return new Promise(() => {}); };
-  submit.click();
-  assert.equal(captured.contract, F.PIN.preProposeSingle);
-  const inner = captured.msg.propose.msg.propose;
-  assert.equal(inner.title, "Appeal 7: annul");
-  assert.equal(JSON.parse(Buffer.from(inner.msgs[0].wasm.execute.msg, "base64").toString()).resolve.outcome.annul !== undefined, true);
-  assert.equal(inner.msgs[0].wasm.execute.contract_addr, F.PIN.escrow);
-  assert.equal(JSON.stringify(captured.funds), "[]");
-  assert.match(inner.description, /Case: https:\/\/ludum\.netadao\.org\/disputes\/case\/\?id=7/);
-});
-
-test("new appeal: a proposer's title and rationale go on chain; the case facts follow the rationale", async () => {
-  const p = await load("new", "?case=7");
-  await p.connect();
-  p.body.find((n) => n.getAttribute && n.getAttribute("value") === "uphold").fire("change");
-  const title = p.body.find((n) => n.getAttribute && n.getAttribute("id") === "nw-t");
-  title.value = "Appeal 0007: uphold the record"; title.fire("input"); title.fire("change");
-  const rat = p.body.find((n) => n.getAttribute && n.getAttribute("id") === "nw-r");
-  rat.value = "The settlement matches the log."; rat.fire("input"); rat.fire("change");
-  const read = p.body.find((n) => n.getAttribute && n.getAttribute("id") === "nw-read"); read.checked = true; read.fire("change");
-  let captured = null;
-  p.ctx.LudumGov.prepare = (_r, spec) => { captured = spec; return new Promise(() => {}); };
-  p.buttons(/Sign and submit with Keplr/)[0].click();
-  const inner = captured.msg.propose.msg.propose;
-  assert.equal(inner.title, "Appeal 0007: uphold the record");
-  assert.match(inner.description, /^The settlement matches the log\.\n\n— Case facts, read from the chain —\nEscrow 2\.1\.0 game #7/);
-});
-
-test("new appeal: a non-member, a settled game and the deadline guard each keep submit disabled; Replace needs Play's agreeing record", async () => {
-  const outsider = await load("new", "?case=7");
-  outsider.ctx.keplr.getKey = () => Promise.resolve({ bech32Address: "juno1" + "n".repeat(38), name: "n", pubKey: new Uint8Array(33) });
-  await outsider.connect();
-  outsider.body.find((n) => n.getAttribute && n.getAttribute("value") === "annul").fire("change");
-  const r1 = outsider.body.find((n) => n.getAttribute && n.getAttribute("id") === "nw-read"); r1.checked = true; r1.fire("change");
-  assert.ok(disabled(outsider.buttons(/Sign and submit/)[0]));
-  assert.match(outsider.text(), /not a Ludum DAO member the pre-propose module allows/);
-  const late = F.world({ game: (c, a) => { const g = F.chainGame(a.chain_game_id); g.deadlines.resolver_timeout_at = F.ns(F.NOW + 3 * 86400); return { data: g }; } });
-  const l = await load("new", "?case=7", { world: late });
-  assert.match(l.text(), /Not enough/);
-  assert.match(l.text(), /Deadline guard/);
-  const noServer = await load("new", "?case=7", { withSession: false });
-  const replace = noServer.body.find((n) => n.tagName === "input" && n.getAttribute("value") === "replace");
-  assert.equal(replace.getAttribute("disabled"), "", "Replace is disabled without Play's terminal record");
-  assert.match(noServer.text(), /it needs Play’s terminal record/);
-  const withServer = await load("new", "?case=7");
-  const r2 = withServer.body.find((n) => n.tagName === "input" && n.getAttribute("value") === "replace");
-  assert.equal(r2.getAttribute("disabled"), null);
-  r2.fire("change");
-  assert.ok(withServer.body.find((n) => n.getAttribute && n.getAttribute("id") === "nw-w2"), "one weight field per seat");
-  assert.match(withServer.text(), /"replace"/, "the message shows the corrected payload");
-});
-
-/* ================= Proposal (/governance/proposal/?id=) ================= */
-
-test("proposal (open): the tally, a member's vote form, what it does and its record", async () => {
+test("proposal (open): the tally, a member's vote form, what it does and its record -- no case, no resolver deadline", async () => {
   const p = await load("proposal", "?id=13");
   assert.match(p.text(), /Appeal 7: uphold/);
   assert.match(p.text(), /41\.0%/);
@@ -297,29 +146,65 @@ test("proposal (open): the tally, a member's vote form, what it does and its rec
   vote.click();
   assert.deepEqual(JSON.parse(JSON.stringify(captured.msg)), { vote: { proposal_id: 13, vote: "no", rationale: null } });
   assert.equal(captured.contract, F.PIN.proposalSingle);
-  for (const want of ["What it does", "\"resolve\"", "Not yet", "Submitted", "tx 2A77…D013", "Resolver deadline for game 7"]) assert.ok(p.text().includes(want), want);
+  for (const want of ["What it does", "\"resolve\"", "Proposer", "Description", "Not yet", "Submitted", "tx 2A77…D013"]) assert.ok(p.text().includes(want), want);
+  assert.doesNotMatch(p.text(), /Resolver deadline|Case file|Appeal ·|the case stays Disputed/, "the escrow's labels are gone");
+  assert.equal(escrowRead(p.requests), false, "the retired escrow is never read, even for a proposal that once addressed it");
 });
 
-test("proposal (passed): execution checks read now; Execute only for a member (the module lets only members execute)", async () => {
+test("proposal (open): a wallet that is not a member gets no vote form", async () => {
+  const p = await load("proposal", "?id=13");
+  p.ctx.keplr.getKey = () => Promise.resolve({ bech32Address: "juno1" + "n".repeat(38), name: "n", pubKey: new Uint8Array(33) });
+  await p.connect();
+  assert.match(p.text(), /The connected wallet is not a Ludum DAO member/);
+  assert.equal(p.buttons(/Vote with Keplr/).length, 0);
+});
+
+test("proposal (passed): Execute only for a member when the module lets only members execute", async () => {
   const p = await load("proposal", "?id=11");
   assert.ok(disabled(p.buttons(/Execute with Keplr/)[0]), "disabled before a member wallet");
   await p.connect();
   const exec = p.buttons(/Execute with Keplr/)[0];
   assert.ok(!disabled(exec));
   assert.match(p.text(), /Ready to execute/);
+  assert.doesNotMatch(p.text(), /Live checks|Resolver for game/, "no escrow game checks");
   let captured = null;
   p.ctx.LudumGov.prepare = (_r, spec) => { captured = spec; return new Promise(() => {}); };
   exec.click();
   assert.deepEqual(JSON.parse(JSON.stringify(captured.msg)), { execute: { proposal_id: 11 } });
-  const resolved = F.world({ game: (c, a) => ({ data: F.chainGame(a.chain_game_id, { state: "annulled" }) }) });
-  const r = await load("proposal", "?id=11", { world: resolved });
-  await r.connect();
-  assert.ok(disabled(r.buttons(/Execute with Keplr/)[0]), "a game no longer disputed: execution would fail, so it is not offered");
+  const outsider = await load("proposal", "?id=11");
+  outsider.ctx.keplr.getKey = () => Promise.resolve({ bech32Address: "juno1" + "n".repeat(38), name: "n", pubKey: new Uint8Array(33) });
+  await outsider.connect();
+  const refused = outsider.buttons(/Execute with Keplr/)[0];
+  assert.ok(disabled(refused));
+  assert.equal(refused.getAttribute("title"), "the proposal module lets only members execute");
+  const open = await load("proposal", "?id=11", { world: F.world({ config: (c) => (c === F.PIN.proposalSingle ? { data: { dao: F.PIN.daoCore, max_voting_period: { time: 604800 }, only_members_execute: false } } : undefined) }) });
+  open.ctx.keplr.getKey = outsider.ctx.keplr.getKey;
+  await open.connect();
+  assert.ok(!disabled(open.buttons(/Execute with Keplr/)[0]), "a module that lets anyone execute: the chain's rule, not Ludum's");
+});
+
+test("v1.7: removing the escrow removed no independent check -- DAO pins that differ, or a foreign frame, turn every action off", async () => {
+  const mismatch = F.world({ voting_module: () => ({ data: "juno1impostor" }) });
+  for (const [id, re] of [["13", /Vote with Keplr/], ["11", /Execute with Keplr/]]) {
+    const p = await load("proposal", "?id=" + id, { world: mismatch });
+    assert.match(p.text(), /differs from the addresses this site pins.*voting_module/);
+    assert.ok(disabled(p.buttons(/^Connect Keplr$/)[0]), "connecting is off too");
+    assert.equal(p.buttons(re).filter((b) => !disabled(b)).length, 0, id);
+  }
+  const unreadable = await load("proposal", "?id=11", { world: F.world({ proposal_modules: () => ({ status: 502, message: "bad gateway" }) }) });
+  assert.match(unreadable.text(), /The Ludum DAO could not be read/);
+  assert.ok(disabled(unreadable.buttons(/Execute with Keplr/)[0]));
+  const framed = await load("proposal", "?id=11", { framed: true, ancestors: ["https://evil.example"] });
+  assert.match(framed.text(), /framed by another site/);
+  assert.ok(disabled(framed.buttons(/Execute with Keplr/)[0]));
+  const shell = await load("proposal", "?id=11", { framed: true, ancestors: ["https://netadao.org"] });
+  assert.doesNotMatch(shell.text(), /framed by another site/, "the radio shell on netadao.org may frame it");
 });
 
 test("proposal (execution failed): the stop notice and the chain's own receipt; nothing retried", async () => {
   const p = await load("proposal", "?id=12");
-  for (const want of ["Execution failed", "does not retry", "B90E…14F7", "201,334 used of 520,000", "0.039 JUNOX", "wrong state"]) assert.ok(p.text().includes(want), want);
+  for (const want of ["Execution failed", "does not retry", "The message was refused.", "B90E…14F7", "201,334 used of 520,000", "0.039 JUNOX", "wrong state"]) assert.ok(p.text().includes(want), want);
+  assert.doesNotMatch(p.text(), /The escrow refused/);
   assert.equal(p.buttons(/Execute|Vote|Close/).length, 0);
 });
 
@@ -328,50 +213,124 @@ test("proposal: an unreadable tx index leaves the record to the module's own fac
   assert.match(p.text(), /transaction index could not be read/);
   const none = await load("proposal", "?id=99");
   assert.match(none.text(), /No such proposal/);
+  const nothing = await load("proposal", "");
+  assert.match(nothing.text(), /No proposal chosen/);
+  assert.equal(nothing.links(/^Proposals$/)[0].getAttribute("href"), "/governance/");
 });
 
-/* ================= /governance/ and the design's addresses ================= */
-
-test("governance list: the proposals; an old #proposal-N link is forwarded to the proposal page", async () => {
-  const p = await load("governance");
-  assert.match(p.text(), /Appeal 7: uphold/);
-  const old = await load("governance", "", { hash: "#proposal-13" });
-  assert.deepEqual(old.replaced, ["/governance/proposal/?id=13"]);
-  const junk = await load("governance", "", { hash: "#proposal-13x" });
-  assert.deepEqual(junk.replaced, [], "only an exact old anchor is forwarded");
+test("a missing proposal is recognised from the chain's whole error text (uni-7's real message is long)", async () => {
+  const LONG = "type: dao_proposal_single::proposal::SingleChoiceProposal; key: [00, 0C, 70, 72, 6F, 70, 6F, 73, 61, 6C, 73, 5F, 76, 32, 00, 00, 00, 00, 00, 00, 00, 01] not found: query wasm contract failed";
+  const p = await load("proposal", "?id=1", { world: F.world({ proposal: () => ({ status: 500, message: LONG }) }) });
+  assert.match(p.text(), /No such proposal/);
 });
 
-test("route map: the design's /account/ and /cases/ addresses go to the engineering routes, and nothing else", () => {
+/* ================= /disputes/: a neutral tab ================= */
+
+async function disputes(who, answers = {}) {
+  const requests = [], apiCalls = [];
+  const c = context(F.world(), requests);
+  const main = new Node("main");
+  main.setAttribute("data-ludum-disputes", "");
+  const slot = new Node("div");
+  slot.setAttribute("data-pass-slot", "");
+  main.appendChild(slot);
+  c.body.appendChild(main);
+  c.ctx.LudumSession = {
+    whoami: () => (who instanceof Error ? Promise.reject(who) : Promise.resolve(who)),
+    signInUrl: (p) => "/me/sign-in/?return=" + encodeURIComponent(p),
+    api: (route, b) => { apiCalls.push(route); const a = answers[route]; return typeof a === "function" ? a(b) : a === undefined ? Promise.reject({ status: 404, error: "not-found" }) : Promise.resolve(a); },
+  };
+  vm.createContext(c.ctx);
+  for (const f of ["platform/js/records.js", "platform/js/pass.js", "platform/js/work.js", "platform/js/disputes-page.js"]) vm.runInContext(src(f), c.ctx, { filename: f });
+  await settleFor(60)();
+  return { ...c, requests, apiCalls, text: () => c.body.textContent.replace(/\s+/g, " ") };
+}
+const PROFILE = { standing: { completedGames: 3, uniqueOpponents: 2, memberSince: "2026-10" }, publicCredits: { value: 1200, provenance: "server-recorded" }, ratings: [] };
+const PLAYER = { signedIn: true, account: { name: "Marlowe", username: "m" }, roles: { reviewer: false } };
+const TEAM = { members: [
+  { name: "Caspian", roles: ["admin", "moderator"], can: ["staff.view", "moderator.manage", "appeals.manage"], since: null, configured: true, you: false },
+  { name: "Quinn", roles: ["appeals"], can: ["appeal.review", "staff.view"], since: "2026-10-24T09:00:00Z", you: true },
+  { name: "Mia", roles: ["moderator"], can: ["case.review", "staff.view"], since: "2026-10-23T09:00:00Z", you: false },
+] };
+
+test("disputes: a signed-in player -- the pass and tabs with Disputes current, a neutral 'not open yet', no chain read, no count, no wallet", async () => {
+  const p = await disputes(PLAYER, { profile: PROFILE });
+  const t = p.text();
+  for (const want of ["Games", "Account", "Disputes", "Appeals aren’t open yet", "nothing is waiting", "stand as they were recorded", "About appeals", "Ludum DAO proposals"]) assert.ok(t.includes(want), want);
+  const current = p.body.findAll((n) => n.tagName === "a" && n.getAttribute("aria-current") === "page");
+  assert.deepEqual(current.map((a) => a.getAttribute("href")), ["/disputes/"], "Disputes is the current tab");
+  assert.equal(p.body.findAll((n) => n.className === "ld-ptabs__count").length, 0, "no count beside any tab");
+  assert.ok(p.body.find((n) => n.tagName === "a" && n.getAttribute("href") === "/governance/"), "the Ludum DAO is one link away");
+  assert.doesNotMatch(t, /escrow|JUNOX|Disputed tables|Voting wallet|Voting power|juno1|bond|resolver|Appeals team/i);
+  assert.deepEqual(p.requests, [], "the page reads no chain");
+  assert.deepEqual(p.apiCalls, ["profile"], "only your own profile, for the pass");
+  assert.equal(p.keplr.calls, 0);
+});
+
+test("disputes: the Appeals team and the Admins who appoint it see the team's roster from staff-team; Moderators and players do not", async () => {
+  const quinn = { ...PLAYER, account: { name: "Quinn", username: "q" }, staff: { roles: ["appeals"], permissions: ["appeal.review", "staff.view"] } };
+  const p = await disputes(quinn, { profile: PROFILE, "staff-team": TEAM });
+  const t = p.text();
+  for (const want of ["Appeals team", "Quinn", "(you)", "24 Oct 2026", "they decide none", "no Ludum DAO membership or vote"]) assert.ok(t.includes(want), want);
+  assert.doesNotMatch(t, /Mia/, "only the Appeals role is on this roster");
+  assert.deepEqual(p.apiCalls.sort(), ["profile", "staff-team"]);
+  const admin = { ...PLAYER, account: { name: "Caspian", username: "c" }, staff: { roles: ["admin"], permissions: ["staff.view", "moderator.manage", "appeals.manage", "player.rename", "name.reserve"] } };
+  const a = await disputes(admin, { profile: PROFILE, "staff-team": TEAM });
+  assert.match(a.text(), /Appeals team.*Quinn/);
+  const mod = { ...PLAYER, roles: { reviewer: true }, staff: { roles: ["moderator"], permissions: ["case.review", "staff.view"] } };
+  const m = await disputes(mod, { profile: PROFILE, "staff-team": TEAM });
+  assert.doesNotMatch(m.text(), /Appeals team/);
+  assert.deepEqual(m.apiCalls, ["profile"]);
+  const failing = await disputes(quinn, { profile: PROFILE, "staff-team": () => Promise.reject({ status: 503, error: "unavailable" }) });
+  assert.match(failing.text(), /The team couldn’t be read/);
+  assert.match(failing.text(), /Appeals aren’t open yet/, "the rest of the page stands");
+});
+
+test("disputes: signed out -- the same neutral notice and a way to sign in; a profile that can't be read says so", async () => {
+  const out = await disputes({ signedIn: false });
+  assert.match(out.text(), /Appeals aren’t open yet/);
+  const signIn = out.body.find((n) => n.tagName === "a" && /Sign in/.test(n.textContent));
+  assert.equal(signIn.getAttribute("href"), "/me/sign-in/?return=%2Fdisputes%2F");
+  assert.ok(out.body.find((n) => n.tagName === "h1" && n.textContent === "Disputes"), "the page has its heading");
+  assert.deepEqual(out.apiCalls, []);
+  const down = await disputes(new Error("offline"));
+  assert.match(down.text(), /Unavailable.*could not be read just now/);
+});
+
+test("v1.7: what the governance and Disputes pages say, and the Disputes tab's rule, carry nothing of the retired escrow", () => {
+  for (const rel of ["platform/js/gov-page.js", "platform/js/disputes-page.js", "platform/js/gov.js"]) {
+    assert.doesNotMatch(said(rel), /escrow|disputed table|Create appeal|New appeal|case file|resolver deadline|deadline guard|bond\b|Uphold|Annul/i, rel);
+  }
+});
+
+/* ================= the design's addresses and the pages themselves ================= */
+
+test("route map: the design's /account/ addresses go to the engineering routes, and nothing else (v1.7: no /cases/, no new appeal)", () => {
   const require = createRequire(import.meta.url);
   const M = require("../js/route-map.js");
   const cases = {
     "/account/": "/me/", "/account": "/me/", "/account/details/": "/me/account/", "/account/games/g_xfqa37t6wt6ajvnbx5j3f5dn2g/": "/me/?game=g_xfqa37t6wt6ajvnbx5j3f5dn2g",
     "/account/moderation/": "/moderation/", ["/account/moderation/cases/cc_" + "a".repeat(32) + "/"]: "/moderation/case/?id=cc_" + "a".repeat(32),
-    "/account/appeals/": "/disputes/", "/account/appeals/new/": "/governance/new/", "/account/appeals/proposals/13/": "/governance/proposal/?id=13", "/cases/52/": "/disputes/case/?id=52",
+    "/account/appeals/": "/disputes/", "/account/appeals/proposals/13/": "/governance/proposal/?id=13",
   };
   for (const [from, to] of Object.entries(cases)) assert.equal(M.mapDesignPath(from), to, from);
-  for (const bad of ["/cases/x/", "/cases//evil.example/", "/account/games/../x", "/accountx/", "/cases/052/", "//evil.example/cases/1/", "/account/appeals/proposals/0/"]) assert.equal(M.mapDesignPath(bad), null, bad);
+  for (const bad of ["/cases/52/", "/account/appeals/new/", "/disputes/case/", "/cases/x/", "/cases//evil.example/", "/account/games/../x", "/accountx/", "//evil.example/cases/1/", "/account/appeals/proposals/0/"]) assert.equal(M.mapDesignPath(bad), null, bad);
 });
 
-test("every governance page: the §2.4 CSP first, the records layer and the pass's, no inline script, the scripts in order", () => {
-  for (const [rel, kind] of [["disputes/index.html", "register"], ["disputes/case/index.html", "case"], ["governance/index.html", "governance"], ["governance/new/index.html", "new"], ["governance/proposal/index.html", "proposal"]]) {
-    const html = src(rel);
+test("every governance page and Disputes: the §2.4 CSP first, the records layer and the pass's, no inline script, the scripts in order", () => {
+  const GOV = ["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", "/platform/js/pass.js", "/platform/js/work.js", "/platform/js/auth.js", "/platform/js/account-menu.js", "/platform/js/gov.js", "/platform/js/gov-page.js"];
+  const DISPUTES = ["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", "/platform/js/pass.js", "/platform/js/work.js", "/platform/js/auth.js", "/platform/js/account-menu.js", "/platform/js/disputes-page.js", "/platform/js/page-init.js"];
+  for (const [rel, kind, scripts] of [["disputes/index.html", null, DISPUTES], ["governance/index.html", "governance", GOV], ["governance/proposal/index.html", "proposal", GOV]]) {
+    const html = src(rel).replace(/\r\n/g, "\n");
     assert.match(html, /<head>\n<meta http-equiv="Content-Security-Policy"/, rel);
-    assert.match(html, new RegExp(`data-gov-page="${kind}"`), rel);
+    if (kind) assert.match(html, new RegExp(`data-gov-page="${kind}"`), rel);
+    else { assert.doesNotMatch(html, /data-gov-page/, rel); assert.match(html, /<main id="main" class="ld-profile" data-ludum-disputes>/, rel); }
     const order = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
-    assert.deepEqual(order, ["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", "/platform/js/pass.js", "/platform/js/work.js", "/platform/js/auth.js", "/platform/js/account-menu.js", "/platform/js/gov.js", "/platform/js/gov-case.js", "/platform/js/gov-page.js"], rel);
+    assert.deepEqual(order, scripts, rel);
     assert.ok(html.indexOf("/platform/css/records.css") > html.indexOf("/design-system/css/ludum.css"), rel);
     assert.ok(html.indexOf("/platform/css/pass.css") > html.indexOf("/platform/css/records.css"), rel);
-    assert.match(html, /<main id="main" class="ld-profile">/, `${rel}: the profile's container`);
-    assert.doesNotMatch(html, /<script>|\son[a-z]+=|javascript:|ld-specimen/i, rel);
+    assert.match(html, /<main id="main" class="ld-profile"[ >]/, `${rel}: the profile's container`);
+    assert.doesNotMatch(html, /<script>|\son[a-z]+=|javascript:|ld-specimen|escrow/i, rel);
   }
   assert.match(src("404.html"), /<script src="\/platform\/js\/route-map\.js"><\/script>\r?\n<script src="\/design-system\/js\/ludum\.js">/);
-});
-
-test("a missing proposal or game is recognised from the chain's whole error text (uni-7's real message is long)", async () => {
-  const LONG = "type: dao_proposal_single::proposal::SingleChoiceProposal; key: [00, 0C, 70, 72, 6F, 70, 6F, 73, 61, 6C, 73, 5F, 76, 32, 00, 00, 00, 00, 00, 00, 00, 01] not found: query wasm contract failed";
-  const p = await load("proposal", "?id=1", { world: F.world({ proposal: () => ({ status: 500, message: LONG }) }) });
-  assert.match(p.text(), /No such proposal/);
-  const g = await load("case", "?id=1", { world: F.world({ game: () => ({ status: 500, message: "codespace wasm code 9: query wasm contract failed: " + "x".repeat(200) + " game not found" }) }), sessionApi: () => Promise.reject({ status: 404 }) });
-  assert.match(g.text(), /No such game/);
 });

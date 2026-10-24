@@ -72,8 +72,8 @@ test("401 goes to sign in only when asked", async () => {
 });
 
 test("signInUrl returns only to a safe path", () => {
-  const { LudumSession } = load(respond(200, {}), "/disputes/case/");
-  assert.equal(LudumSession.signInUrl(), "/me/sign-in/?return=%2Fdisputes%2Fcase%2F");
+  const { LudumSession } = load(respond(200, {}), "/moderation/case/");
+  assert.equal(LudumSession.signInUrl(), "/me/sign-in/?return=%2Fmoderation%2Fcase%2F");
   assert.equal(LudumSession.signInUrl("/governance/"), "/me/sign-in/?return=%2Fgovernance%2F");
   assert.equal(LudumSession.signUpUrl("/governance/"), "/me/sign-up/?return=%2Fgovernance%2F");
   assert.equal(LudumSession.playSignInUrl("/governance/"), "https://play.netadao.org/?ludum=signin&return=%2Fgovernance%2F", "Play's own sign-in stays as a fallback");
@@ -81,7 +81,7 @@ test("signInUrl returns only to a safe path", () => {
     assert.equal(LudumSession.signInUrl(bad), "/me/sign-in/?return=%2F", bad);
     assert.equal(LudumSession.returnPath("?return=" + encodeURIComponent(bad)), "/", bad);
   }
-  assert.equal(LudumSession.returnPath("?return=%2Fdisputes%2Fcase%2F"), "/disputes/case/");
+  assert.equal(LudumSession.returnPath("?return=%2Fmoderation%2Fcase%2F"), "/moderation/case/");
   assert.equal(LudumSession.returnPath("?x=1&return=%2Fme%2F"), "/me/");
   assert.equal(LudumSession.returnPath(""), "/");
   assert.equal(LudumSession.returnPath("?return=%E0%A4%A"), "/", "a broken escape is not a path");

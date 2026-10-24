@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Disputes — Ludum</title>
-<meta name="description" content="Disputed escrow games and the Ludum DAO’s appeals on uni-7, read live from the chain.">
+<meta name="description" content="The Disputes tab of your Ludum profile. Appeals of a game’s result aren’t open yet.">
 <meta name="robots" content="noindex">
 <link rel="canonical" href="https://ludum.netadao.org/disputes/">
 <meta name="theme-color" content="#0B0B0B">
@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="/platform/css/governance.css">
 <script src="https://netadao.org/radio/radio.js" defer></script>
 </head>
-<body class="ld-page" data-gov-page="register">
+<body class="ld-page">
 <a class="ld-skip" href="#main">Skip to content</a><header class="ld-nav" data-theme="press">
   <div class="ld-nav__bar">
     <a class="ld-nav__home" href="/" aria-label="Ludum, home"><span class="ld-nav__name">Ludum</span><span class="ld-nav__by">Games by<br>Neta DAO</span></a>
@@ -26,10 +26,9 @@
     <a class="ld-play" href="https://play.netadao.org" aria-label="Play, on play.netadao.org"><span class="ld-play__word">Play</span><svg class="ld-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18 18 6M8 6h10v10"/></svg></a>
     <button class="ld-nav__menu" type="button" aria-expanded="false" aria-controls="ld-menu"><span class="ld-nav__menu-word">Menu</span><span class="ld-nav__burger" aria-hidden="true"></span></button>
   </div>
-</header><main id="main" class="ld-profile">
-<div class="ld-wrap"><div id="gv-frame"><p class="ld-dirhead" role="status">Reading Juno…</p></div>
-<div id="gv-body" aria-live="polite"></div></div>
-<noscript><div class="ld-wrap"><p class="ld-lede">This page reads the Ludum DAO and the escrow from Juno in your browser, and needs JavaScript.</p></div></noscript>
+</header><main id="main" class="ld-profile" data-ludum-disputes>
+<div class="ld-wrap" data-pass-slot><p class="ld-dirhead" role="status">Reading your profile…</p></div>
+<noscript><div class="ld-wrap"><p class="ld-lede">Disputes needs JavaScript.</p></div></noscript>
 </main><footer class="ld-footer" data-theme="press">
   <span class="ld-footer__band" aria-hidden="true"></span>
   <div class="ld-wrap ld-footer__inner">
@@ -52,8 +51,7 @@
 <script src="/platform/js/work.js"></script>
 <script src="/platform/js/auth.js"></script>
 <script src="/platform/js/account-menu.js"></script>
-<script src="/platform/js/gov.js"></script>
-<script src="/platform/js/gov-case.js"></script>
-<script src="/platform/js/gov-page.js"></script>
+<script src="/platform/js/disputes-page.js"></script>
+<script src="/platform/js/page-init.js"></script>
 </body>
 </html>

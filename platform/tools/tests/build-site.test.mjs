@@ -24,7 +24,7 @@ test("no test, harness, mock, tool, build input, Markdown or dotfile is publishe
 test("every page and what it uses is published", () => {
   const files = publishedFiles(ROOT);
   for (const page of ["index.html", "404.html", "about/index.html", "projects/index.html", "me/index.html", "me/account/index.html", "me/game/index.html", "players/index.html", "platform/js/player-page.js",
-    "moderation/index.html", "moderation/case/index.html", "disputes/index.html", "disputes/case/index.html", "governance/index.html",
+    "moderation/index.html", "moderation/case/index.html", "disputes/index.html", "platform/js/disputes-page.js", "governance/index.html", "governance/proposal/index.html",
     "platform/css/records.css", "platform/js/account-menu.js", "platform/vendor/cosmjs-0.32.4.min.js", "design-system/fonts/Anton-Regular.woff2", "CNAME"]) {
     assert.ok(files.includes(page), page);
   }

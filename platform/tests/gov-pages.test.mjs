@@ -24,8 +24,8 @@ const CSP_24 = [
   "upgrade-insecure-requests",
 ].join(" ");
 
-// B2 integration: the case page also loads the shared LudumSession client and the case-record checker (gov-case.js).
-const ALLOWED_SCRIPTS = new Set(["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", "/platform/js/pass.js", "/platform/js/work.js", "/platform/js/auth.js", "/platform/js/account-menu.js", "/platform/js/gov.js", "/platform/js/gov-case.js", "/platform/js/gov-page.js"]);
+// v1.7 (owner, 2026-10-24): the retired escrow's case checker (gov-case.js) is gone; /disputes/ has its own script.
+const ALLOWED_SCRIPTS = new Set(["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", "/platform/js/pass.js", "/platform/js/work.js", "/platform/js/auth.js", "/platform/js/account-menu.js", "/platform/js/gov.js", "/platform/js/gov-page.js", "/platform/js/disputes-page.js", "/platform/js/page-init.js"]);
 
 function htmlUnder(dir) {
   return readdirSync(dir).flatMap((name) => {
@@ -35,9 +35,9 @@ function htmlUnder(dir) {
 }
 const PAGES = [...htmlUnder(path.join(ROOT, "disputes")), ...htmlUnder(path.join(ROOT, "governance"))];
 
-test("the governance pages exist (B1's three, and the design's New appeal and Proposal)", () => {
+test("the governance pages exist: Disputes, the proposals and a proposal (v1.7: no case file, no new appeal)", () => {
   const rel = PAGES.map((p) => path.relative(ROOT, p).split(path.sep).join("/")).sort();
-  assert.deepEqual(rel, ["disputes/case/index.html", "disputes/index.html", "governance/index.html", "governance/new/index.html", "governance/proposal/index.html"]);
+  assert.deepEqual(rel, ["disputes/index.html", "governance/index.html", "governance/proposal/index.html"]);
 });
 
 for (const file of PAGES) {
@@ -67,10 +67,12 @@ for (const file of PAGES) {
       assert.ok(ALLOWED_SCRIPTS.has(src[1]), `allowed script: ${src[1]}`);
     }
     assert.ok(scripts.some(([, a]) => a.includes('src="https://netadao.org/radio/radio.js"')), "the radio include stays");
-    assert.ok(scripts.some(([, a]) => a.includes('src="/platform/js/gov-page.js"')), "Ludum.enhance() comes from gov-page.js");
+    const enhancer = rel.startsWith("disputes/") ? "/platform/js/page-init.js" : "/platform/js/gov-page.js";
+    assert.ok(scripts.some(([, a]) => a.includes(`src="${enhancer}"`)), `Ludum.enhance() comes from ${enhancer}`);
     assert.doesNotMatch(html, /\son[a-z]+\s*=/i, "no inline event handlers");
     assert.doesNotMatch(html, /javascript:/i);
-    assert.doesNotMatch(html, /Ludum\.enhance\(\)/, "enhance is called from gov-page.js, not inline");
+    assert.doesNotMatch(html, /Ludum\.enhance\(\)/, "enhance is never called inline");
+    assert.doesNotMatch(html, /escrow/i, "v1.7: no page speaks of the retired escrow");
   });
 
   test(`${rel}: uses the design system stylesheet`, () => {

@@ -39,7 +39,7 @@ test("every page: <script src> only from this repository or the exact radio URL"
 });
 
 test("the API pages: no inline script, no handler attribute, no javascript: URL; the meta CSP first and exact", () => {
-  for (const dir of ["me", "disputes", "governance", "disputes/case"]) {
+  for (const dir of ["me", "disputes", "governance", "governance/proposal"]) {
     const rel = `${dir}/index.html`;
     assert.deepEqual(checkPage(rel, page(`${CSP}<title>x</title><script src="${RADIO_URL}" defer></script>`, OWN), ROOT), [], rel);
     assert.equal(checkPage(rel, page(`${CSP}`, `${OWN}<script>Ludum.enhance();</script>`), ROOT).length, 1, `${rel}: inline`);

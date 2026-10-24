@@ -4,8 +4,9 @@
  *   Player Name     Change Player Name: the new name (checked as typed), the former name (Release, the default, or
  *                   Reserve), a required reason, then a dashed summary and the red "Change to ...".
  *   Former names    each with its date and state; the newest can be reserved or released (one step, a required reason).
- *   Staff roles     the account's roles; an Admin appoints or removes a Moderator here (owner, 2026-10-23: Admin itself
- *                   moves only by the server operator's command).
+ *   Staff roles     the account's roles; an Admin appoints or removes a Moderator, and (v1.7, owner 2026-10-24) a member
+ *                   of the Appeals team, here -- each team on its own, each change its own approval (owner, 2026-10-23:
+ *                   Admin itself moves only by the server operator's command).
  * then the player's append-only audit history (staff only). Every control follows a PERMISSION the server sends with the
  * player (`can`), never a role name: a Moderator sees them aria-disabled, "Changing it is for Admins only for now." Every
  * change is approved in Keplr by the staff member's own Authorization Wallet (owner, 2026-10-23: never the password) --
@@ -21,7 +22,18 @@
   var el = P.el;
   var ADMINS_ONLY = 'Changing it is for Admins only for now.';
   var REASON_MAX = 300;
-  var ROLE = { admin: 'Admin', moderator: 'Moderator' };
+  var ROLE = { admin: 'Admin', moderator: 'Moderator', appeals: 'Appeals' };
+  /** The teams an Admin appoints to and removes from, each by its own permission (the server's `can`). */
+  var TEAMS = [
+    { role: 'moderator', can: 'moderator', appoint: 'Appoint Moderator', remove: 'Remove Moderator',
+      title: function (n, held) { return held ? 'Remove ' + n + ' as a Moderator' : 'Appoint ' + n + ' a Moderator'; },
+      lede: function (held) { return held ? 'They stop reviewing conduct cases at once, on every device. Recorded in the audit history.' : 'They review conduct cases from their profile’s Moderation tab. Recorded in the audit history.'; },
+      flash: function (n, appointed) { return appointed ? n + ' is a Moderator now. ' : n + ' is no longer a Moderator. '; } },
+    { role: 'appeals', can: 'appeals', appoint: 'Appoint to Appeals', remove: 'Remove from Appeals',
+      title: function (n, held) { return held ? 'Remove ' + n + ' from the Appeals team' : 'Appoint ' + n + ' to the Appeals team'; },
+      lede: function (held) { return held ? 'They leave the Appeals team at once, on every device. Recorded in the audit history.' : 'They will prepare appeals once appeals open. The role decides nothing and carries no Ludum DAO membership or vote. Recorded in the audit history.'; },
+      flash: function (n, appointed) { return appointed ? n + ' is on the Appeals team now. ' : n + ' is no longer on the Appeals team. '; } }
+  ];
   var serial = 0;
   function nextId(prefix) { serial += 1; return prefix + '-' + serial; }
 
@@ -92,8 +104,9 @@
   function idle(b) { if (b.saved !== undefined) b.label.textContent = b.saved; b.removeAttribute('aria-busy'); b.disabled = false; }
   function stamp(iso) { return R.day(iso) + ' · ' + R.clock(iso).replace(' UTC', ''); }
   function note(text, id) { return el('span', { class: 'ld-account__note', id: id || null, text: text }); }
+  /** One row: its label, value and notes, its action (a button, or several), and the panel(s) the action opens. */
   function row(label, value, notes, action, more) {
-    return el('div', null, [el('dt', { text: label }), el('dd', null, [value].concat(notes)), el('dd', { class: 'ld-account__act' }, action ? [action] : []), more || null]);
+    return el('div', null, [el('dt', { text: label }), el('dd', null, [value].concat(notes)), el('dd', { class: 'ld-account__act' }, action ? [].concat(action) : [])].concat(more ? [].concat(more) : []));
   }
   /** A row's button for a staff-only action: live when the server says the caller may, else aria-disabled with the reason. */
   function guarded(b, allowed, whyId) {
@@ -307,7 +320,7 @@
     ]);
   }
 
-  /* ---------- one-step panels: a former name, a Moderator ---------- */
+  /* ---------- one-step panels: a former name, a team role ---------- */
 
   function oneStep(session, opts, close) {
     var id = nextId('os');
@@ -413,29 +426,36 @@
       var formerNotes = [note('Only staff see these. A released name can be registered again; a reserved one can’t.')];
       if (formerBtn && !view.can.reserve) formerNotes.push(adminsOnly());
 
-      /* Staff roles */
-      var isModerator = view.roles.indexOf('moderator') !== -1;
-      var roleBtn = null, roleMore = el('dd', { class: 'ld-account__more', hidden: true });
-      if (view.can.moderator && !view.you) {
-        roleBtn = button(isModerator ? 'Remove Moderator' : 'Appoint Moderator');
-        roleBtn.setAttribute('aria-expanded', 'false');
-        disclosure(roleBtn, roleMore, function (close) {
+      /* Staff roles: one control per team the server lets this Admin manage, each with its own panel and approval. */
+      var roleBtns = [], roleMores = [];
+      TEAMS.forEach(function (t) {
+        if (!view.can[t.can] || view.you) return;
+        var held = view.roles.indexOf(t.role) !== -1;
+        var b = button(held ? t.remove : t.appoint);
+        var more = el('dd', { class: 'ld-account__more', hidden: true });
+        b.setAttribute('aria-expanded', 'false');
+        disclosure(b, more, function (close) {
           return oneStep(session, {
-            title: isModerator ? 'Remove ' + view.name + ' as a Moderator' : 'Appoint ' + view.name + ' a Moderator',
-            lede: isModerator ? 'They stop reviewing conduct cases at once, on every device. Recorded in the audit history.' : 'They review conduct cases from their profile’s Moderation tab. Recorded in the audit history.',
+            title: t.title(view.name, held), lede: t.lede(held),
             hint: 'Required. Kept in the audit history with your name and the time; other staff can read it.',
-            action: isModerator ? 'Remove Moderator' : 'Appoint Moderator', ctx: 'role', red: isModerator, who: who, route: 'staff-role',
-            body: function (reason) { return { name: view.name, role: 'moderator', action: isModerator ? 'remove' : 'appoint', reason: reason }; },
-            done: function () { return read(view.name, { kind: 'role', appointed: !isModerator }); }
+            action: held ? t.remove : t.appoint, ctx: 'role', red: held, who: who, route: 'staff-role',
+            body: function (reason) { return { name: view.name, role: t.role, action: held ? 'remove' : 'appoint', reason: reason }; },
+            done: function () { return read(view.name, { kind: 'role', role: t.role, appointed: !held }); }
           }, close);
         });
-      }
-      var roleNotes = [note('Admin and Moderator are roles on one account, never separate accounts. ' + (view.can.moderator ? 'Admins appoint and remove Moderators here; Admin itself is set on the server.' : 'They’re assigned by Admins.'))];
+        roleBtns.push(b);
+        roleMores.push(more);
+      });
+      var manages = view.can.moderator || view.can.appeals;
+      var roleNotes = [note('Admin, Moderator and Appeals are roles on one account, never separate accounts. ' + (manages ? 'Admins appoint and remove Moderators and the Appeals team here, each on its own; Admin itself is set on the server.' : 'They’re assigned by Admins.'))];
 
       /* A change just made: said in its row, with the audit line. */
       if (flash && flash.kind === 'renamed') { nameMore.appendChild(renamedPanel(who, flash, function () { nameMore.hidden = true; nameMore.textContent = ''; nameBtn.focus(); })); nameMore.hidden = false; }
       if (flash && flash.kind === 'former') { formerNotes.unshift(el('span', { class: 'ld-account__note', role: 'status' }, [el('b', { text: flash.name + ' is ' + (flash.reserved ? 'reserved' : 'released') + '. ' }), recorded(who.account.name)])); }
-      if (flash && flash.kind === 'role') { roleNotes.unshift(el('span', { class: 'ld-account__note', role: 'status' }, [el('b', { text: flash.appointed ? view.name + ' is a Moderator now. ' : view.name + ' is no longer a Moderator. ' }), recorded(who.account.name)])); }
+      if (flash && flash.kind === 'role') {
+        var team = TEAMS.filter(function (t) { return t.role === flash.role; })[0] || TEAMS[0];
+        roleNotes.unshift(el('span', { class: 'ld-account__note', role: 'status' }, [el('b', { text: team.flash(view.name, flash.appointed) }), recorded(who.account.name)]));
+      }
 
       var audit = view.audit.slice().sort(function (a, b) { return a.at < b.at ? 1 : -1; });
       var auditBlock = el('div', { class: 'ld-audit' }, [W.block({ title: 'Audit history', count: audit.length ? String(audit.length) : null,
@@ -452,7 +472,7 @@
         el('dl', { class: 'ld-account' }, [
           row('Player Name', el('span', { class: 'ld-account__value', text: view.name }), nameNotes, nameBtn, nameMore),
           row('Former names', formerValue, formerNotes, formerBtn, formerMore),
-          row('Staff roles', W.roles(view.roles), roleNotes, roleBtn, roleMore)
+          row('Staff roles', W.roles(view.roles), roleNotes, roleBtns.length ? roleBtns : null, roleMores)
         ]),
         auditBlock
       ]);

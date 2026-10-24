@@ -3,7 +3,8 @@
 // profile; every control follows the server's `can` (a Moderator sees them aria-disabled, "Admins only for now"); a
 // rename needs an available name and a reason, is approved in Keplr by the Admin's own Authorization Wallet for exactly
 // that request (v1.7, owner 2026-10-23: never the password) and sent with the approval; a refused approval changes
-// nothing and the change is approved again; the notice says only the names and the day.
+// nothing and the change is approved again; the notice says only the names and the day. v1.7 (owner, 2026-10-24): an
+// Admin appoints and removes the Moderation team and the Appeals team each on its own, each change its own approval.
 // Run from the repository root: node --test platform/tests/staff-manage.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -58,10 +59,10 @@ const text = (n) => n.textContent.replace(/\s+/g, " ");
 const button = (root, re) => root.find((n) => n.tagName === "button" && re.test(n.textContent));
 
 const ADMIN_WALLET = "juno1" + "a".repeat(38);
-const ADMIN = { signedIn: true, account: { name: "Caspian", authorizationWallet: { address: ADMIN_WALLET } }, staff: { roles: ["admin", "moderator"], permissions: ["case.review", "staff.view", "moderator.manage", "player.rename", "name.reserve"] } };
+const ADMIN = { signedIn: true, account: { name: "Caspian", authorizationWallet: { address: ADMIN_WALLET } }, staff: { roles: ["admin", "moderator"], permissions: ["case.review", "staff.view", "moderator.manage", "appeals.manage", "player.rename", "name.reserve"] } };
 const MOD = { signedIn: true, account: { name: "Ivo" }, staff: { roles: ["moderator"], permissions: ["case.review", "staff.view"] } };
 function view(over = {}) {
-  return { name: "Kestral", memberSince: "2026-10", active: true, roles: [], formerNames: [], audit: [], can: { rename: true, reserve: true, moderator: true }, you: false, ...over };
+  return { name: "Kestral", memberSince: "2026-10", active: true, roles: [], formerNames: [], audit: [], can: { rename: true, reserve: true, moderator: true, appeals: true }, you: false, ...over };
 }
 
 function world(who, answers) {
@@ -100,6 +101,8 @@ test("the audit history in words: renames with the former name's fate, reserves,
   assert.equal(M.auditChange({ kind: "player-renamed", from: "Kestral", to: "Kestrel", former: "reserved", outcome: "refused", by }), "Player Name: Kestral → Kestrel · former name reserved · refused: nothing changed");
   assert.equal(M.auditChange({ kind: "name-reserved", name: "Kestral", by }), "Former name reserved: Kestral");
   assert.equal(M.auditChange({ kind: "role-granted", role: "moderator", by }), "Role given: Moderator");
+  assert.equal(M.auditChange({ kind: "role-granted", role: "appeals", by }), "Role given: Appeals");
+  assert.equal(M.auditChange({ kind: "role-revoked", role: "appeals", by }), "Role removed: Appeals");
   assert.equal(M.auditBy({ by }), "Caspian · Admin");
   assert.equal(M.auditBy({ by: { name: null, role: "operator", operator: "host" } }), "Server operator", "the operator's own label is not shown");
   eq(M.newestFormer([{ name: "A", until: "2026-10-01T00:00:00Z" }, { name: "B", until: "2026-10-20T00:00:00Z" }]), { name: "B", until: "2026-10-20T00:00:00Z" });
@@ -109,20 +112,21 @@ test("the audit history in words: renames with the former name's fate, reserves,
   assert.match(M.refusal({ error: "unavailable", detail: "outcome-unknown" }, "rename"), /read the audit history before trying again/);
 });
 
-test("an Admin's Manage: the three rows, the empty audit history, live controls, Appoint Moderator", async () => {
+test("an Admin's Manage: the three rows, the empty audit history, live controls, Appoint Moderator and Appoint to Appeals", async () => {
   const w = world(ADMIN, { "staff-player": { player: view() } });
   await w.mount();
   const t = text(w.host);
-  for (const want of ["Manage", "Only staff see this", "Player Name", "Kestral", "Former names", "None", "Staff roles", "Audit history", "No staff changes to this player yet.", "Admin and Moderator are roles on one account"]) assert.ok(t.includes(want), want);
+  for (const want of ["Manage", "Only staff see this", "Player Name", "Kestral", "Former names", "None", "Staff roles", "Audit history", "No staff changes to this player yet.", "Admin, Moderator and Appeals are roles on one account"]) assert.ok(t.includes(want), want);
   const change = button(w.host, /^Change Player Name/);
   assert.equal(change.getAttribute("aria-disabled"), null);
   assert.ok(button(w.host, /^Appoint Moderator/), "an Admin appoints Moderators here");
+  assert.ok(button(w.host, /^Appoint to Appeals/), "and, on its own, the Appeals team");
   assert.doesNotMatch(t, /Admins only for now/);
   eq(w.calls, [["staff-player", { name: "Kestral" }]]);
 });
 
 test("a Moderator's Manage: the same rows, the controls aria-disabled and tied to 'Admins only for now'; no role control", async () => {
-  const w = world(MOD, { "staff-player": { player: view({ formerNames: [{ name: "Kestrall", until: "2026-10-20T10:00:00Z", state: "released" }], can: { rename: false, reserve: false, moderator: false } }) } });
+  const w = world(MOD, { "staff-player": { player: view({ formerNames: [{ name: "Kestrall", until: "2026-10-20T10:00:00Z", state: "released" }], can: { rename: false, reserve: false, moderator: false, appeals: false } }) } });
   await w.mount();
   const change = button(w.host, /^Change Player Name/);
   const reserve = button(w.host, /^Reserve Kestrall/);
@@ -134,6 +138,7 @@ test("a Moderator's Manage: the same rows, the controls aria-disabled and tied t
   change.click();
   assert.equal(change.getAttribute("aria-expanded"), "false", "a disabled control opens nothing");
   assert.equal(button(w.host, /Moderator$/), null, "no Appoint or Remove for a Moderator");
+  assert.equal(button(w.host, /Appeals$/), null, "nor for the Appeals team");
   assert.match(text(w.host), /Released/);
 });
 
@@ -181,6 +186,49 @@ test("Change Player Name: an available name and a reason; approved in Keplr for 
   const t = text(w.host);
   for (const want of ["Player Name changed", "Kestral is reserved. Kestrel will be told on their next visit.", "Recorded in the audit history", "by Caspian", "Player Name: Kestral → Kestrel · former name reserved", "Caspian · Admin", "Impersonation report", "Release Kestral"]) assert.ok(t.includes(want), want);
   eq(w.renamed, ["Kestrel"], "the page's pass, title and address follow the new name");
+});
+
+test("the Appeals team: an Admin appoints and removes on its own, each approved in Keplr for exactly that change; the Moderator control is untouched", async () => {
+  const granted = { at: "2026-10-24T09:00:00Z", kind: "role-granted", role: "appeals", by: { name: "Caspian", role: "admin" }, reason: "Prepares appeals" };
+  const revoked = { at: "2026-10-24T10:00:00Z", kind: "role-revoked", role: "appeals", by: { name: "Caspian", role: "admin" }, reason: "Rotation" };
+  const players = [view(), view({ roles: ["appeals"], audit: [granted] }), view({ roles: [], audit: [granted, revoked] })];
+  const w = world(ADMIN, {
+    "staff-player": () => Promise.resolve({ player: players.shift() }),
+    "staff-role": () => Promise.resolve({ ok: true }),
+  });
+  await w.mount();
+  async function change(re, reasonText) {
+    const b = button(w.host, re);
+    b.click();
+    assert.equal(b.getAttribute("aria-expanded"), "true");
+    const form = w.host.find((n) => n.tagName === "form");
+    form.fire("submit");
+    assert.match(text(w.host), /Give a reason. It’s kept in the audit history./, "no reason: nothing is approved or sent");
+    const reason = form.find((n) => n.tagName === "textarea");
+    reason.value = reasonText; reason.fire("input");
+    form.fire("submit");
+    await settle();
+  }
+  await change(/^Appoint to Appeals/, "Prepares appeals");
+  eq(w.approvals, [{ route: "staff-role", body: { name: "Kestral", role: "appeals", action: "appoint", reason: "Prepares appeals" }, account: "Caspian", authorizationWallet: ADMIN_WALLET }]);
+  let t = text(w.host);
+  for (const want of ["Kestral is on the Appeals team now.", "Recorded in the audit history", "Role given: Appeals", "Prepares appeals"]) assert.ok(t.includes(want), want);
+  assert.ok(button(w.host, /^Remove from Appeals/), "the control follows the role");
+  assert.ok(button(w.host, /^Appoint Moderator/), "the Moderation team is a separate control");
+  await change(/^Remove from Appeals/, "Rotation");
+  eq(w.approvals[1].body, { name: "Kestral", role: "appeals", action: "remove", reason: "Rotation" });
+  t = text(w.host);
+  assert.ok(t.includes("Kestral is no longer on the Appeals team."));
+  assert.ok(t.includes("Role removed: Appeals"));
+  const sent = w.calls.filter(([r]) => r === "staff-role").map(([, b]) => b);
+  eq(sent.map((b) => [b.role, b.action, b.confirmOperation]), [["appeals", "appoint", "op1"], ["appeals", "remove", "op2"]], "each change carries its own approval");
+});
+
+test("an Admin the server lets manage only the Appeals team sees only that control", async () => {
+  const w = world(ADMIN, { "staff-player": { player: view({ can: { rename: true, reserve: true, moderator: false, appeals: true } }) } });
+  await w.mount();
+  assert.equal(button(w.host, /Moderator$/), null);
+  assert.ok(button(w.host, /^Appoint to Appeals/));
 });
 
 test("a former name taken meanwhile: the refusal says nothing changed and the name step is refused", async () => {

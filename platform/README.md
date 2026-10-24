@@ -1,8 +1,8 @@
 # Ludum platform
 
 The signed-in parts of ludum.netadao.org — **/me/** (Your record: your figures and your games, each game's result
-opening in place, **/me/?game=‹gameId›** opening one), **/me/account/** (Your account), **/moderation/** and **/moderation/case/?id=** (conduct review, Play's reviewers only), **/disputes/**,
-**/disputes/case/?id=** and **/governance/** — the account slot in every page's nav, and the shared pieces they stand on. The contract they follow is the 1830Juno repository's
+opening in place, **/me/?game=‹gameId›** opening one), **/me/account/** (Your account), **/moderation/** and **/moderation/case/?id=** (conduct review, Play's reviewers only), **/disputes/**
+(a neutral tab: appeals aren't open yet) and **/governance/** (the Ludum DAO's proposals) — the account slot in every page's nav, and the shared pieces they stand on. The contract they follow is the 1830Juno repository's
 `docs/ludum/LUDUM_PLATFORM_ARCHITECTURE.md` (§2.1 sign-in, §2.4 scripts and CSP, §5 the API).
 
 The marketing pages (`index.html`, `projects/`, `about/`, `404.html`) and `design-system/` are not part of the platform.
@@ -11,9 +11,13 @@ The platform adds only the account slot to the marketing pages (`records.css`, `
 
 The designed addresses map onto fixed paths (Claude Design handoff §8.4): `/account/` → `/me/`, Your account →
 `/me/account/`, `/account/games/‹no›/` → `/me/?game=‹gameId›` (the retired **/me/game/?id=** page leads there too), `/account/moderation/` (and `cases/‹id›/`) →
-`/moderation/` (and `/moderation/case/?id=‹caseId›`), `/account/appeals/` → `/disputes/`, `/cases/‹no›/` →
-`/disputes/case/?id=‹chainGameId›`; New appeal is the Case file's proposal section and a proposal is
-`/governance/#proposal-‹no›`.
+`/moderation/` (and `/moderation/case/?id=‹caseId›`), `/account/appeals/` → `/disputes/`, and a proposal is
+`/governance/proposal/?id=‹no›` (the old `/governance/#proposal-‹no›` anchors are forwarded there).
+
+Ludum v1.7 (owner, 2026-10-24): the retired JUNOX escrow is no Ludum feature. Its pages -- the disputed tables, the case
+file (`/disputes/case/`, `/cases/‹no›/`) and the new-appeal ticket (`/governance/new/`) -- are gone, and so are their
+addresses. The Ludum DAO's own governance (`gov.js`, `gov-page.js`) keeps every check it had: the DAO's modules must
+equal the pins, the page must not be framed by a foreign site, and the chain decides who may propose, vote and execute.
 
 ## Shared pieces
 
@@ -25,7 +29,7 @@ The designed addresses map onto fixed paths (Claude Design handoff §8.4): `/acc
 | `platform/css/records.css` | The Design System's records layer (sections 40–50), which the live `ludum.css` export leaves out |
 | `platform/js/records.js` | `LudumRecords`: the records pages' shared components (record head, profile tabs, stamps, amounts, ledgers, docket, notices) |
 | `platform/js/account-menu.js` | The nav's account slot: SIGN IN (Ludum's own), or the name and its menu (Profile; Moderation for reviewers; Appeals & Disputes for this account's Ludum DAO membership; Sign out, here) |
-| `platform/js/me-record.js`, `account-page.js`, `game-record.js`, `moderation-page.js` | The records pages |
+| `platform/js/me-record.js`, `account-page.js`, `game-record.js`, `moderation-page.js`, `disputes-page.js` | The records pages |
 | `platform/tools/build-site.mjs` | The published site, by allow-list (`.github/workflows/pages.yml`) |
 | `platform/tools/check-scripts.mjs` | The §2.4 script rule, checked over every `*.html` |
 | `platform/tools/tests/` | Tests for the two above (`node --test platform/tools/tests/*.test.mjs`) |

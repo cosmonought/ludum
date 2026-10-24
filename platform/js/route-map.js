@@ -7,9 +7,9 @@
  *   /account/moderation/               -> /moderation/
  *   /account/moderation/cases/<id>/    -> /moderation/case/?id=<id>
  *   /account/appeals/                  -> /disputes/
- *   /account/appeals/new/              -> /governance/new/
  *   /account/appeals/proposals/<no>/   -> /governance/proposal/?id=<no>
- *   /cases/<chainGameId>/              -> /disputes/case/?id=<chainGameId>
+ * LUDUM v1.7 (owner, 2026-10-24): the retired escrow's case file and new-appeal pages are gone, and so are their
+ * addresses (/cases/<chainGameId>/, /account/appeals/new/): they now find the site's 404 like any other missing path.
  */
 (function (root) {
   'use strict';
@@ -20,9 +20,7 @@
     [/^\/account\/moderation\/?$/, function () { return '/moderation/'; }],
     [/^\/account\/moderation\/cases\/(cc_[0-9a-f]{32})\/?$/, function (m) { return '/moderation/case/?id=' + m[1]; }],
     [/^\/account\/appeals\/?$/, function () { return '/disputes/'; }],
-    [/^\/account\/appeals\/new\/?$/, function () { return '/governance/new/'; }],
-    [/^\/account\/appeals\/proposals\/([1-9]\d{0,15})\/?$/, function (m) { return '/governance/proposal/?id=' + m[1]; }],
-    [/^\/cases\/(0|[1-9]\d{0,15})\/?$/, function (m) { return '/disputes/case/?id=' + m[1]; }]
+    [/^\/account\/appeals\/proposals\/([1-9]\d{0,15})\/?$/, function (m) { return '/governance/proposal/?id=' + m[1]; }]
   ];
   function mapDesignPath(pathname) {
     var p = String(pathname || '');

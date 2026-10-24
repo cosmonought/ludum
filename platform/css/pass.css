@@ -636,9 +636,9 @@
 .ld-block + .ld-block { margin-top: var(--space-8); }
 /* Ludum: a block the page redraws in place sits in its own slot; the slots keep the same rhythm. */
 .ld-panel > div:has(> .ld-block) + div > .ld-block:first-child { margin-top: var(--space-8); }
-/* Ludum: at full width the appeals ledger's seven columns stay inside the container -- the cue, the status and the
+/* Ludum: at full width the proposals ledger's six columns stay inside the container -- the cue, the status and the
    tally's header wrap rather than push the table past its edge and squeeze the titles. */
-.ld-wl--appeals .c-you .ld-yours, .ld-wl--appeals .c-status .ld-state, .ld-wl--appeals thead th.is-num { white-space: normal; }
+.ld-wl--proposals .c-you .ld-yours, .ld-wl--proposals .c-status .ld-state, .ld-wl--proposals thead th.is-num { white-space: normal; }
 .ld-block__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 24px; margin-bottom: 16px; }
 .ld-block__head h3 { display: flex; align-items: baseline; gap: 14px; margin: 0; font: 400 36px/.94 var(--font-display); text-transform: uppercase; }
 .ld-block__count { font: 400 19px/1 var(--font-mono); color: var(--ink-3); text-transform: none; }
@@ -730,7 +730,7 @@
   .ld-wl .ld-state::before { margin-top: 8px; }
 }
 /* Each row becomes a card of labelled facts (labels are aria-hidden; the table's own headers stay for assistive
-   tech): the two widest ledgers (disputed tables, appeals) from laptop down, the others from tablet down. */
+   tech): the widest ledger (proposals) from laptop down, the others from tablet down. */
 @container ldp (max-width: 1279px) {
   .ld-wl--wide { position: relative; }
   .ld-wl--wide thead { display: block; position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
@@ -775,12 +775,9 @@
 /* Laptop and tablet: the wide ledgers' cards lay their facts out in three columns. */
 @container ldp (min-width: 600px) and (max-width: 1279px) {
   .ld-wl--wide tbody > tr { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 32px; }
-  .ld-wl--disputes tbody > tr { grid-template-areas: "case appeal by" "bond due act"; }
-  .ld-wl--disputes .c-case { grid-area: case; } .ld-wl--disputes .c-appeal { grid-area: appeal; } .ld-wl--disputes .c-by { grid-area: by; }
-  .ld-wl--disputes .c-bond { grid-area: bond; } .ld-wl--disputes .c-due { grid-area: due; } .ld-wl--disputes .c-act { grid-area: act; justify-self: end; align-self: end; }
-  .ld-wl--appeals tbody > tr { grid-template-areas: "no status you" "title title title" "case when tally"; }
-  .ld-wl--appeals .c-no { grid-area: no; } .ld-wl--appeals .c-status { grid-area: status; } .ld-wl--appeals .c-you { grid-area: you; justify-self: end; }
-  .ld-wl--appeals .c-title { grid-area: title; } .ld-wl--appeals .c-case { grid-area: case; } .ld-wl--appeals .c-when { grid-area: when; } .ld-wl--appeals .c-tally { grid-area: tally; }
+  .ld-wl--proposals tbody > tr { grid-template-areas: "no status you" "title title title" "when when tally"; }
+  .ld-wl--proposals .c-no { grid-area: no; } .ld-wl--proposals .c-status { grid-area: status; } .ld-wl--proposals .c-you { grid-area: you; justify-self: end; }
+  .ld-wl--proposals .c-title { grid-area: title; } .ld-wl--proposals .c-when { grid-area: when; } .ld-wl--proposals .c-tally { grid-area: tally; }
 }
 @container ldp (max-width: 599px) {
   .ld-standing { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
@@ -1015,4 +1012,9 @@
   /* The key field keeps its edge: what happens in Keplr stays set apart. */
   .ld-key, .ld-tx { border: 1px solid CanvasText; }
   .ld-confirm li::before { forced-color-adjust: none; background: CanvasText; }
+}
+/* Ludum (v1.7 review): on a phone, a record page's large action (Execute with Keplr, Vote with Keplr) wraps its words
+   inside the column rather than push the page past the screen's edge. */
+@container ldp (max-width: 599px) {
+  .ld-pstack .ld-btn--l { max-width: 100%; white-space: normal; text-align: left; }
 }

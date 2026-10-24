@@ -71,7 +71,7 @@ test("v1.3 formatting: credits, ratings, rating changes, the game's name from it
   ], ["Voided", "Forfeited", "Won by forfeit", "Completed", "In play", "Cancelled"], "a clock-ended credit game is never shown as still in play");
 });
 
-test("profile tabs: Moderation only for a Play reviewer, Disputes only for a DAO member (or while on it) -- never merged", () => {
+test("profile tabs: Moderation only for a Play reviewer, Disputes only for a DAO member or the Appeals team (or while on it) -- never merged, never counted", () => {
   /* pass.js draws the row: a small DOM is enough to read its links. */
   class N {
     constructor(tag) { this.tagName = tag; this.children = []; this.attributes = {}; this.className = ""; this._text = null; }
@@ -99,6 +99,13 @@ test("profile tabs: Moderation only for a Play reviewer, Disputes only for a DAO
   eq(tabs({ signedIn: true }, "games", {}), ["Games", "Account"], "an older server's session (no roles) draws no Moderation");
   eq(tabs(player, "disputes", {}), ["Games", "Account", "Disputes"], "the tab you are on is drawn while the chain is asked");
   eq(tabs(reviewer, "moderation", { moderation: 3, disputes: 0 }), ["Games", "Account", "Moderation 3"], "a count only when there is something to do");
+  /* v1.7 (owner, 2026-10-24): the Appeals team sees Disputes (the server's appeal.review); Disputes never has a count. */
+  const appeals = { signedIn: true, roles: { reviewer: false }, staff: { roles: ["appeals"], permissions: ["appeal.review", "staff.view"] } };
+  const appointer = { signedIn: true, roles: { reviewer: false }, staff: { roles: ["admin"], permissions: ["staff.view", "moderator.manage", "appeals.manage", "player.rename", "name.reserve"] } };
+  eq(tabs(appeals, "games", {}), ["Games", "Account", "Disputes"]);
+  eq(tabs(appointer, "games", {}), ["Games", "Account"], "appointing the Appeals team is not being on it");
+  eq(tabs({ signedIn: true, staff: { roles: ["appeals"], permissions: "appeal.review" } }, "games", {}), ["Games", "Account"], "a malformed staff answer draws nothing");
+  eq(tabs(player, "disputes", { disputes: 4 }), ["Games", "Account", "Disputes"], "no count beside Disputes, whatever is passed");
   const current = links(reviewer, "moderation", {}).filter((a) => a.getAttribute("aria-current") === "page");
   eq(current.map((a) => a.getAttribute("href")), ["/moderation/"]);
 });

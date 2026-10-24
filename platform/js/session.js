@@ -46,7 +46,7 @@
 
   var PLAY_ORIGIN = 'https://play.netadao.org';
   var API_BASE = PLAY_ORIGIN + '/gs/api/ludum/v1/';
-  var ROUTES = ['session', 'games', 'game', 'case', 'account', 'display-name', 'moderation-queue', 'moderation-case', 'moderation-decide', 'profile', 'player', 'name-check', 'players',
+  var ROUTES = ['session', 'games', 'game', 'account', 'display-name', 'moderation-queue', 'moderation-case', 'moderation-decide', 'profile', 'player', 'name-check', 'players',
     /* v1.7: website staff (Manage, the Moderation team) and the renamed player's notice */
     'staff-team', 'staff-player', 'staff-role', 'staff-rename', 'staff-former-name', 'name-notice-dismiss',
     /* v1.7 (owner, 2026-10-23): the Authorization Wallet text that approves one staff change */
