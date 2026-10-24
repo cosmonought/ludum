@@ -14,6 +14,8 @@ import path from "node:path";
 import vm from "node:vm";
 import { createRequire } from "node:module";
 import * as F from "./gov-fixtures.mjs";
+import { createHash } from "node:crypto";
+const requireCjs = createRequire(import.meta.url);
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const src = (rel) => readFileSync(path.join(ROOT, rel), "utf8");
@@ -224,13 +226,13 @@ test("a missing proposal is recognised from the chain's whole error text (uni-7'
   assert.match(p.text(), /No such proposal/);
 });
 
-/* ================= /disputes/: a neutral tab ================= */
+/* ================= /disputes/: your appeals, the Appeals staff's queue; /disputes/case/: one appeal ================= */
 
-async function disputes(who, answers = {}) {
+async function disputes(who, answers = {}, { mode = "", search = "", files = [] } = {}) {
   const requests = [], apiCalls = [];
-  const c = context(F.world(), requests);
+  const c = context(F.world(), requests, { search });
   const main = new Node("main");
-  main.setAttribute("data-ludum-disputes", "");
+  main.setAttribute("data-ludum-disputes", mode);
   const slot = new Node("div");
   slot.setAttribute("data-pass-slot", "");
   main.appendChild(slot);
@@ -238,12 +240,14 @@ async function disputes(who, answers = {}) {
   c.ctx.LudumSession = {
     whoami: () => (who instanceof Error ? Promise.reject(who) : Promise.resolve(who)),
     signInUrl: (p) => "/me/sign-in/?return=" + encodeURIComponent(p),
-    api: (route, b) => { apiCalls.push(route); const a = answers[route]; return typeof a === "function" ? a(b) : a === undefined ? Promise.reject({ status: 404, error: "not-found" }) : Promise.resolve(a); },
+    api: (route, b) => { apiCalls.push(route); bodies.push([route, b]); const a = answers[route]; return typeof a === "function" ? a(b) : a === undefined ? Promise.reject({ status: 404, error: "not-found" }) : Promise.resolve(a); },
   };
+  const bodies = [];
   vm.createContext(c.ctx);
-  for (const f of ["platform/js/records.js", "platform/js/pass.js", "platform/js/work.js", "platform/js/disputes-page.js"]) vm.runInContext(src(f), c.ctx, { filename: f });
+  for (const f of ["platform/js/records.js", "platform/js/pass.js", "platform/js/work.js", ...files, "platform/js/disputes-page.js"]) vm.runInContext(src(f), c.ctx, { filename: f });
   await settleFor(60)();
-  return { ...c, requests, apiCalls, text: () => c.body.textContent.replace(/\s+/g, " ") };
+  const buttons = (re) => c.body.findAll((n) => n.tagName === "button" && re.test(n.textContent));
+  return { ...c, requests, apiCalls, bodies, buttons, settle: settleFor(60), text: () => c.body.textContent.replace(/\s+/g, " ") };
 }
 const PROFILE = { standing: { completedGames: 3, uniqueOpponents: 2, memberSince: "2026-10" }, publicCredits: { value: 1200, provenance: "server-recorded" }, ratings: [] };
 const PLAYER = { signedIn: true, account: { name: "Marlowe", username: "m" }, roles: { reviewer: false } };
@@ -253,42 +257,51 @@ const TEAM = { members: [
   { name: "Mia", roles: ["moderator"], can: ["case.review", "staff.view"], since: "2026-10-23T09:00:00Z", you: false },
 ] };
 
-test("disputes: a signed-in player -- the pass and tabs with Disputes current, a neutral 'not open yet', no chain read, no count, no wallet", async () => {
-  const p = await disputes(PLAYER, { profile: PROFILE });
+/** Objects made inside the page's context, compared as plain data. */
+const plain = (x) => JSON.parse(JSON.stringify(x));
+const CASE = "ap_" + "3f9c1a0b".repeat(3);
+const SUMMARY = { caseId: CASE, gameId: "g_xfqa37t6wt6ajvnbx5j3f5dn2g", filedAt: "2026-10-25T18:40:00.000Z", status: "investigating", appellants: 1, grounds: ["engine-failure"], proposal: null, outcome: null, lastAt: "2026-10-25T18:40:00.000Z" };
+
+test("disputes: a signed-in player -- the pass and tabs with Disputes current, their own appeals (appeals-mine), no chain read, no count, no wallet", async () => {
+  const p = await disputes(PLAYER, { profile: PROFILE, "appeals-mine": { cases: [SUMMARY] } });
   const t = p.text();
-  for (const want of ["Games", "Account", "Disputes", "Appeals aren’t open yet", "nothing is waiting", "stand as they were recorded", "About appeals", "Ludum DAO proposals"]) assert.ok(t.includes(want), want);
+  for (const want of ["Games", "Account", "Disputes", "Your appeals", "Appeal 3F9C-1A0B", "Engine failure or bug", "Being investigated", "How appeals work", "30 minutes", "There is no fee and no wallet signature", "Ludum DAO proposals"]) assert.ok(t.includes(want), want);
+  const link = p.body.find((n) => n.tagName === "a" && n.getAttribute("href") === "/disputes/case/?id=" + CASE);
+  assert.ok(link, "each appeal opens its page");
   const current = p.body.findAll((n) => n.tagName === "a" && n.getAttribute("aria-current") === "page");
   assert.deepEqual(current.map((a) => a.getAttribute("href")), ["/disputes/"], "Disputes is the current tab");
   assert.equal(p.body.findAll((n) => n.className === "ld-ptabs__count").length, 0, "no count beside any tab");
-  assert.ok(p.body.find((n) => n.tagName === "a" && n.getAttribute("href") === "/governance/"), "the Ludum DAO is one link away");
-  assert.doesNotMatch(t, /escrow|JUNOX|Disputed tables|Voting wallet|Voting power|juno1|bond|resolver|Appeals team/i);
+  assert.doesNotMatch(t, /escrow|JUNOX|Disputed tables|Voting wallet|Voting power|juno1|bond|resolver|Appeals team|Appeals queue/i);
   assert.deepEqual(p.requests, [], "the page reads no chain");
-  assert.deepEqual(p.apiCalls, ["profile"], "only your own profile, for the pass");
+  assert.deepEqual(p.apiCalls.sort(), ["appeals-mine", "profile"], "your own profile and your own appeals");
   assert.equal(p.keplr.calls, 0);
+  const none = await disputes(PLAYER, { profile: PROFILE, "appeals-mine": { cases: [] } });
+  assert.match(none.text(), /No appeals.*filed on Play, from the Game Over screen/);
 });
 
-test("disputes: the Appeals team and the Admins who appoint it see the team's roster from staff-team; Moderators and players do not", async () => {
+test("disputes: the Appeals team and the Admins who appoint it see the queue and the team's roster; Moderators and players do not", async () => {
   const quinn = { ...PLAYER, account: { name: "Quinn", username: "q" }, staff: { roles: ["appeals"], permissions: ["appeal.review", "staff.view"] } };
-  const p = await disputes(quinn, { profile: PROFILE, "staff-team": TEAM });
+  const queue = { cases: [SUMMARY, { ...SUMMARY, caseId: "ap_" + "a".repeat(24), status: "settled", outcome: "annul" }] };
+  const p = await disputes(quinn, { profile: PROFILE, "staff-team": TEAM, "appeals-mine": { cases: [] }, "appeals-queue": queue });
   const t = p.text();
-  for (const want of ["Appeals team", "Quinn", "(you)", "24 Oct 2026", "they decide none", "no Ludum DAO membership or vote"]) assert.ok(t.includes(want), want);
+  for (const want of ["Appeals queue", "1 open", "Staff only", "Settled", "Annul the game", "Appeals team", "Quinn", "(you)", "24 Oct 2026", "they decide none", "no Ludum DAO membership or vote"]) assert.ok(t.includes(want), want);
   assert.doesNotMatch(t, /Mia/, "only the Appeals role is on this roster");
-  assert.deepEqual(p.apiCalls.sort(), ["profile", "staff-team"]);
+  assert.deepEqual(p.apiCalls.sort(), ["appeals-mine", "appeals-queue", "profile", "staff-team"]);
   const admin = { ...PLAYER, account: { name: "Caspian", username: "c" }, staff: { roles: ["admin"], permissions: ["staff.view", "moderator.manage", "appeals.manage", "player.rename", "name.reserve"] } };
-  const a = await disputes(admin, { profile: PROFILE, "staff-team": TEAM });
-  assert.match(a.text(), /Appeals team.*Quinn/);
+  const a = await disputes(admin, { profile: PROFILE, "staff-team": TEAM, "appeals-mine": { cases: [] }, "appeals-queue": queue });
+  assert.match(a.text(), /Appeals queue.*Appeals team.*Quinn/);
   const mod = { ...PLAYER, roles: { reviewer: true }, staff: { roles: ["moderator"], permissions: ["case.review", "staff.view"] } };
-  const m = await disputes(mod, { profile: PROFILE, "staff-team": TEAM });
-  assert.doesNotMatch(m.text(), /Appeals team/);
-  assert.deepEqual(m.apiCalls, ["profile"]);
-  const failing = await disputes(quinn, { profile: PROFILE, "staff-team": () => Promise.reject({ status: 503, error: "unavailable" }) });
-  assert.match(failing.text(), /The team couldn’t be read/);
-  assert.match(failing.text(), /Appeals aren’t open yet/, "the rest of the page stands");
+  const m = await disputes(mod, { profile: PROFILE, "staff-team": TEAM, "appeals-mine": { cases: [] } });
+  assert.doesNotMatch(m.text(), /Appeals team|Appeals queue/);
+  assert.deepEqual(m.apiCalls.sort(), ["appeals-mine", "profile"]);
+  const failing = await disputes(quinn, { profile: PROFILE, "staff-team": () => Promise.reject({ status: 503, error: "unavailable" }), "appeals-mine": { cases: [] }, "appeals-queue": queue });
+  assert.match(failing.text(), /Appeals team couldn’t be read/);
+  assert.match(failing.text(), /Appeals queue/, "the rest of the page stands");
 });
 
-test("disputes: signed out -- the same neutral notice and a way to sign in; a profile that can't be read says so", async () => {
+test("disputes: signed out -- a way to sign in and how appeals work; a profile that can't be read says so", async () => {
   const out = await disputes({ signedIn: false });
-  assert.match(out.text(), /Appeals aren’t open yet/);
+  assert.match(out.text(), /Sign in to see your appeals.*How appeals work/);
   const signIn = out.body.find((n) => n.tagName === "a" && /Sign in/.test(n.textContent));
   assert.equal(signIn.getAttribute("href"), "/me/sign-in/?return=%2Fdisputes%2F");
   assert.ok(out.body.find((n) => n.tagName === "h1" && n.textContent === "Disputes"), "the page has its heading");
@@ -297,10 +310,112 @@ test("disputes: signed out -- the same neutral notice and a way to sign in; a pr
   assert.match(down.text(), /Unavailable.*could not be read just now/);
 });
 
-test("v1.7: what the governance and Disputes pages say, and the Disputes tab's rule, carry nothing of the retired escrow", () => {
+test("v1.7: what the governance and Disputes pages say carry nothing of the retired escrow (LUDUM RESULT REVIEW: an appeal's outcomes are named again, never its money)", () => {
   for (const rel of ["platform/js/gov-page.js", "platform/js/disputes-page.js", "platform/js/gov.js"]) {
-    assert.doesNotMatch(said(rel), /escrow|disputed table|Create appeal|New appeal|case file|resolver deadline|deadline guard|bond\b|Uphold|Annul/i, rel);
+    assert.doesNotMatch(said(rel), /escrow|disputed table|Create appeal|New appeal|case file|resolver deadline|deadline guard|bond\b|wager pool|payout splits?/i, rel);
   }
+  assert.doesNotMatch(said("platform/js/disputes-page.js"), /JUNOX|junox\(/i, "an appeal names Credits, never a token");
+  for (const rel of ["platform/js/gov-page.js", "platform/js/gov.js"]) assert.doesNotMatch(said(rel), /Uphold|Annul/i, rel);
+});
+
+/* ---------------- one appeal ---------------- */
+
+const RECORD = { format: "ludum-resolution/1", case_id: CASE, game_id: SUMMARY.gameId, revision: 1, result_id: "b".repeat(32), evidence: { log_len: 412, log_hash: "c".repeat(64) },
+  outcome: "annul", responsible: [], standings: null, consequences: { payouts: [100, 100], deltas: null, wagers_returned: true }, rationale: "An engine failure in OR 4.\nLudum appeal " + CASE + " resolution " + "f".repeat(64), prepared_at_seq: 3 };
+const SEATS = [{ playerId: "p-0000000000000001", name: "Marlowe", place: 1, netWorth: 4919, payout: 139, ratingChange: 4.1234 }, { playerId: "p-0000000000000002", name: "Bea", place: 2, netWorth: 4732, payout: 61, ratingChange: -4.1234 }];
+function caseView(over = {}, you = { party: true, staff: false }) {
+  return { ...SUMMARY, you,
+    result: { outcome: "scored", endedAt: "2026-10-25T18:00:00.000Z", reviewDeadline: "2026-10-25T18:31:00.000Z", resultId: "b".repeat(32), foreclosure: null, seats: SEATS },
+    evidence: { logLen: 412, logHash: "c".repeat(64), boardDigest: "d".repeat(64) },
+    filings: [{ at: "2026-10-25T18:10:00.000Z", playerId: SEATS[0].playerId, name: "Marlowe", grounds: ["engine-failure"], statement: "The game froze in OR 4." }],
+    notes: [], proposals: [], settlement: "pending", trail: [], ...over };
+}
+const proposalOf = (digest, decision = null) => ({ revision: 1, digest, daoLine: "Ludum appeal " + CASE + " resolution " + digest, outcome: "annul", rationale: RECORD.rationale, preparedAt: "2026-10-25T19:00:00.000Z", preparedBy: "Quinn (Appeals)",
+  consequences: [{ playerId: SEATS[0].playerId, name: "Marlowe", payout: 100, ratingChange: null }, { playerId: SEATS[1].playerId, name: "Bea", payout: 100, ratingChange: null }], wagersReturned: true, standings: null, responsible: [], decision, record: RECORD });
+
+test("an appeal, as a player of its game sees it: the provisional result, the filings, no staff notes, no staff controls; a stranger is told it is not theirs", async () => {
+  const p = await disputes(PLAYER, { "appeal-case": { case: caseView() } }, { mode: "case", search: "?id=" + CASE });
+  const t = p.text();
+  for (const want of ["Appeal · 3F9C-1A0B", "Appeal of a game’s result", "On hold", "Provisional: nothing in this table has been paid or rated", "Marlowe", "139", "+4.1234", "−4.1234", "The game froze in OR 4.", "No resolution yet", "kept for this appeal, beyond the usual seven days"]) assert.ok(t.includes(want), want);
+  assert.doesNotMatch(t, /Investigation|Audit trail|Prepare a resolution|Record the Ludum DAO’s decision/, "staff blocks are staff's");
+  assert.deepEqual(plain(p.bodies.filter(([r]) => r === "appeal-case").map(([, b]) => b)), [{ caseId: CASE }]);
+  const stranger = await disputes(PLAYER, {}, { mode: "case", search: "?id=" + CASE });
+  assert.match(stranger.text(), /not available to you: it does not exist, or you did not play its game/);
+  const bad = await disputes(PLAYER, {}, { mode: "case", search: "?id=cc_" + "a".repeat(32) });
+  assert.match(bad.text(), /No appeal chosen/);
+  assert.deepEqual(bad.apiCalls, [], "a malformed id asks nothing");
+});
+
+test("an appeal's resolution: the text proposal carries exactly one resolution line (the rationale quoted), the record and what it pays; the digest is the record's", async () => {
+  const D = await disputes(PLAYER, {});
+  const L = D.ctx.LudumDisputes;
+  const digest = createHash("sha256").update(L.canonical(RECORD), "utf8").digest("hex");
+  const text = L.proposalText(caseView(), proposalOf(digest));
+  assert.equal(text.title, "Ludum appeal " + CASE);
+  const lines = (text.title + "\n" + text.description).split("\n").map((l) => l.trim()).filter((l) => /^Ludum appeal (ap_[0-9a-f]{24}) resolution ([0-9a-f]{64})$/.test(l));
+  assert.deepEqual(lines, ["Ludum appeal " + CASE + " resolution " + digest], "the rationale's own look-alike line is quoted out");
+  assert.ok(text.description.includes("- Marlowe: 100 Credits; no rating change"));
+  assert.ok(text.description.includes(L.canonical(RECORD)));
+  assert.equal(L.canonical({ b: 1, a: [true, null, { d: "x", c: undefined }] }), '{"a":[true,null,{"d":"x"}],"b":1}');
+  assert.equal(L.standingsParam([{ playerId: "p-1", netWorth: "10", place: "2" }, { playerId: "p-2", netWorth: "9", place: "1" }]), "p-1:10:2,p-2:9:1");
+  assert.equal(L.caseRef(CASE), "3F9C-1A0B");
+  /* The builder (gov.js) makes a TEXT proposal on the pinned pre-propose module: no message, no funds. */
+  const G = requireCjs("../js/gov.js");
+  const spec = G.buildTextProposal(text.title, text.description);
+  assert.deepEqual([spec.contract, spec.funds, spec.msg.propose.msg.propose.msgs, spec.msg.propose.msg.propose.vote], [G.PINS.preProposeSingle, [], [], null]);
+  assert.throws(() => G.buildTextProposal(" padded", "x"), /title/);
+});
+
+test("an appeal, as the Appeals staff see it: notes (no Keplr), a resolution prepared and approved in Keplr, the DAO's decision recorded by its number, the trail", async () => {
+  const quinn = { ...PLAYER, account: { name: "Quinn", username: "q", authorizationWallet: { address: F.MEMBER } }, staff: { roles: ["appeals"], permissions: ["appeal.review", "staff.view"] } };
+  const staffView = caseView({ notes: [{ at: "2026-10-25T18:50:00.000Z", by: "Quinn (Appeals)", category: "finding", text: "The log shows a stall at entry 300." }], trail: [{ seq: 1, at: "2026-10-25T18:00:00.000Z", kind: "opened", by: "the server" }] }, { party: false, staff: true });
+  const approvals = [];
+  const answers = { "appeal-case": { case: staffView }, "appeal-note": (b) => Promise.resolve({ case: staffView }), "appeal-propose": (b) => Promise.resolve({ case: { ...staffView, status: "proposed", proposals: [proposalOf("e".repeat(64))] } }) };
+  const p = await disputes(quinn, answers, { mode: "case", search: "?id=" + CASE });
+  p.ctx.LudumAuth = { approveStaffAction: (S, G, input) => { approvals.push(input); return Promise.resolve({ confirmOperation: "op", confirmPubKey: "pk", confirmSignature: "sig" }); }, staffApprovalSentence: () => "refused" };
+  const t = p.text();
+  for (const want of ["Investigation", "Finding", "The log shows a stall at entry 300.", "Prepare a resolution", "Uphold the result", "Annul the game", "Correct the standings", "awaits the owner’s approval", "Audit trail", "the server"]) assert.ok(t.includes(want), want);
+  /* A note: no Keplr. */
+  const textarea = p.body.find((n) => n.tagName === "textarea" && n.getAttribute("id") === "ap-note");
+  textarea.value = "  Asked both players for screenshots.  ";
+  p.buttons(/^Add to the case$/)[0].click();
+  await p.settle();
+  assert.deepEqual(plain(p.bodies.filter(([r]) => r === "appeal-note").map(([, b]) => b)), [{ caseId: CASE, category: "note", text: "Asked both players for screenshots." }]);
+  assert.equal(approvals.length, 0);
+  /* A resolution: the outcome, the rationale, approved in Keplr with exactly the body sent. */
+  const annul = p.body.find((n) => n.tagName === "input" && n.getAttribute("value") === "annul");
+  annul.fire("change");
+  p.body.find((n) => n.tagName === "textarea" && n.getAttribute("id") === "ap-why").value = "The engine failure decided the game.";
+  p.buttons(/Prepare the resolution/)[0].click();
+  await p.settle();
+  assert.deepEqual(plain(approvals.map((a) => [a.route, a.body, a.account, a.authorizationWallet])), [["appeal-propose", { caseId: CASE, outcome: "annul", rationale: "The engine failure decided the game." }, "Quinn", F.MEMBER]]);
+  assert.deepEqual(plain(p.bodies.filter(([r]) => r === "appeal-propose").map(([, b]) => b)), [{ caseId: CASE, outcome: "annul", rationale: "The engine failure decided the game.", confirmOperation: "op", confirmPubKey: "pk", confirmSignature: "sig" }]);
+  assert.match(p.text(), /Prepared: revision 1 \(Annul the game\)\. It now waits for the Ludum DAO\./);
+  assert.match(p.text(), /Revision 1 waits for the Ludum DAO/);
+  assert.match(p.text(), /Checked here.*(DOES NOT MATCH|not checked)/, "a digest that is not the record's is said, never hidden");
+});
+
+test("recording the Ludum DAO's decision: the number checked here, approved in Keplr, the server's verdict said; forfeiture is never offered", async () => {
+  const quinn = { ...PLAYER, account: { name: "Quinn", username: "q", authorizationWallet: { address: F.MEMBER } }, staff: { roles: ["appeals"], permissions: ["appeal.review", "staff.view"] } };
+  const pending = caseView({ status: "proposed", proposals: [proposalOf("e".repeat(64))] }, { party: false, staff: true });
+  const decided = { ...pending, status: "decided", outcome: "annul", proposals: [proposalOf("e".repeat(64), { verdict: "approved", proposalId: 7, status: "passed", at: "2026-10-26T10:00:00.000Z" })] };
+  const p = await disputes(quinn, { "appeal-case": { case: pending }, "appeal-dao": () => Promise.resolve({ verdict: "approved", case: decided }) }, { mode: "case", search: "?id=" + CASE });
+  const approvals = [];
+  p.ctx.LudumAuth = { approveStaffAction: (S, G, input) => { approvals.push(input); return Promise.resolve({ confirmOperation: "op", confirmPubKey: "pk", confirmSignature: "sig" }); }, staffApprovalSentence: () => "refused" };
+  const input = p.body.find((n) => n.tagName === "input" && n.getAttribute("id") === "ap-pid");
+  input.value = "seven";
+  p.buttons(/^Record the decision/)[0].click();
+  await p.settle();
+  assert.match(p.text(), /A proposal number is a whole number/);
+  assert.equal(approvals.length, 0);
+  input.value = "7";
+  p.buttons(/^Record the decision/)[0].click();
+  await p.settle();
+  assert.deepEqual(plain(approvals.map((a) => [a.route, a.body])), [["appeal-dao", { caseId: CASE, proposalId: 7 }]]);
+  assert.match(p.text(), /Proposal 7: The Ludum DAO approved it: the resolution is applied once\./);
+  assert.match(p.text(), /Approved by the Ludum DAO — proposal 7 \(passed\)/);
+  const forfeit = p.body.findAll((n) => n.tagName === "input" && n.getAttribute("value") === "forfeit");
+  assert.ok(forfeit.every((n) => n.getAttribute("disabled") !== null), "forfeiture is shown, never offered");
 });
 
 /* ================= the design's addresses and the pages themselves ================= */
@@ -320,11 +435,13 @@ test("route map: the design's /account/ addresses go to the engineering routes, 
 test("every governance page and Disputes: the §2.4 CSP first, the records layer and the pass's, no inline script, the scripts in order", () => {
   const GOV = ["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", "/platform/js/pass.js", "/platform/js/work.js", "/platform/js/auth.js", "/platform/js/account-menu.js", "/platform/js/gov.js", "/platform/js/gov-page.js"];
   const DISPUTES = ["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", "/platform/js/pass.js", "/platform/js/work.js", "/platform/js/auth.js", "/platform/js/account-menu.js", "/platform/js/disputes-page.js", "/platform/js/page-init.js"];
-  for (const [rel, kind, scripts] of [["disputes/index.html", null, DISPUTES], ["governance/index.html", "governance", GOV], ["governance/proposal/index.html", "proposal", GOV]]) {
+  /* LUDUM RESULT REVIEW: an appeal's page also loads gov.js (Keplr for the staff's approvals and a DAO member's proposal). */
+  const APPEAL = ["https://netadao.org/radio/radio.js", "/design-system/js/ludum.js", "/platform/js/session.js", "/platform/js/records.js", "/platform/js/pass.js", "/platform/js/work.js", "/platform/js/gov.js", "/platform/js/auth.js", "/platform/js/account-menu.js", "/platform/js/disputes-page.js", "/platform/js/page-init.js"];
+  for (const [rel, kind, scripts] of [["disputes/index.html", null, DISPUTES], ["disputes/case/index.html", null, APPEAL], ["governance/index.html", "governance", GOV], ["governance/proposal/index.html", "proposal", GOV]]) {
     const html = src(rel).replace(/\r\n/g, "\n");
     assert.match(html, /<head>\n<meta http-equiv="Content-Security-Policy"/, rel);
     if (kind) assert.match(html, new RegExp(`data-gov-page="${kind}"`), rel);
-    else { assert.doesNotMatch(html, /data-gov-page/, rel); assert.match(html, /<main id="main" class="ld-profile" data-ludum-disputes>/, rel); }
+    else { assert.doesNotMatch(html, /data-gov-page/, rel); assert.match(html, rel === "disputes/case/index.html" ? /<main id="main" class="ld-profile" data-ludum-disputes="case">/ : /<main id="main" class="ld-profile" data-ludum-disputes>/, rel); }
     const order = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
     assert.deepEqual(order, scripts, rel);
     assert.ok(html.indexOf("/platform/css/records.css") > html.indexOf("/design-system/css/ludum.css"), rel);

@@ -186,18 +186,18 @@
   }
 
   /** The private tabs under your own pass: links to their pages (`aria-current` on this one), Moderation for a conduct
-   *  reviewer (the server's `roles.reviewer`: v1.7, a Moderator in the staff log too), Disputes for a Ludum DAO member (the
-   *  chain's answer, as before), for the Appeals team (the server's `appeal.review`) or on the Disputes page itself;
-   *  "Only you see these" once, on the row. `opts.games`: the count beside Games, when known. v1.7 (owner, 2026-10-23):
-   *  `opts.moderation` (active cases) beside Moderation -- only when read and above 0. Disputes has no count (owner,
-   *  2026-10-24: the retired escrow's disputed tables are no Ludum feature, and appeals aren't open yet). */
+   *  reviewer (the server's `roles.reviewer`: v1.7, a Moderator in the staff log too), Disputes for every signed-in
+   *  account (LUDUM RESULT REVIEW: appeals are open, and each player follows their own there); "Only you see these" once,
+   *  on the row. `opts.games`: the count beside Games, when known. v1.7 (owner, 2026-10-23): `opts.moderation` (active
+   *  cases) beside Moderation -- only when read and above 0. Disputes has no count. `opts.daoMember` is no longer read. */
   function tabsRow(session, current, opts) {
     opts = opts || {};
     var positive = function (n) { return typeof n === 'number' && n > 0 ? n : undefined; };
     var tabs = [{ key: 'games', href: '/me/', text: 'Games', count: opts.games }, { key: 'account', href: '/me/account/', text: 'Account' }];
     if (session && session.roles && session.roles.reviewer === true) tabs.push({ key: 'moderation', href: '/moderation/', text: 'Moderation', count: positive(opts.moderation) });
-    var perms = session && session.staff && Array.isArray(session.staff.permissions) ? session.staff.permissions : [];
-    if (opts.daoMember || perms.indexOf('appeal.review') !== -1 || current === 'disputes') tabs.push({ key: 'disputes', href: '/disputes/', text: 'Disputes' });
+    /* LUDUM RESULT REVIEW: appeals are open, and every player follows their own on Disputes -- the tab is every signed-in
+       account's (never with a count). */
+    if (session && session.signedIn === true) tabs.push({ key: 'disputes', href: '/disputes/', text: 'Disputes' });
     return el('div', { class: 'ld-tabsrow' }, [
       el('nav', { class: 'ld-ptabs', 'aria-label': 'Your profile' }, tabs.map(function (t) {
         return el('a', { href: t.href, 'aria-current': t.key === current ? 'page' : null }, [t.text, typeof t.count === 'number' ? el('span', { class: 'ld-ptabs__count', text: ' ' + t.count }) : null]);

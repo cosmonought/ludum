@@ -50,7 +50,9 @@
     /* v1.7: website staff (Manage, the Moderation team) and the renamed player's notice */
     'staff-team', 'staff-player', 'staff-role', 'staff-rename', 'staff-former-name', 'name-notice-dismiss',
     /* v1.7 (owner, 2026-10-23): the Authorization Wallet text that approves one staff change */
-    'staff-confirm'];
+    'staff-confirm',
+    /* LUDUM RESULT REVIEW: a player's own appeals, one appeal, and the Appeals staff's work */
+    'appeals-mine', 'appeal-case', 'appeals-queue', 'appeal-note', 'appeal-propose', 'appeal-dao'];
   var RETURN_PATH = /^\/[a-z0-9\/_-]{0,128}$/;
   var AUTH_ACTIONS = ['start', 'sign-in', 'authorization', 'create', 'recover', 'confirm', 'sign-out', 'password', 'wallet-challenge', 'wallet-replace', 'keplr-sign-in', 'wallet-approve', 'sign-out-others'];
 

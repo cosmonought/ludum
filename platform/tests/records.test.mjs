@@ -92,19 +92,16 @@ test("profile tabs: Moderation only for a Play reviewer, Disputes only for a DAO
   const tabs = (session, current, opts) => links(session, current, opts).map((a) => a.textContent.trim());
   const player = { signedIn: true, roles: { reviewer: false } };
   const reviewer = { signedIn: true, roles: { reviewer: true } };
-  eq(tabs(player, "games", {}), ["Games", "Account"]);
-  eq(tabs(reviewer, "games", {}), ["Games", "Account", "Moderation"]);
-  eq(tabs(player, "games", { daoMember: { checkedAt: 1 } }), ["Games", "Account", "Disputes"]);
-  eq(tabs(reviewer, "games", { daoMember: { checkedAt: 1 } }), ["Games", "Account", "Moderation", "Disputes"]);
-  eq(tabs({ signedIn: true }, "games", {}), ["Games", "Account"], "an older server's session (no roles) draws no Moderation");
-  eq(tabs(player, "disputes", {}), ["Games", "Account", "Disputes"], "the tab you are on is drawn while the chain is asked");
-  eq(tabs(reviewer, "moderation", { moderation: 3, disputes: 0 }), ["Games", "Account", "Moderation 3"], "a count only when there is something to do");
-  /* v1.7 (owner, 2026-10-24): the Appeals team sees Disputes (the server's appeal.review); Disputes never has a count. */
+  /* LUDUM RESULT REVIEW: appeals are open, so Disputes -- where each player follows their own -- is every signed-in
+     account's tab; Moderation stays a reviewer's. */
+  eq(tabs(player, "games", {}), ["Games", "Account", "Disputes"]);
+  eq(tabs(reviewer, "games", {}), ["Games", "Account", "Moderation", "Disputes"]);
+  eq(tabs(player, "games", { daoMember: { checkedAt: 1 } }), ["Games", "Account", "Disputes"], "DAO membership adds nothing now");
+  eq(tabs({ signedIn: true }, "games", {}), ["Games", "Account", "Disputes"], "an older server's session (no roles) draws no Moderation");
+  eq(tabs({ signedIn: false }, "games", {}), ["Games", "Account"], "a signed-out session has no Disputes of its own");
+  eq(tabs(reviewer, "moderation", { moderation: 3, disputes: 0 }), ["Games", "Account", "Moderation 3", "Disputes"], "a count only when there is something to do");
   const appeals = { signedIn: true, roles: { reviewer: false }, staff: { roles: ["appeals"], permissions: ["appeal.review", "staff.view"] } };
-  const appointer = { signedIn: true, roles: { reviewer: false }, staff: { roles: ["admin"], permissions: ["staff.view", "moderator.manage", "appeals.manage", "player.rename", "name.reserve"] } };
   eq(tabs(appeals, "games", {}), ["Games", "Account", "Disputes"]);
-  eq(tabs(appointer, "games", {}), ["Games", "Account"], "appointing the Appeals team is not being on it");
-  eq(tabs({ signedIn: true, staff: { roles: ["appeals"], permissions: "appeal.review" } }, "games", {}), ["Games", "Account"], "a malformed staff answer draws nothing");
   eq(tabs(player, "disputes", { disputes: 4 }), ["Games", "Account", "Disputes"], "no count beside Disputes, whatever is passed");
   const current = links(reviewer, "moderation", {}).filter((a) => a.getAttribute("aria-current") === "page");
   eq(current.map((a) => a.getAttribute("href")), ["/moderation/"]);

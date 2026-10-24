@@ -182,10 +182,10 @@
 
   /**
    * A work tab's top, exactly as /me/ draws its own: YOUR pass (its shell at once, the figures when `profile` answers),
-   * the line under it, and the tab row with this tab current. The Disputes tab is drawn from this account's remembered
-   * DAO membership at once and corrected when the chain answers (records.js `checkMembership`: no Keplr), and for the
-   * Appeals team from the session. Returns {setCounts({moderation})} so the Moderation panel can put its count beside
-   * its tab once it has read it.
+   * the line under it, and the tab row with this tab current (Disputes is every signed-in account's tab; this account's
+   * remembered DAO membership is still read at once and corrected when the chain answers -- records.js
+   * `checkMembership`, no Keplr). Returns {setCounts({moderation})} so the Moderation panel can put its count beside its
+   * tab once it has read it.
    */
   function profileTop(slot, session, who, current) {
     var R = root.LudumRecords;

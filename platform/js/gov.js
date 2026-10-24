@@ -62,6 +62,14 @@
   }
 
   /* ---- Builders (§6, byte for byte). Each returns { contract, msg, funds: [] } for one MsgExecuteContract. ---- */
+  /* LUDUM RESULT REVIEW: a TEXT proposal -- no message, so it can execute nothing on chain. An appeal's resolution is
+     decided by the Ludum DAO's vote on one that names the resolution's digest; Play's server reads the vote and applies
+     the resolution itself. The pre-propose module takes no deposit (funds: []); the chain decides who may propose. */
+  function buildTextProposal(title, description) {
+    if (typeof title !== 'string' || title !== title.trim() || !title || title.length > 200) throw new Error('a proposal title is 1 to 200 characters');
+    if (typeof description !== 'string' || !description.trim() || description.length > 30000) throw new Error('a proposal description is required (at most 30,000 characters)');
+    return { contract: PINS.preProposeSingle, msg: { propose: { msg: { propose: { title: title, description: description, msgs: [], vote: null } } } }, funds: [] };
+  }
   function buildVote(proposalId, vote, rationale) {
     if (vote !== 'yes' && vote !== 'no' && vote !== 'abstain') throw new Error('vote must be yes, no or abstain');
     var r = typeof rationale === 'string' && rationale.trim() ? rationale.trim() : null;
@@ -409,7 +417,7 @@
     proposalPhase: proposalPhase, tallyOf: tallyOf, expirationSecs: expirationSecs,
     readProposal: readProposal, readTotalWeight: readTotalWeight, readPreProposeConfig: readPreProposeConfig, readTxs: readTxs,
     proposalTxQuery: proposalTxQuery, proposalActionOf: proposalActionOf,
-    buildVote: buildVote, buildExecute: buildExecute, buildClose: buildClose, checkPins: checkPins, framingAllowed: framingAllowed,
+    buildVote: buildVote, buildExecute: buildExecute, buildClose: buildClose, buildTextProposal: buildTextProposal, checkPins: checkPins, framingAllowed: framingAllowed,
     fmtDuration: fmtDuration, nanosToSecs: nanosToSecs, isoFromSecs: isoFromSecs,
     utf8ToB64: utf8ToB64, b64ToUtf8: b64ToUtf8,
     makeReader: makeReader, readLivePins: readLivePins, readGovernor: readGovernor,

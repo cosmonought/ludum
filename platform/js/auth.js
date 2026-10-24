@@ -58,7 +58,10 @@
     'staff-rename': ['name', 'to', 'former', 'reason'],
     'staff-role': ['name', 'role', 'action', 'reason'],
     'staff-former-name': ['name', 'former', 'action', 'reason'],
-    'moderation-decide': ['caseId', 'revision', 'status', 'note']
+    'moderation-decide': ['caseId', 'revision', 'status', 'note'],
+    /* LUDUM RESULT REVIEW: a prepared appeal resolution, and the Ludum DAO's decision recorded by its proposal number */
+    'appeal-propose': ['caseId', 'outcome', 'standings', 'responsible', 'rationale'],
+    'appeal-dao': ['caseId', 'proposalId']
   };
   var JUNO = /^juno1[02-9ac-hj-np-z]{38}$/;
   var HEX_32 = /^[0-9a-f]{32}$/;
