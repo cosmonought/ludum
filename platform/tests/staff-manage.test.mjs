@@ -103,6 +103,8 @@ test("the audit history in words: renames with the former name's fate, reserves,
   assert.equal(M.auditChange({ kind: "role-granted", role: "moderator", by }), "Role given: Moderator");
   assert.equal(M.auditChange({ kind: "role-granted", role: "appeals", by }), "Role given: Appeals");
   assert.equal(M.auditChange({ kind: "role-revoked", role: "appeals", by }), "Role removed: Appeals");
+  assert.equal(M.auditChange({ kind: "directory-hidden", by: { role: "operator" } }), "Left out of Find a Player");
+  assert.equal(M.auditChange({ kind: "directory-shown", by: { role: "operator" } }), "Listed in Find a Player again");
   assert.equal(M.auditBy({ by }), "Caspian · Admin");
   assert.equal(M.auditBy({ by: { name: null, role: "operator", operator: "host" } }), "Server operator", "the operator's own label is not shown");
   eq(M.newestFormer([{ name: "A", until: "2026-10-01T00:00:00Z" }, { name: "B", until: "2026-10-20T00:00:00Z" }]), { name: "B", until: "2026-10-20T00:00:00Z" });

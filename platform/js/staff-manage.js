@@ -55,6 +55,9 @@
       case 'name-released': return 'Former name released: ' + row.name;
       case 'role-granted': return 'Role given: ' + role;
       case 'role-revoked': return 'Role removed: ' + role;
+      /* v1.7 (owner, 2026-10-24): the operator left a synthetic account out of Find a Player, or listed it again. */
+      case 'directory-hidden': return 'Left out of Find a Player';
+      case 'directory-shown': return 'Listed in Find a Player again';
       default: return String(row.kind);
     }
   }
