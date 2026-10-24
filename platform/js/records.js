@@ -165,6 +165,8 @@
     var c = g && g.credits;
     if (c && c.outcome === 'void') return { text: 'Voided', kind: 'closed' };
     if (c && c.outcome === 'foreclosed') return { text: c.defaulted ? 'Forfeited' : 'Won by forfeit', kind: 'closed' };
+    /* LUDUM RESULT REVIEW: decided by the Ludum DAO's forfeiture on an appeal. */
+    if (c && c.outcome === 'forfeited') return { text: c.defaulted ? 'Forfeited on appeal' : 'Won on appeal', kind: 'closed' };
     if (c && (c.outcome === 'scored' || c.outcome === 'settled')) return { text: 'Completed', kind: 'closed' };
     var e = g && g.clockEnd;
     if (e && e.how === 'annulled') return { text: 'Annulled', kind: 'closed' };

@@ -334,8 +334,11 @@ const proposalOf = (digest, decision = null) => ({ revision: 1, digest, daoLine:
   consequences: [{ playerId: SEATS[0].playerId, name: "Marlowe", payout: 100, ratingChange: null }, { playerId: SEATS[1].playerId, name: "Bea", payout: 100, ratingChange: null }], wagersReturned: true, standings: null, responsible: [], decision, record: RECORD });
 
 test("an appeal, as a player of its game sees it: the provisional result, the filings, no staff notes, no staff controls; a stranger is told it is not theirs", async () => {
-  const p = await disputes(PLAYER, { "appeal-case": { case: caseView() } }, { mode: "case", search: "?id=" + CASE });
+  const extended = caseView();
+  const withOutage = { ...extended, result: { ...extended.result, reviewDeadline: "2026-10-25T18:33:00.000Z", originalDeadline: "2026-10-25T18:31:00.000Z", extensions: [{ at: "2026-10-25T18:12:00.000Z", cause: "restart", from: "2026-10-25T18:09:00.000Z", to: "2026-10-25T18:11:00.000Z", byMs: 120000 }] } };
+  const p = await disputes(PLAYER, { "appeal-case": { case: withOutage } }, { mode: "case", search: "?id=" + CASE });
   const t = p.text();
+  assert.ok(t.includes("Extended+120 s: the server restarted"), "an outage extension is shown from its durable record");
   for (const want of ["Appeal · 3F9C-1A0B", "Appeal of a game’s result", "On hold", "Provisional: nothing in this table has been paid or rated", "Marlowe", "139", "+4.1234", "−4.1234", "The game froze in OR 4.", "No resolution yet", "kept for this appeal, beyond the usual seven days"]) assert.ok(t.includes(want), want);
   assert.doesNotMatch(t, /Investigation|Audit trail|Prepare a resolution|Record the Ludum DAO’s decision/, "staff blocks are staff's");
   assert.deepEqual(plain(p.bodies.filter(([r]) => r === "appeal-case").map(([, b]) => b)), [{ caseId: CASE }]);
@@ -374,7 +377,7 @@ test("an appeal, as the Appeals staff see it: notes (no Keplr), a resolution pre
   const p = await disputes(quinn, answers, { mode: "case", search: "?id=" + CASE });
   p.ctx.LudumAuth = { approveStaffAction: (S, G, input) => { approvals.push(input); return Promise.resolve({ confirmOperation: "op", confirmPubKey: "pk", confirmSignature: "sig" }); }, staffApprovalSentence: () => "refused" };
   const t = p.text();
-  for (const want of ["Investigation", "Finding", "The log shows a stall at entry 300.", "Prepare a resolution", "Uphold the result", "Annul the game", "Correct the standings", "awaits the owner’s approval", "Audit trail", "the server"]) assert.ok(t.includes(want), want);
+  for (const want of ["Investigation", "Finding", "The log shows a stall at entry 300.", "Prepare a resolution", "Uphold the result", "Annul the game", "Correct the standings", "Forfeiture", "Audit trail", "the server"]) assert.ok(t.includes(want), want);
   /* A note: no Keplr. */
   const textarea = p.body.find((n) => n.tagName === "textarea" && n.getAttribute("id") === "ap-note");
   textarea.value = "  Asked both players for screenshots.  ";
@@ -414,8 +417,32 @@ test("recording the Ludum DAO's decision: the number checked here, approved in K
   assert.deepEqual(plain(approvals.map((a) => [a.route, a.body])), [["appeal-dao", { caseId: CASE, proposalId: 7 }]]);
   assert.match(p.text(), /Proposal 7: The Ludum DAO approved it: the resolution is applied once\./);
   assert.match(p.text(), /Approved by the Ludum DAO — proposal 7 \(passed\)/);
-  const forfeit = p.body.findAll((n) => n.tagName === "input" && n.getAttribute("value") === "forfeit");
-  assert.ok(forfeit.every((n) => n.getAttribute("disabled") !== null), "forfeiture is shown, never offered");
+});
+
+test("a forfeiture (owner-approved): Appeals staff name the players found responsible -- at least one, never every player -- and approve exactly that in Keplr", async () => {
+  const quinn = { ...PLAYER, account: { name: "Quinn", username: "q", authorizationWallet: { address: F.MEMBER } }, staff: { roles: ["appeals"], permissions: ["appeal.review", "staff.view"] } };
+  const staffView = caseView({}, { party: false, staff: true });
+  const p = await disputes(quinn, { "appeal-case": { case: staffView }, "appeal-propose": () => Promise.resolve({ case: { ...staffView, status: "proposed", proposals: [proposalOf("e".repeat(64))] } }) }, { mode: "case", search: "?id=" + CASE });
+  const approvals = [];
+  p.ctx.LudumAuth = { approveStaffAction: (S, G, input) => { approvals.push(input); return Promise.resolve({ confirmOperation: "op", confirmPubKey: "pk", confirmSignature: "sig" }); }, staffApprovalSentence: () => "refused" };
+  const forfeit = p.body.find((n) => n.tagName === "input" && n.getAttribute("value") === "forfeit");
+  assert.equal(forfeit.getAttribute("disabled"), null, "forfeiture is offered");
+  forfeit.fire("change");
+  p.body.find((n) => n.tagName === "textarea" && n.getAttribute("id") === "ap-why").value = "Proven collusion by Marlowe.";
+  const boxes = p.body.findAll((n) => n.tagName === "input" && n.getAttribute("type") === "checkbox" && /^ap-rs-/.test(n.getAttribute("id") ?? ""));
+  assert.equal(boxes.length, 2, "one box per player");
+  p.buttons(/Prepare the resolution/)[0].click();
+  await p.settle();
+  assert.match(p.text(), /Choose the players found responsible./);
+  boxes.forEach((b) => (b.checked = true));
+  p.buttons(/Prepare the resolution/)[0].click();
+  await p.settle();
+  assert.match(p.text(), /Not every player: a forfeiture needs at least one player to pay/);
+  assert.equal(approvals.length, 0, "nothing is approved for an impossible forfeiture");
+  boxes[1].checked = false;
+  p.buttons(/Prepare the resolution/)[0].click();
+  await p.settle();
+  assert.deepEqual(plain(approvals.map((a) => [a.route, a.body])), [["appeal-propose", { caseId: CASE, outcome: "forfeit", rationale: "Proven collusion by Marlowe.", responsible: SEATS[0].playerId }]]);
 });
 
 /* ================= the design's addresses and the pages themselves ================= */

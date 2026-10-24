@@ -35,7 +35,7 @@
     uphold: 'the result stands as proposed, and settles as shown',
     annul: 'the game is annulled: every wager is returned and no Skill Rating changes',
     correct: 'the standings are corrected, and the game settles by the ordinary rules on the corrected standings',
-    forfeit: 'the game is decided by forfeiture'
+    forfeit: 'the players found responsible forfeit their wagers, which are shared equally among the other players (any remainder in seat order); nobody else receives anything'
   };
   var GROUND = { 'rules-error': 'Material rules error', 'illegal-move': 'Illegal move the game allowed', 'engine-failure': 'Engine failure or bug',
     'settlement-error': 'Incorrect standings or settlement', cheating: 'Cheating', collusion: 'Collusion' };
@@ -243,6 +243,8 @@
       W.facts([
         r.foreclosure ? ['How it ended', 'Clock foreclosure of ' + ((r.seats.filter(function (s) { return s.playerId === r.foreclosure.defaulter; })[0] || {}).name || 'a player')] : ['How it ended', 'At the game’s end, by final net worth'],
         ['Review closed', when(r.reviewDeadline)],
+        /* Outage accounting: each interruption of the server credited to the review, from its durable record. */
+        Array.isArray(r.extensions) && r.extensions.length ? ['Extended', r.extensions.map(function (e) { return '+' + Math.round(e.byMs / 1000) + ' s: ' + (e.cause === 'restart' ? 'the server restarted' : 'the server was unavailable') + ' (' + when(e.from) + ' to ' + when(e.to) + ')'; }).join('; ')] : null,
         ['Game log', view.evidence.logLen.toLocaleString('en-US') + ' entries · hash ' + R.shortHash(view.evidence.logHash)],
         view.evidence.boardDigest ? ['Final board', 'digest ' + R.shortHash(view.evidence.boardDigest)] : null,
         ['Kept', 'The game’s log and record are kept for this appeal, beyond the usual seven days.']
@@ -439,6 +441,13 @@
     var seats = view.result.seats;
     var scored = view.result.outcome === 'scored';
     var standingsHost = el('div', { hidden: true });
+    /* A forfeiture names the players found responsible: at least one, never every player. */
+    var responsibleHost = el('div', { hidden: true });
+    var responsibleBoxes = seats.map(function (s, i) {
+      var box = el('input', { type: 'checkbox', id: 'ap-rs-' + i, value: s.playerId });
+      return { playerId: s.playerId, box: box, row: el('label', { class: 'ld-pchoice', for: 'ap-rs-' + i }, [box, el('span', { class: 'ld-pchoice__name', text: s.name })]) };
+    });
+    W.fill(responsibleHost, [W.sub('The players found responsible'), el('p', { class: 'ld-step__note', style: 'margin:0 0 8px', text: 'Each one forfeits their whole wager; the other players share the forfeited wagers. Not every player: then there is nobody to pay, and the appeal needs another disposition.' })].concat(responsibleBoxes.map(function (r) { return r.row; })));
     var inputs = seats.map(function (s, i) {
       var nw = el('input', { class: 'ld-pinput', id: 'ap-nw-' + i, inputmode: 'numeric', value: s.netWorth === null ? '' : String(s.netWorth) });
       var place = el('input', { class: 'ld-pinput', id: 'ap-pl-' + i, inputmode: 'numeric', value: String(s.place) });
@@ -457,7 +466,7 @@
       { value: 'uphold', name: OUTCOME.uphold, line: 'The proposed result stands and settles as shown.' },
       { value: 'annul', name: OUTCOME.annul, line: 'Every wager is returned and no Skill Rating changes.' },
       { value: 'correct', name: OUTCOME.correct, line: 'Enter the corrected net worths and places; the game settles by the ordinary rules on them.', disabled: !scored, why: 'A foreclosure has no standings to correct: uphold or annul it.' },
-      { value: 'forfeit', name: OUTCOME.forfeit, disabled: true, why: 'Not available: the Credit rule for a forfeiture awaits the owner’s approval.' }
+      { value: 'forfeit', name: OUTCOME.forfeit, line: 'Choose the players found responsible for proven misconduct; they forfeit their wagers to the others.' }
     ];
     go.addEventListener('click', function () {
       error.hidden = true;
@@ -470,6 +479,12 @@
         if (!rows.every(function (x) { return /^\d{1,12}$/.test(x.netWorth) && /^[1-7]$/.test(x.place); })) { error.textContent = 'Each corrected standing is a whole net worth and a place from 1 to 7.'; error.hidden = false; return; }
         body.standings = standingsParam(rows);
       }
+      if (outcome === 'forfeit') {
+        var chosen = responsibleBoxes.filter(function (r) { return r.box.checked === true; }).map(function (r) { return r.playerId; });
+        if (!chosen.length) { error.textContent = 'Choose the players found responsible.'; error.hidden = false; return; }
+        if (chosen.length === seats.length) { error.textContent = 'Not every player: a forfeiture needs at least one player to pay. Choose another disposition, such as annulling the game.'; error.hidden = false; return; }
+        body.responsible = chosen.join(',');
+      }
       go.disabled = true;
       label.textContent = 'Approve in Keplr';
       confirmedCall(who, session, 'appeal-propose', body, confirmSlot).then(function (answer) {
@@ -480,13 +495,14 @@
         label.textContent = 'Prepare the resolution';
         if (e && e.stopped) return;
         confirmSlot.textContent = '';
-        error.textContent = e && e.error === 'conflict' && e.detail === 'not-approved' ? 'A forfeiture can’t be prepared until the owner approves its Credit rule.' : refusal(e);
+        error.textContent = refusal(e);
         error.hidden = false;
       });
     });
     var form = el('form', { novalidate: 'novalidate' }, [
-      W.choices({ legend: 'Resolve the appeal by', name: 'ap-out', options: options, onChange: function (v) { outcome = v; standingsHost.hidden = v !== 'correct'; } }),
+      W.choices({ legend: 'Resolve the appeal by', name: 'ap-out', options: options, onChange: function (v) { outcome = v; standingsHost.hidden = v !== 'correct'; responsibleHost.hidden = v !== 'forfeit'; } }),
       standingsHost,
+      responsibleHost,
       el('div', { class: 'ld-pfield', style: 'margin-top:18px' }, [
         el('label', { class: 'ld-step__label', for: 'ap-why', text: 'Rationale' }),
         el('p', { class: 'ld-step__note', id: 'ap-why-hint', style: 'margin:0 0 8px', text: 'Why this outcome, from the evidence. The Ludum DAO reads it in the proposal, which is public on chain, and the players read it here.' }),

@@ -120,6 +120,8 @@
     var why = function (reason) { return reason && REASONS[reason] ? ': ' + REASONS[reason] : ''; };
     if (c && c.outcome === 'void') return 'Voided' + why(c.reason) + '. Every wager was returned; nobody was rated.';
     if (c && c.outcome === 'foreclosed') return (c.defaulted ? 'You forfeited' : 'Won by forfeit') + why(c.reason) + '.';
+    /* LUDUM RESULT REVIEW: the Ludum DAO's forfeiture on an appeal (misconduct found), never the clock's. */
+    if (c && c.outcome === 'forfeited') return c.defaulted ? 'Forfeited on appeal: the Ludum DAO found you responsible, and your wager went to the other players.' : 'Won on appeal: the Ludum DAO found other players responsible, and their wagers were shared among the rest.';
     if (c && (c.outcome === 'scored' || c.outcome === 'settled')) return 'Settled.';
     var e = g.clockEnd;
     if (e && e.how === 'annulled') return 'Annulled on the clock: an overdue turn, and the players did not go on.';
