@@ -1,6 +1,6 @@
 /* Ludum · /disputes/ and /disputes/case/?id=<caseId> -- the Disputes tab of your profile and the appeal it opens.
  *
- * LUDUM RESULT REVIEW (owner policy, 2026-10-25). A Credit game's result is provisional until every seated player has
+ * LUDUM RESULT REVIEW (owner policy, 2026-10-24). A Credit game's result is provisional until every seated player has
  * confirmed it (or let the 30-minute review run out) or the Ludum DAO has decided a timely appeal. Appeals are filed on
  * Play, from the Game Over screen; this tab is where they are followed:
  *
