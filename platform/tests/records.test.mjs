@@ -196,12 +196,13 @@ test("Phase 4: a cancelled table is never a completed game -- read from the serv
   for (const t of ["completed", "active", "waiting"]) assert.equal(M.isCancelled(g(t)), false, t);
 });
 
-test("Phase 4 / v1.3: a cancelled table is listed only when its escrow held money (its record keeps the refund)", () => {
+test("v1.7: a cancelled table is never listed -- the retired escrow's money tables included", () => {
   const { window } = load(["records.js", "me-record.js"]);
   const M = window.LudumMeRecord;
-  assert.equal(M.keepsCancelled({ money: { chainGameId: "12" } }), true);
-  assert.equal(M.keepsCancelled({ money: { chainGameId: null } }), false, "never funded: not listed");
-  assert.equal(M.keepsCancelled({ money: null }), false);
+  assert.equal(M.keepsCancelled, undefined, "no escrow exception to the rule");
+  const src = readFileSync(resolve(JS, "me-record.js"), "utf8");
+  assert.match(src, /var listed = all\.filter\(function \(g\) \{ return !isCancelled\(g\); \}\);/);
+  assert.doesNotMatch(src, /chainGameId/);
 });
 
 test("Phase 4: the Finish cell -- your rank from the recorded result, ties shared as the game ranks them", () => {

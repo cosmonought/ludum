@@ -11,7 +11,8 @@
  *
  * The tab opens exactly as /me/ does: your pass, the line under it, the tab row with Moderation current, then the panel
  * (its scope and your standing; Cases; Team; "What a decision does"). The case opens on a record head printed on the
- * pass's stock, then the blocks Decide, Evidence, Parties, History.
+ * pass's stock, then the blocks Decide, Evidence, Parties, History. v1.7 (owner, 2026-10-24): the retired JUNOX escrow is
+ * no player-facing feature, so a case says nothing of it -- the server keeps its evidence (`evidence.money`) as recorded.
  *
  * Confidential: parties are display names, seat ids and account fingerprints, never a username, wallet or id. Nothing
  * is kept in this browser. */
@@ -178,7 +179,7 @@
   function drawCase(slot, session, c, flash, readAt) {
     document.title = c.categoryLabel + ' — Conduct case — Ludum';
     var ev = c.evidence;
-    var dek = c.reporter.nickname + ' reported ' + c.reported.nickname + ' at table ' + R.shortId(c.gameId) + (ev.table.money ? ', a retired real-money table' : '') + '.' + (c.reports > 1 ? ' ' + (c.reports - 1) + ' later report' + (c.reports > 2 ? 's were' : ' was') + ' added.' : '');
+    var dek = c.reporter.nickname + ' reported ' + c.reported.nickname + ' at table ' + R.shortId(c.gameId) + '.' + (c.reports > 1 ? ' ' + (c.reports - 1) + ' later report' + (c.reports > 2 ? 's were' : ' was') + ' added.' : '');
     var head = W.recordHead({
       back: { href: '/moderation/', text: 'Moderation' }, staff: true, kicker: 'Conduct case · ' + c.caseId.slice(0, 9) + '…', title: c.categoryLabel, dek: dek,
       facts: [['Status', stateOf(c.status)], ['Revision', String(c.revision)], ['Opened', shortWhen(c.createdAt) + ' UTC'], ['Reports', String(c.reports) + (c.lastReportAt ? ' · last ' + shortWhen(c.lastReportAt) : '')]]
@@ -268,8 +269,6 @@
     body.appendChild(W.block({ title: 'Evidence', read: 'Facts the server kept at each report' }, [W.stack([W.facts([
       ['Log pointer, first report', logLine],
       ['Check', c.verification.detail],
-      /* v1.7 (owner, 2026-10-24): the retired escrow is evidence only for the old money tables it held -- kept there. */
-      ev.table.money ? ['Retired real-money escrow', ev.money ? 'Phase ' + (ev.money.phase || 'unknown') + (ev.money.held ? ' · held' : '') : 'Not readable then'] : null,
       ['Reporter’s note', c.note === null ? 'None' : '“' + c.note + '”'],
       ['Not captured', ev.not_captured.length ? ev.not_captured.join('; ') : 'Nothing missing']
     ]), W.twocol(countsLedger, chat)])]));

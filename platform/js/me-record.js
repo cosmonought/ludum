@@ -49,8 +49,6 @@
     var t = g.table && g.table.value;
     return t === 'cancelled' || t === 'expired' || (t === 'archived' && !g.startedAt);
   }
-  /** Phase 4: a cancelled table keeps a line only when its escrow held money (its record keeps the refund). */
-  function keepsCancelled(g) { return !!(g.money && g.money.chainGameId); }
 
   /** The Finish cell: your place in the recorded result (ties share it), or "—". */
   function finishOf(g) {
@@ -416,7 +414,9 @@
       }
       function arrived(r, n) {
         all = all.concat(r.games);
-        var listed = all.filter(function (g) { return !isCancelled(g) || keepsCancelled(g); });
+        /* v1.7 (owner, 2026-10-24): a cancelled table is never listed -- a legacy money table's included (the retired
+           escrow's refund is no player-facing record; the server keeps the game's record). */
+        var listed = all.filter(function (g) { return !isCancelled(g); });
         var older = r.nextCursor !== null && n + 1 >= MAX_PAGES;
         block.set(listed, older);
         if (r.nextCursor !== null && n + 1 < MAX_PAGES) return next(r.nextCursor, n + 1);
@@ -444,7 +444,7 @@
   }
 
   window.LudumMeRecord = {
-    isCancelled: isCancelled, keepsCancelled: keepsCancelled, finishOf: finishOf, creditCells: creditCells, filtered: filtered, facetsOf: facetsOf,
+    isCancelled: isCancelled, finishOf: finishOf, creditCells: creditCells, filtered: filtered, facetsOf: facetsOf,
     isOver: isOver, playedOf: playedOf, dateOf: dateOf, standingsOf: standingsOf, endingOf: endingOf, factsOf: factsOf, openedIn: openedIn,
     gameColumns: gameColumns, ledgerCells: ledgerCells, mount: mount
   };
