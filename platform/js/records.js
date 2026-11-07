@@ -149,8 +149,10 @@
     if (typeof n !== 'number' || !isFinite(n) || n === 0) return 'ld-amt ld-amt--zero';
     return n < 0 ? 'ld-amt ld-amt--loss' : 'ld-amt ld-amt--gain';
   }
-  /* Project 18XX's three editions, by the names players use. Another game: its own name. */
-  var EDITIONS = { standard: '18xx', plus: '18xx+', levelPlayingField: '18xx+: LPF' };
+  /* Project 18XX's editions, by the names players use: A Divided Frontier (`multipolarAmerica`, M3) in its compact form,
+     since the Game column beside it already says Project 18XX; `levelPlayingField` keeps its label for its past games.
+     Another game: its own name. */
+  var EDITIONS = { standard: '18xx', plus: '18xx+', levelPlayingField: '18xx+: LPF', multipolarAmerica: 'A Divided Frontier' };
   /** The game a table played, from the server's recorded game ({key, name, edition}); "Project 18XX" for an older
    *  server that does not send it. Never read from a label. */
   function gameName(game) {

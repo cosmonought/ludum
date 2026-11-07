@@ -56,8 +56,11 @@ test("v1.3 formatting: credits, ratings, rating changes, the game's name from it
   eq([R.rating(1500), R.rating(1468.3334), R.rating(1587.5)], ["1,500", "1,468", "1,588"]);
   eq([R.ratingChange(16), R.ratingChange(-5.3334), R.ratingChange(0), R.ratingChange(null)], ["+16.0", "−5.3", "0.0", "—"]);
   const game = (edition, key = "project-18xx", name = "Project 18XX") => ({ key, name, edition, source: "recorded" });
-  eq([R.gameName(game("standard")), R.gameName(game("plus")), R.gameName(game("levelPlayingField")), R.gameName(game("steel-meridian", "steel-meridian", "18Heartland: Steel Meridian")), R.gameName(undefined)],
-    ["18xx", "18xx+", "18xx+: LPF", "18Heartland: Steel Meridian", "Project 18XX"]);
+  eq([R.gameName(game("standard")), R.gameName(game("plus")), R.gameName(game("levelPlayingField")), R.gameName(game("multipolarAmerica")), R.gameName(game("steel-meridian", "steel-meridian", "18Heartland: Steel Meridian")), R.gameName(undefined)],
+    ["18xx", "18xx+", "18xx+: LPF", "A Divided Frontier", "18Heartland: Steel Meridian", "Project 18XX"]);
+  /* M3: A Divided Frontier is named by its compact form, never by its working name; an edition this page does not know yet
+     is the server's name for the game. */
+  assert.equal(R.gameName(game("someLaterEdition")), "Project 18XX");
   /* Owner policy 2026-10-22: no figure is private until a game count, so there is no "Private · n of 5" state to say. */
   assert.equal(R.publicState, undefined);
   const fact = (value) => ({ value, provenance: "server-recorded" });
@@ -170,11 +173,15 @@ test("v1.3 Your record: the filters keep a game by its recorded game and its sta
   const { window } = load(["records.js", "me-record.js"]);
   const M = window.LudumMeRecord;
   const g = (edition, at, credits = null) => ({ game: { key: "project-18xx", name: "Project 18XX", edition, source: "recorded" }, endedAt: at, credits, table: { value: "completed" } });
-  const games = [g("plus", "2026-10-02T00:00:00.000Z"), g("levelPlayingField", "2026-10-05T00:00:00.000Z", { outcome: "void" }), g("standard", "2026-10-01T00:00:00.000Z")];
-  eq(M.filtered(games, { game: "", outcome: "", oldest: false }).map((x) => M.facetsOf(x).game), ["18xx+: LPF", "18xx+", "18xx"]);
-  eq(M.filtered(games, { game: "", outcome: "", oldest: true }).map((x) => M.facetsOf(x).game), ["18xx", "18xx+", "18xx+: LPF"]);
+  const games = [g("plus", "2026-10-02T00:00:00.000Z"), g("levelPlayingField", "2026-10-05T00:00:00.000Z", { outcome: "void" }), g("standard", "2026-10-01T00:00:00.000Z"), g("multipolarAmerica", "2026-11-07T00:00:00.000Z")];
+  eq(M.filtered(games, { game: "", outcome: "", oldest: false }).map((x) => M.facetsOf(x).game), ["A Divided Frontier", "18xx+: LPF", "18xx+", "18xx"]);
+  eq(M.filtered(games, { game: "", outcome: "", oldest: true }).map((x) => M.facetsOf(x).game), ["18xx", "18xx+", "18xx+: LPF", "A Divided Frontier"]);
   eq(M.filtered(games, { game: "18xx+", outcome: "", oldest: false }).length, 1);
+  eq(M.filtered(games, { game: "A Divided Frontier", outcome: "", oldest: false }).length, 1);
   eq(M.filtered(games, { game: "", outcome: "Voided", oldest: false }).map((x) => M.facetsOf(x).game), ["18xx+: LPF"]);
+  /* M3: the Game column says Project 18XX, so the Table column names A Divided Frontier in its compact form; a past Level
+     Playing Field game keeps its own name. */
+  eq(games.map((x) => M.gameColumns(x)), [{ game: "Project 18XX", table: "18XX+" }, { game: "Project 18XX", table: "18XX+: LPF" }, { game: "Project 18XX", table: "18XX" }, { game: "Project 18XX", table: "A Divided Frontier" }]);
 });
 
 test("Phase 4: a cancelled table is never a completed game -- read from the server's `history`, else the table status", () => {
